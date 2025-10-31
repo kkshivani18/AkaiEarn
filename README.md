@@ -5,11 +5,11 @@ A React Native mobile application that allows users to earn tokens by completing
 ## 📱 Features
 
 - **User Authentication** - Secure login/signup with JWT tokens
-- **Profile Management** - Complete user profiles with IQ tracking and streaks
+- **Profile Management** - Complete user profiles with IQ tracking
 - **Task Completion** - Label offers, social tasks, and creative tasks
-- **Rewards System** - Interactive spin wheel, coupons, and referral system
+- **Rewards System** - Spin wheel, coupons, and referral system
 - **Real-time Balance** - Token and INR balance tracking
-- **Dark Theme** - Beautiful dark UI with blur effects and gradients
+- **Dark Theme** - Beautiful dark UI with blur effects
 
 ## 🚀 Quick Start
 
@@ -18,34 +18,31 @@ A React Native mobile application that allows users to earn tokens by completing
 - Node.js (v16 or higher)
 - npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
-- iOS Simulator (for iOS development)
-- Android Studio/Emulator (for Android development)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/AKAI-admin/Offer-Wall-Frontend-upd.git
+   git clone https://github.com/yourusername/Offer-Wall-Frontend.git
    cd Offer-Wall-Frontend-upd
    ```
 
 2. **Install dependencies**
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
 3. **Configure environment**
    ```bash
+   # Copy environment template
+   cp .env.example .env
+
    # Update API_BASE_URL in config/environment.ts
    ```
 
-4. **Start the development server**
+4. **Start the app**
    ```bash
-   npm start
-   # or
-   yarn start
+   npx expo start
    ```
 
 5. **Run on device/simulator**
@@ -65,30 +62,25 @@ A React Native mobile application that allows users to earn tokens by completing
 ```
 ├── app/                    # App screens and navigation
 │   ├── (tabs)/            # Tab navigation screens
-│   │   ├── offer.tsx      # Main offers screen
-│   │   ├── profile.tsx    # User profile screen
-│   │   └── rewards.tsx    # Rewards and spin wheel
 │   ├── Login.tsx          # Authentication screens
-│   ├── SignUp.tsx         # Registration screen
 │   └── profile-completion.tsx
 ├── components/            # Reusable components
-│   ├── SpinWheel.tsx     # Interactive spin wheel
+│   ├── SpinWheel.tsx     # Spin wheel component
 │   ├── CouponModal.tsx   # Coupon display modal
 │   └── IQMeter.tsx       # IQ level display
 ├── contexts/             # React contexts
 │   ├── AuthContext.tsx   # Authentication state
 │   └── BalanceContext.tsx # User balance state
 ├── services/             # API services
-│   └── api.ts            # API endpoints and integrations
+│   └── api.ts            # API endpoints
 ├── types/                # TypeScript definitions
-│   └── Offer.ts          # Data type definitions
 └── config/               # Configuration files
-    └── environment.ts    # Environment configuration
+    └── environment.ts    # Environment config
 ```
 
 ## 🔧 Configuration
 
-### Environment Setup
+### Environment Variables
 
 Update `config/environment.ts` with your backend URL:
 
@@ -96,98 +88,101 @@ Update `config/environment.ts` with your backend URL:
 const environments = {
   development: {
     API_BASE_URL: 'https://your-backend-url.com/api',
-    DEBUG: true,
+    // ...other config
   }
 }
 ```
 
 ### Backend Integration
 
-This frontend connects to the Offer-Wall Backend API. Ensure the backend is running and accessible.
+This frontend connects to the Offer-Wall Backend. Ensure the backend is running and accessible.
 
-**Key API Endpoints:**
+**Required Backend Endpoints:**
 - `POST /auth/login` - User authentication
-- `POST /auth/register` - User registration  
+- `POST /auth/register` - User registration
 - `GET /auth/user` - Get user profile
 - `GET /offers/get-all-label-offers` - Get available offers
 - `GET /rewards/spin-wheel` - Get spin wheel coupons
 - `POST /rewards/spin-wheel/select` - Select spin wheel coupon
 
-## 📱 App Flow
+## 📱 App Features
 
-### Authentication
+### Authentication Flow
 1. **Splash Screen** → Check authentication status
 2. **Login/Signup** → User authentication
-3. **Profile Completion** → Collect user information and referrals
+3. **Profile Completion** → Collect user information
 4. **Main App** → Access to all features
 
-### Main Features
-- **Offers Tab** - Browse and complete available tasks
-- **Profile Tab** - User information, IQ meter, and statistics  
-- **Rewards Tab** - Spin wheel, coupons, and referral system
+### Main Screens
+- **Offers** - Browse and complete available tasks
+- **Profile** - User information and statistics  
+- **Rewards** - Spin wheel, coupons, and referrals
 
-## 🎨 Key Components
-
-### SpinWheel Component
-- Interactive spinning wheel with realistic physics
-- 6 reward segments with company logos
-- Daily spin limitation with countdown timer
-- Integration with backend coupon selection
-
-### CouponModal Component  
-- Beautiful coupon display with company branding
-- Copy coupon code functionality
-- Animated glass morphism design
-
-### IQMeter Component
-- Visual representation of user IQ level
-- Dynamic color-coded progress indicator
-- Smooth animations and transitions
+### Key Components
+- **SpinWheel** - Interactive spinning wheel with rewards
+- **CouponModal** - Display and copy coupon codes
+- **IQMeter** - Visual IQ level indicator
 
 ## 🛠️ Development
 
 ### Code Style
 - TypeScript for type safety
-- Functional components with React Hooks
+- Functional components with hooks
 - Consistent naming conventions
 - Component-based architecture
 
 ### State Management
-- React Context for global state (Auth, Balance)
+- React Context for global state
 - Local state for component-specific data
-- Expo SecureStore for sensitive data persistence
+- Secure storage for sensitive data
 
 ### API Integration
-- Axios for HTTP requests with interceptors
-- Automatic token attachment for authenticated requests
-- Comprehensive error handling and retry logic
+- Axios for HTTP requests
+- Interceptors for token management
+- Error handling and retry logic
 
-## 🚀 Building for Production
+## 🎨 UI/UX
 
-### Configure Environment
+### Design System
+- **Colors**: Dark theme with blue accents
+- **Typography**: System fonts with weight hierarchy
+- **Components**: Blur effects, gradients, and shadows
+- **Icons**: Ionicons for consistent iconography
+
+### Responsive Design
+- Supports various screen sizes
+- Optimized for mobile devices
+- Cross-platform compatibility
+
+## 🚀 Deployment
+
+### Building for Production
+
+1. **Configure environment for production**
 ```typescript
 // config/environment.ts
 production: {
   API_BASE_URL: 'https://your-production-api.com/api',
   DEBUG: false,
+  // ...
 }
 ```
 
-### Build Commands
-```bash
-# Build for production
-expo build:android
-expo build:ios
+2. **Build the app**
+   ```bash
+   # Build for production
+   expo build:android
+   expo build:ios
 
-# Or using EAS Build (recommended)
-eas build --platform all
-```
+   # Or using EAS Build
+   eas build --platform all
+   ```
 
-### Deployment
-```bash
-# Submit to app stores
-eas submit --platform all
-```
+3. **Deploy to app stores**
+   ```bash
+   # Submit to stores
+   eas submit --platform all
+   ```
 
 ## 🤝 Contributing
 
@@ -199,12 +194,17 @@ eas submit --platform all
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🔗 Related Repositories
 
-- [Offer-Wall-Backend](https://github.com/AKAI-admin/Offer-Wall-Backend) - Backend API
+- [Offer-Wall-Backend](https://github.com/yourusername/Offer-Wall-Backend) - Backend API
+- [Offer-Wall-Admin](https://github.com/yourusername/Offer-Wall-Admin) - Admin dashboard
+
+## 📞 Support
+
+For support, email support@offerwall.com or create an issue in this repository.
 
 ---
 
-Made with ❤️ by the AKAI Team
+Made with ❤️ by the Offer-Wall Team
