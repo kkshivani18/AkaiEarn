@@ -199,12 +199,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔗 Related Repositories
 
 - [Offer-Wall-Backend](https://github.com/yourusername/Offer-Wall-Backend) - Backend API
-- [Offer-Wall-Admin](https://github.com/yourusername/Offer-Wall-Admin) - Admin dashboard
-
-## 📞 Support
-
-For support, email support@offerwall.com or create an issue in this repository.
 
 ---
 
-Made with ❤️ by the Offer-Wall Team
+Made with ❤️ by the AkaiSpace Team
