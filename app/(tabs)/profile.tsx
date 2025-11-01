@@ -76,43 +76,61 @@ const ProfileHeader = ({ userProfile }: { userProfile: any }) => (
     </View>
 );
 
-const StatsGrid = ({ userProfile, balance }: { userProfile: any, balance: number }) => (
-  <View style={styles.statsGrid}>
-    {/* Token Card */}
-    <View style={styles.statCard}>
-      <View style={styles.statCardLeft}>
-        <View style={styles.statIcon}>
-          <Text style={styles.statIconText}>🪙</Text>
-        </View>
-        {/* <View style={styles.statInfo}>
-          <Text style={styles.statLabel}>Token Balance</Text>
-          <Text style={styles.statValue}>{balance.toLocaleString()}</Text>
-        </View> */}
-      </View>
-      <View style={styles.statCardRight}>
-        <Text style={styles.statSubValue}>{balance.toLocaleString()}</Text>
-        <Text style={styles.statSubLabel}>Token Balance</Text>
-      </View>
-    </View>
+const StatsGrid = ({ userProfile, balance }: { userProfile: any, balance: number }) => {
+  // Safe referral count resolver (same as rewards screen)
+  const resolveReferralCount = (user: any) => {
+    if (!user) return 0;
+    
+    // Prefer authoritative counter if backend provides it
+    if (typeof user.referredCount === 'number') return user.referredCount;
 
-    {/* INR Balance Card */}
-    <View style={styles.statCard}>
-      <View style={styles.statCardLeft}>
-        <View style={styles.statIcon}>
-          <Text style={styles.statIconText}>💰</Text>
+    const arr: string[] = Array.isArray(user.referredUsers) ? user.referredUsers : [];
+    
+    // If user has referredUsers array, that means they have referred people
+    if (arr.length > 0) {
+      // If the array contains only the user's own ID (self-reference), treat as 0
+      if (arr.length === 1 && arr[0] === user._id) {
+        return 0;
+      }
+      
+      // Filter out any self-references but keep the rest
+      const validReferrals = arr.filter(referredUserId => referredUserId !== user._id);
+      return validReferrals.length;
+    }
+
+    return 0;
+  };
+
+  return (
+    <View style={styles.statsGrid}>
+      {/* Token Card */}
+      <View style={styles.statCard}>
+        <View style={styles.statCardLeft}>
+          <View style={styles.statIcon}>
+            <Text style={styles.statIconText}>🪙</Text>
+          </View>
         </View>
-        {/* <View style={styles.statInfo}>
-          <Text style={styles.statLabel}>INR Balance</Text>
-          <Text style={styles.statValue}>₹{(balance * 0.1).toFixed(2)}</Text>
-        </View> */}
+        <View style={styles.statCardRight}>
+          <Text style={styles.statSubValue}>{balance.toLocaleString()}</Text>
+          <Text style={styles.statSubLabel}>Token Balance</Text>
+        </View>
       </View>
-      <View style={styles.statCardRight}>
-        <Text style={styles.statSubValue}>₹ {(balance * 0.1).toFixed(2)}</Text>
-        <Text style={styles.statSubLabel}>INR Balance</Text>
+
+      {/* INR Balance */}
+      <View style={styles.statCard}>
+        <View style={styles.statCardLeft}>
+          <View style={styles.statIcon}>
+            <Text style={styles.statIconText}>💰</Text>
+          </View>
+        </View>
+        <View style={styles.statCardRight}>
+          <Text style={styles.statSubValue}>₹ {(balance * 0.1).toFixed(2)}</Text>
+          <Text style={styles.statSubLabel}>INR Balance</Text>
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 const AccountMenu = ({ onLogout }: { onLogout: () => void }) => (
     <View style={styles.accountSectionContainer}>

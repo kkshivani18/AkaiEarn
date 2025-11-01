@@ -60,6 +60,9 @@ const RewardsScreen: React.FC = () => {
   const [availableSpinCoupons, setAvailableSpinCoupons] = useState<any[]>([]);
   const [wheelSegments, setWheelSegments] = useState<Segment[]>([]);
   const [lastSpinDate, setLastSpinDate] = useState<string | null>(null);
+  const [showReferredUsers, setShowReferredUsers] = useState(false);
+  const [referredUsersDetails, setReferredUsersDetails] = useState<any[]>([]);
+  const [loadingReferredUsers, setLoadingReferredUsers] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -210,11 +213,11 @@ const RewardsScreen: React.FC = () => {
                 text: 'OK',
                 onPress: () => {
                   setShowSpinWheel(false);
-                  // COMMENTED OUT: 24-hour cooldown for testing
-                  // setTimeout(() => setHasSpun(false), 24 * 60 * 60 * 1000);
+                  // 24-hour spin-wheel reset
+                  setTimeout(() => setHasSpun(false), 24 * 60 * 60 * 1000);
                   
                   // For testing: Reset immediately
-                  setTimeout(() => setHasSpun(false), 2000);
+                  // setTimeout(() => setHasSpun(false), 2000);
                 }
               }
             ]
@@ -248,7 +251,8 @@ const RewardsScreen: React.FC = () => {
               onPress: () => {
                 setShowSpinWheel(false);
                 // For testing: Reset immediately
-                setTimeout(() => setHasSpun(false), 2000);
+                // setTimeout(() => setHasSpun(false), 2000);
+                setTimeout(() => setHasSpun(false), 24 * 60 * 60 * 1000);
               }
             }
           ]
@@ -287,6 +291,29 @@ const RewardsScreen: React.FC = () => {
     }
   };
 
+  // referral count 
+  const referralCount = (user: any) => {
+    if (!user) return 0;
+    if (typeof user.referredCount === 'number') return user.referredCount;
+
+    const arr: string[] = Array.isArray(user.referredUsers) ? user.referredUsers : [];
+    
+    // If user has referredUsers array, that means they have referred people
+    // The length of this array is the actual referral count
+    if (arr.length > 0) {
+      // If the array contains only the user's own ID (self-reference), treat as 0
+      if (arr.length === 1 && arr[0] === user._id) {
+        return 0;
+      }
+      
+      // Filter out any self-references but keep the rest
+      const validReferrals = arr.filter(referredUserId => referredUserId !== user._id);
+      return validReferrals.length;
+    }
+
+    return 0;
+  };
+
   const handleCouponPress = (coupon: any) => {
     // Convert the coupon data to match CouponModal expected format
     const modalCoupon: Coupon = {
@@ -305,6 +332,39 @@ const RewardsScreen: React.FC = () => {
   const handleCloseCouponModal = () => {
     setShowCouponModal(false);
     setSelectedCoupon(null);
+  };
+
+  // Fetch details of referred users
+  const fetchReferredUsersDetails = async () => {
+    if (!userProfile?.referredUsers || userProfile.referredUsers.length === 0) {
+      return;
+    }
+
+    setLoadingReferredUsers(true);
+    try {
+      // Since we can't modify backend, we'll show user IDs and basic info
+      // In a real implementation, you'd have an endpoint to get user details by IDs
+      const referredUsers = userProfile.referredUsers.map((userId: string, index: number) => ({
+        _id: userId,
+        name: `User ${index + 1}`, // Fallback name
+        email: `user${index + 1}@example.com`, // Fallback email
+        joinedDate: new Date().toLocaleDateString(), // Fallback date
+      }));
+      
+      setReferredUsersDetails(referredUsers);
+    } catch (error) {
+      console.error('Failed to fetch referred users details:', error);
+    } finally {
+      setLoadingReferredUsers(false);
+    }
+  };
+
+  // Toggle referred users dropdown
+  const handleToggleReferredUsers = () => {
+    if (!showReferredUsers && referredUsersDetails.length === 0) {
+      fetchReferredUsersDetails();
+    }
+    setShowReferredUsers(!showReferredUsers);
   };
 
   const SpinWheelModal = () => (
@@ -393,7 +453,8 @@ const RewardsScreen: React.FC = () => {
               <Text style={styles.referralLabel}>Your referral code</Text>
               <View style={styles.referralCodeBox}>
                 <Text style={styles.referralCode}>{userProfile?.referralCode || 'LOADING...'}</Text>
-                <Text style={styles.referralStats}>Total referrals: {userProfile?.referredUsers?.length || 0}</Text>
+                {/* Use safe resolver instead of raw referredUsers length */}
+                <Text style={styles.referralStats}>Total referrals: {referralCount(userProfile)}</Text>
               </View>
               <TouchableOpacity style={styles.copyButton}>
                 <Ionicons name="copy-outline" size={16} color="#007AFF" />
@@ -404,6 +465,75 @@ const RewardsScreen: React.FC = () => {
               <Ionicons name="share-social-outline" size={20} color="white" />
               <Text style={styles.inviteButtonText}>Invite Friends</Text>
             </TouchableOpacity>
+          </BlurView>
+
+          {/* Referred Users Card */}
+          <BlurView intensity={40} tint="dark" style={styles.sectionCard}>
+            <TouchableOpacity 
+              style={styles.referredUsersHeader} 
+              onPress={handleToggleReferredUsers}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIcon}>
+                  <Ionicons name="people" size={28} color="#007AFF" />
+                </View>
+                <View style={styles.sectionInfo}>
+                  <Text style={styles.sectionTitle}>Referred Users</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    {referralCount(userProfile)} user{referralCount(userProfile) !== 1 ? 's' : ''} joined using your code
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.dropdownIcon}>
+                <Ionicons 
+                  name={showReferredUsers ? "chevron-up" : "chevron-down"} 
+                  size={24} 
+                  color="#A1A1AA" 
+                />
+              </View>
+            </TouchableOpacity>
+
+            {/* Dropdown Content */}
+            {showReferredUsers && (
+              <View style={styles.referredUsersDropdown}>
+                {loadingReferredUsers ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#007AFF" />
+                    <Text style={styles.loadingText}>Loading referred users...</Text>
+                  </View>
+                ) : referredUsersDetails.length > 0 ? (
+                  <>
+                    <View style={styles.dividerLine} />
+                    {referredUsersDetails.map((user, index) => (
+                      <View key={user._id} style={styles.referredUserItem}>
+                        <View style={styles.userAvatar}>
+                          <Text style={styles.userAvatarText}>
+                            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                          </Text>
+                        </View>
+                        <View style={styles.userInfo}>
+                          <Text style={styles.userName}>{user.name}</Text>
+                          <Text style={styles.userDetails}> Joined: {user.joinedDate} </Text>
+                          <Text style={styles.userDetails}> ID: {user._id.substring(0, 24)}</Text>
+                        </View>
+                        {/* <View style={styles.userBadge}>
+                          <Text style={styles.userBadgeText}>#{index + 1}</Text>
+                        </View> */}
+                      </View>
+                    ))}
+                  </>
+                ) : (
+                  <View style={styles.noReferredUsersContainer}>
+                    <Ionicons name="people-outline" size={48} color="#666" />
+                    <Text style={styles.noReferredUsersText}>No referrals yet</Text>
+                    <Text style={styles.noReferredUsersSubtext}>
+                      Share your referral code to start earning rewards!
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </BlurView>
 
           {/* Your Coupons Section - Show actual user coupons */}
@@ -634,6 +764,102 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 600,
+  },
+
+  // Referred Users Section
+  referredUsersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownIcon: {
+    padding: 1,
+    marginRight: 15
+  },
+  referredUsersDropdown: {
+    marginTop: 10,
+  },
+  dividerLine: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 10,
+  },
+  referredUserItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  userAvatarText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 2,
+  },
+  userDetails: {
+    fontSize: 12,
+    color: '#A1A1AA',
+  },
+  // userBadge: {
+  //   backgroundColor: 'rgba(0, 122, 255, 0.2)',
+  //   paddingHorizontal: 8,
+  //   paddingVertical: 4,
+  //   borderRadius: 12,
+  // },
+  // userBadgeText: {
+  //   fontSize: 12,
+  //   color: '#007AFF',
+  //   fontWeight: '600',
+  // },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    color: '#A1A1AA',
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  noReferredUsersContainer: {
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  noReferredUsersText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#A1A1AA',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  noReferredUsersSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 
   // Coupons Section

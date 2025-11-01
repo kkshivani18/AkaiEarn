@@ -213,6 +213,21 @@ const ProfileCompletionScreen: React.FC = () => {
     }
   };
 
+  const handleBackNavigation = async () => {
+    try {
+      // Optional: Clear auth state
+      // if (onLogout) {
+      //   await onLogout();
+      // }
+      // Navigate to Login
+      router.replace('/Login');
+    } catch (error) {
+      console.error('Error during back navigation:', error);
+      // Fallback: just navigate
+      router.replace('/Login');
+    }
+  };
+
   const occupationItems = [
     { label: 'Student', value: 'student' },
     { label: 'Developer', value: 'developer' },
@@ -243,7 +258,7 @@ const ProfileCompletionScreen: React.FC = () => {
         >
           <BlurView intensity={60} tint="dark" style={styles.mobileScreen}>
             <View style={styles.header}>
-              <TouchableOpacity style={styles.backButton} onPress={() => router.push('/Login')}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBackNavigation}>
                 <Ionicons name="arrow-back" size={24} color="white" />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>About You</Text>

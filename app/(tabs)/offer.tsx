@@ -73,7 +73,7 @@ const OfferScreen: React.FC = () => {
     difficulty: getDifficultyFromIQ(backendTask.minimumIq || 0),
     minimumIq: backendTask.minimumIq || 0,
     // Always use S3 creative link instead of backend's example.com
-    creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/index.html',
+    creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
     penaltyTime: backendTask.penaltyTime || 1,
     type: backendTask.type
   });
@@ -87,7 +87,7 @@ const OfferScreen: React.FC = () => {
       pathname: '/creative-task',
       params: {
         labelOfferId: task.id, // Changed from taskId to labelOfferId
-        creativeLink: task.creativeLink || 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/index.html',
+        creativeLink: task.creativeLink || 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
         taskTitle: task.title,
         reward: task.reward.toString(),
         iqGain: task.iqGain.toString(),
@@ -127,7 +127,7 @@ const OfferScreen: React.FC = () => {
           image: 'https://via.placeholder.com/300x140/2a2b33/fff?text=Offline',
           difficulty: 'Beginner',
           minimumIq: 0,
-          creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/index.html',
+          creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
           penaltyTime: 1,
           type: 'labelling-task',
         }]);

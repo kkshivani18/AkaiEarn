@@ -10,6 +10,15 @@ interface AuthProps{
   onProfileCompleted?: () => void;
 }
 
+interface AuthContextType {
+  authState?: { token: string | null, authenticated: boolean | null, user?: {name: string, email: string}, profileCompleted?: boolean };
+  onRegister?: (name: string, email: string, password: string) => Promise<any>;
+  onLogin?: (email: string, password: string) => Promise<any>;
+  onLogout?: () => Promise<any>;
+  onProfileCompleted?: () => void;
+  updateTokenBalance: (tokens: number) => void;
+}
+
 const TOKEN_KEY = 'authToken';
 // Make the context undefined by default so we can detect missing provider
 const AuthContext = createContext<AuthProps | undefined>(undefined);
@@ -222,12 +231,25 @@ export const AuthProvider = ({children}: any) => {
     }
   };
 
-  const value = {
+  const updateTokenBalance = (tokens: number) => {
+    if (authState?.user) {
+      setAuthState(prev => ({
+        ...prev!,
+        user: {
+          ...prev!.user,
+          coins: (prev!.user.coins || 0) + tokens  // Changed from 'tokens' to 'coins'
+        }
+      }));
+    }
+  };
+
+  const value: AuthContextType = {
     onRegister: register,
     onLogin: login,
     onLogout: logout,
     onProfileCompleted: onProfileCompleted,
-    authState: authState
+    authState: authState,
+    updateTokenBalance,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

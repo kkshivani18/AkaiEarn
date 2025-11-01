@@ -97,7 +97,7 @@ const CreativeTaskScreen: React.FC = () => {
       return '';
     }
     
-    const baseUrl = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/index.html';
+    const baseUrl = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html';
     
     // Build comprehensive parameter set with validation
     const urlParams = {
@@ -387,7 +387,7 @@ const CreativeTaskScreen: React.FC = () => {
       const labelOfferData = {
         imageLink: taskData.imageUrl || 'https://via.placeholder.com/300x200/2a2b33/fff?text=Completed+Task',
         type: uniqueTaskType,
-        creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/index.html',
+        creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
         rewards: {
           coinsOnCorrect: reward,
           iqDeltaOnCorrect: iqGain,
