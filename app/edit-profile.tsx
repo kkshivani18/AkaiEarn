@@ -124,8 +124,15 @@ export default function EditProfileScreen() {
   // Pick profile picture
   const pickImage = async () => {
     try {
+      // Ask for media library permission first
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Media library permission is needed to pick images');
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaType.Images], // Fixed deprecation warning
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // fixed enum
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -151,7 +158,7 @@ export default function EditProfileScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: [ImagePicker.MediaType.Images], // Fixed deprecation warning
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // fixed enum
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,

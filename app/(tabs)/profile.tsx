@@ -208,17 +208,12 @@ export default function ProfileScreen() {
       'Logout',
       'Are you sure you want to logout?',
       [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
+          text: 'Logout', style: 'destructive',
           onPress: async () => {
             try {
               await onLogout?.();
-              // Navigate to login screen after logout
               router.replace('/Login');
             } catch (error) {
               console.error('Logout failed:', error);
