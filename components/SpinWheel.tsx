@@ -13,6 +13,7 @@ import Svg, {
   Stop,
   Image as SvgImage,
 } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // --- Types ---
 interface Segment {
@@ -40,7 +41,7 @@ interface SpinWheelProps {
 // --- Constants ---
 const DEFAULT_WHEEL_SIZE = 280;
 const STROKE_WIDTH = 4;
-const COOLDOWN_TIME = 24 * 60 * 60; // 24 hours in seconds
+const COOLDOWN_TIME = 24 * 60 * 60; 
 const SPIN_DURATION = 5000;
 const FULL_SPINS = 5;
 
@@ -66,6 +67,8 @@ const GradientText: React.FC<{ children: React.ReactNode; style: any }> = ({ chi
 
 const WheelPointer: React.FC<{ wheelSize: number }> = React.memo(({ wheelSize }) => (
   <View style={[styles.pointerContainer, { left: wheelSize / 2 - 10 }]}>
+    {/* base dot for pointer */}
+    <View style={styles.pointerBase} />
     <View style={styles.pointer} />
   </View>
 ));
@@ -74,17 +77,30 @@ const SpinButton: React.FC<{
   onPress: () => void;
   disabled: boolean;
   isSpinning: boolean;
-}> = React.memo(({ onPress, disabled, isSpinning }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    disabled={disabled}
-    style={[styles.spinButton, disabled && styles.disabledButton]}
-    activeOpacity={0.8}
-  >
-    <Text style={styles.spinButtonText}>
-      {isSpinning ? '...' : 'SPIN'}
-    </Text>
-  </TouchableOpacity>
+  pulseScale?: Animated.Value;
+}> = React.memo(({ onPress, disabled, isSpinning, pulseScale }) => (
+  <Animated.View style={[styles.spinButtonWrapper, pulseScale ? { transform: [{ scale: pulseScale }] } : null]}>
+    {/* glossy ring behind the button */}
+    <View style={styles.centerDecor}>
+      <View style={styles.centerRingLarge} />
+      <View style={styles.centerRingSmall} />
+    </View>
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      style={[styles.spinButton, disabled && styles.disabledButton]}
+      activeOpacity={0.9}
+    >
+      <LinearGradient
+        colors={['#f97316', '#fb923c']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.spinButtonGradient}
+      >
+        <Text style={styles.spinButtonText}>{isSpinning ? '...' : 'SPIN'}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  </Animated.View>
 ));
 
 const StatusDisplay: React.FC<{
@@ -184,11 +200,21 @@ const WheelSVG: React.FC<{
     });
   }, [segments, anglePerSegment, outerRadius, innerRadius]);
 
+  const renderTickDots = useCallback(() => {
+    const r = innerRadius; // along the ring edge
+    return segments.map((_, index) => {
+      const a = (index * anglePerSegment - 90) * (Math.PI / 180);
+      const cx = outerRadius + r * Math.cos(a);
+      const cy = outerRadius + r * Math.sin(a);
+      return <Circle key={`dot-${index}`} cx={cx} cy={cy} r="2" fill="#f97316" opacity={0.65} />;
+    });
+  }, [segments, anglePerSegment, outerRadius, innerRadius]);
+
   return (
     <Svg width={wheelSize} height={wheelSize} viewBox={`0 0 ${wheelSize} ${wheelSize}`}>
       <Defs>
         <RadialGradient id="orangeGlow">
-          <Stop offset="0%" stopColor="#f97316" stopOpacity="0.7" />
+          <Stop offset="0%" stopColor="#f97316" stopOpacity="0.6" />
           <Stop offset="100%" stopColor="#f97316" stopOpacity="0" />
         </RadialGradient>
         <Filter id="laserGlow">
@@ -198,21 +224,19 @@ const WheelSVG: React.FC<{
           <Circle cx="0" cy="0" r={logoRadius} />
         </ClipPath>
       </Defs>
-      
+
       <G>
         {/* Background glow */}
-        <Circle 
-          cx={outerRadius} 
-          cy={outerRadius} 
-          r={innerRadius} 
-          fill="url(#orangeGlow)" 
-        />
+        <Circle cx={outerRadius} cy={outerRadius} r={innerRadius} fill="url(#orangeGlow)" />
         
         {/* Segments */}
         {segments.map(renderSegment)}
         
         {/* Separator lines */}
         {renderSeparatorLines()}
+        
+        {/* Tick dots for detail */}
+        {renderTickDots()}
         
         {/* Outer rings */}
         <Circle 
@@ -255,6 +279,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   const currentRotationRef = useRef(0);
   const glowOpacity = useRef(new Animated.Value(0.7)).current;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pulseScale = useRef(new Animated.Value(1)).current;
 
   // Memoized calculations
   const { outerRadius, innerRadius, logoRadius } = useMemo(
@@ -350,6 +375,22 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     };
   }, [isUnlocked, timeLeft]);
 
+  // Pulse the center button when ready
+  useEffect(() => {
+    if (isUnlocked && !isSpinning) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseScale, { toValue: 1.06, duration: 900, useNativeDriver: true }),
+          Animated.timing(pulseScale, { toValue: 1.0, duration: 900, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    } else {
+      pulseScale.setValue(1);
+    }
+  }, [isUnlocked, isSpinning, pulseScale]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -390,6 +431,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
             onPress={startSpinning}
             disabled={isSpinning || !isUnlocked}
             isSpinning={isSpinning}
+            pulseScale={pulseScale}
           />
         </View>
         
@@ -425,7 +467,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 27,
     fontWeight: '800',
     marginBottom: 10,
     textAlign: 'center',
@@ -448,6 +490,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
   },
+  // Container for the wheel SVG/animated view
+  wheelContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pointerContainer: {
     position: 'absolute',
     top: 6,
@@ -457,6 +504,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 5,
     elevation: 10,
+  },
+  pointerBase: {
+    alignSelf: 'center',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#fef3c7',
+    marginBottom: 2,
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    marginTop: -27
   },
   pointer: {
     width: 0,
@@ -469,25 +527,61 @@ const styles = StyleSheet.create({
     borderRightColor: 'transparent',
     borderTopColor: '#f97316',
   },
-  wheelContainer: {
-    // Dynamic dimensions set via style prop
+
+  // Center button and decor
+  spinButtonWrapper: {
+    position: 'absolute',
+    zIndex: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerDecor: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerRingLarge: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 2,
+    borderColor: 'rgba(249, 115, 22, 0.35)',
+    backgroundColor: 'rgba(249, 115, 22, 0.06)',
+  },
+  centerRingSmall: {
+    position: 'absolute',
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   spinButton: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     backgroundColor: '#f97316',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 20,
     borderWidth: 4,
     borderColor: 'rgba(255, 255, 255, 0.6)',
     shadowColor: '#f97316',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.85,
     shadowRadius: 20,
     elevation: 15,
+    overflow: 'hidden',
+  },
+  spinButtonGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   disabledButton: {
     opacity: 0.7,
@@ -495,7 +589,8 @@ const styles = StyleSheet.create({
   spinButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   resultContainer: {
     marginTop: 20,
@@ -534,9 +629,10 @@ const styles = StyleSheet.create({
   },
   readyText: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#22c55e',
-    textShadowColor: 'rgba(34, 197, 94, 0.5)',
+    fontWeight: '600',
+    color: 'white',
+    marginLeft: -50,
+    // textShadowColor: 'white',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
     marginBottom: 2,

@@ -515,7 +515,7 @@ const RewardsScreen: React.FC = () => {
               <View style={styles.dropdownIcon}>
                 <Ionicons 
                   name={showReferredUsers ? "chevron-up" : "chevron-down"} 
-                  size={24} 
+                  size={22} 
                   color="#A1A1AA" 
                 />
               </View>
@@ -713,7 +713,6 @@ const styles = StyleSheet.create({
   },
   // icon stack for bolt + rings
   iconStack: {
-    marginTop: 15,
     width: 19, 
     height: 19,
     justifyContent: 'center',
@@ -828,8 +827,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dropdownIcon: {
-    padding: 1,
-    marginRight: 15
+    padding: 8,
+    marginHorizontal: -18
   },
   referredUsersDropdown: {
     marginTop: 10,
@@ -1084,90 +1083,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 
-  // Wheel card enhancements
-  wheelHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  pillBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(253, 186, 116, 0.15)',
-    borderColor: 'rgba(253, 186, 116, 0.35)',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  pillBadgeText: {
-    color: '#FDBA74',
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-
-  wheelPreviewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 12,
-    gap: 14,
-  },
-  ringPreview: {
-    width: 86,
-    height: 86,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  ringOuter: {
-    position: 'absolute',
-    width: 86,
-    height: 86,
-    borderRadius: 86,
-    borderWidth: 2,
-    borderColor: 'rgba(125, 211, 252, 0.45)',
-  },
-  ringInner: {
-    position: 'absolute',
-    width: 62,
-    height: 62,
-    borderRadius: 62,
-    borderWidth: 2,
-    borderColor: 'rgba(99, 102, 241, 0.45)',
-  },
-  ringIcon: { position: 'absolute' },
-
-  prizeChipsCol: { flex: 1, gap: 8 },
-  prizeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  chipToken: {
-    backgroundColor: 'rgba(251, 191, 36, 0.08)',
-    borderColor: 'rgba(251, 191, 36, 0.25)',
-  },
-  chipCoupon: {
-    backgroundColor: 'rgba(96, 165, 250, 0.08)',
-    borderColor: 'rgba(96, 165, 250, 0.25)',
-  },
-  prizeChipText: { color: 'white', fontSize: 13, flexShrink: 1 },
-
-  chipSkeleton: {
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
 
   spinCta: {
     borderRadius: 28,
