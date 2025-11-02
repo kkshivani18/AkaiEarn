@@ -342,14 +342,21 @@ const RewardsScreen: React.FC = () => {
 
     setLoadingReferredUsers(true);
     try {
-      // Since we can't modify backend, we'll show user IDs and basic info
-      // In a real implementation, you'd have an endpoint to get user details by IDs
-      const referredUsers = userProfile.referredUsers.map((userId: string, index: number) => ({
-        _id: userId,
-        name: `User ${index + 1}`, // Fallback name
-        email: `user${index + 1}@example.com`, // Fallback email
-        joinedDate: new Date().toLocaleDateString(), // Fallback date
-      }));
+      const validUserIds = userProfile.referredUsers.filter((userId: string) => userId !== userProfile._id);
+      
+      const referredUsers = validUserIds.map((userId: string, index: number) => {
+        // Extract timestamp from MongoDB ObjectId
+        const timestamp = parseInt(userId.substring(0, 8), 16) * 1000;
+        const joinDate = new Date(timestamp);
+        
+        return {
+          _id: userId,
+          name: `Referred User ${index + 1}`,
+          email: `user-${userId.substring(0, 6)}@app.com`,
+          joinedDate: joinDate.toLocaleDateString(),
+          shortId: userId.substring(0, 8),
+        };
+      });
       
       setReferredUsersDetails(referredUsers);
     } catch (error) {
@@ -397,10 +404,8 @@ const RewardsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0a101bff', '#060910ff', '#071014ff']} style={StyleSheet.absoluteFill} />
-      
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Rewards</Text>
@@ -409,32 +414,54 @@ const RewardsScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Spin the Daily Wheel Section */}
-          <BlurView intensity={40} tint="dark" style={styles.sectionCard}>
+          {/* Spin the Wheel Daily Section */}
+          <BlurView intensity={40} tint="dark" style={[styles.sectionCard, styles.wheelCard]}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionIcon}>
-                <Ionicons name="disc-outline" size={28} color="#007AFF" />
+                <View style={styles.iconStack}>
+                  <View style={styles.ringLarge} />
+                  <View style={styles.ringSmall} />
+                  <Ionicons name="flash-outline" size={19} color="#FBBF24" />
+                </View>
               </View>
               <View style={styles.sectionInfo}>
                 <Text style={styles.sectionTitle}>Spin the Wheel Daily!</Text>
                 <Text style={styles.sectionSubtitle}>
-                  {wheelSegments.length > 0 
-                    ? `${availableSpinCoupons.length} coupons available! Try your luck to win amazing rewards!`
-                    : 'Loading available rewards...'
-                  }
+                  {wheelSegments.length > 0
+                    ? `${availableSpinCoupons.length} coupons available. Try your luck to win amazing rewards!`
+                    : 'Preparing your rewards...'}
                 </Text>
               </View>
             </View>
-            
-            <TouchableOpacity 
-              style={[styles.actionButton, wheelSegments.length === 0 && styles.actionButtonDisabled]} 
+
+            {/* CTA */}
+            <TouchableOpacity
+              style={[
+                styles.spinCta,
+                (wheelSegments.length === 0) && styles.spinCtaDisabled
+              ]}
               onPress={handleSpinWheel}
               disabled={wheelSegments.length === 0}
+              activeOpacity={0.9}
             >
-              <Text style={styles.actionButtonText}>
-                {wheelSegments.length === 0 ? 'Loading...' : 'Spin the wheel'}
-              </Text>
+              <LinearGradient
+                colors={['#0EA5E9', '#2563EB']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.spinCtaGradient}
+              >
+                <Ionicons name="game-controller-outline" size={18} color="#ffffff" />
+                <Text style={styles.spinCtaText}>
+                  {wheelSegments.length === 0 ? 'Loading...' : 'Spin now'}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
+
+            {/* Meta row */}
+            <View style={styles.cardMetaRow}>
+              <Ionicons name="time-outline" size={15} color="#A1A1AA" />
+              <Text style={styles.metaText}>One spin every 24 hours</Text>
+            </View>
           </BlurView>
 
           {/* Referrals Section */}
@@ -666,6 +693,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
+  wheelCard: {
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -679,6 +710,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+  },
+  // icon stack for bolt + rings
+  iconStack: {
+    marginTop: 15,
+    width: 19, 
+    height: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ringLarge: {
+    position: 'absolute',
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    borderColor: 'rgba(125, 211, 252, 0.45)', // light cyan
+  },
+  ringSmall: {
+    position: 'absolute',
+    width: 35,
+    height: 35,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    borderColor: 'rgba(99, 102, 241, 0.45)', // indigo
   },
   sectionInfo: {
     flex: 1,
@@ -1028,6 +1083,120 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     padding: 8,
   },
+
+  // Wheel card enhancements
+  wheelHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  pillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(253, 186, 116, 0.15)',
+    borderColor: 'rgba(253, 186, 116, 0.35)',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  pillBadgeText: {
+    color: '#FDBA74',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+
+  wheelPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    marginBottom: 12,
+    gap: 14,
+  },
+  ringPreview: {
+    width: 86,
+    height: 86,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  ringOuter: {
+    position: 'absolute',
+    width: 86,
+    height: 86,
+    borderRadius: 86,
+    borderWidth: 2,
+    borderColor: 'rgba(125, 211, 252, 0.45)',
+  },
+  ringInner: {
+    position: 'absolute',
+    width: 62,
+    height: 62,
+    borderRadius: 62,
+    borderWidth: 2,
+    borderColor: 'rgba(99, 102, 241, 0.45)',
+  },
+  ringIcon: { position: 'absolute' },
+
+  prizeChipsCol: { flex: 1, gap: 8 },
+  prizeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  chipToken: {
+    backgroundColor: 'rgba(251, 191, 36, 0.08)',
+    borderColor: 'rgba(251, 191, 36, 0.25)',
+  },
+  chipCoupon: {
+    backgroundColor: 'rgba(96, 165, 250, 0.08)',
+    borderColor: 'rgba(96, 165, 250, 0.25)',
+  },
+  prizeChipText: { color: 'white', fontSize: 13, flexShrink: 1 },
+
+  chipSkeleton: {
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+
+  spinCta: {
+    borderRadius: 28,
+    overflow: 'hidden',
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  spinCtaGradient: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  spinCtaText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  spinCtaDisabled: { opacity: 0.6 },
+
+  cardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  metaText: { color: '#A1A1AA', fontSize: 13 },
 });
 
 export default RewardsScreen;

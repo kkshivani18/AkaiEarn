@@ -530,6 +530,31 @@ export const authAPI = {
       console.error('Logout error:', error);
     }
   },
+
+  // Get user details by ID - try different endpoint patterns
+  getUserById: async (userId: string) => {
+    try {
+      // Try the most likely pattern that might exist
+      // Option 1: Try if there's a public user endpoint
+      const response = await api.get(`/auth/user-profile/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      try {
+        // Option 2: Try admin endpoint if you have admin access
+        const response = await api.get(`/admin/users/${userId}`);
+        return response.data;
+      } catch (adminError) {
+        try {
+          // Option 3: Try if backend accepts userId as query param
+          const response = await api.get(`/auth/user?userId=${userId}`);
+          return response.data;
+        } catch (queryError) {
+          console.error(`All attempts failed to fetch user ${userId}`);
+          return null;
+        }
+      }
+    }
+  },
 };
 
 // Referral API
