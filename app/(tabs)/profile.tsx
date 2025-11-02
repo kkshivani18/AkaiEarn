@@ -194,7 +194,6 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [iqRanges, setIqRanges] = useState<any[]>([]);
   
-  // Mock streak data - will be replaced with real data from backend
   const [streakData, setStreakData] = useState({
     currentStreak: 3,
     longestStreak: 15,

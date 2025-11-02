@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { authAPI, couponsAPI } from '../../services/api';
+import { authAPI, couponsAPI, referralAPI } from '../../services/api';
 import CouponModal from '../../components/CouponModal';
 import SpinWheel from '../../components/SpinWheel';
 import { Coupon } from '../../types/Offer';
@@ -342,10 +342,58 @@ const RewardsScreen: React.FC = () => {
 
     setLoadingReferredUsers(true);
     try {
+      // endpoint to get actual user names
+      const response = await referralAPI.getReferredUsers();
+      
+      if (response.success && response.data) {
+        const referredUsers = response.data.map((user: any, index: number) => {
+          const userId = userProfile.referredUsers[index] || `temp-${index}`;
+          
+          // Extract timestamp from ObjectId for join date
+          const timestamp = typeof userId === 'string' && userId.length >= 8 
+            ? parseInt(userId.substring(0, 8), 16) * 1000 
+            : Date.now();
+          const joinDate = new Date(timestamp);
+          const firstName = user.firstName || '';
+          const lastName = user.lastName || '';
+          const fullName = `${firstName} ${lastName}`.trim() || `User ${index + 1}`;
+          
+          return {
+            _id: userId,
+            name: fullName,
+            email: user.email || `user${index + 1}@example.com`,
+            joinedDate: joinDate.toLocaleDateString(),
+            shortId: typeof userId === 'string' ? userId.substring(0, 8) : 'temp',
+          };
+        });
+        
+        setReferredUsersDetails(referredUsers);
+      } else {
+        // Fallback to the old method if the new endpoint fails
+        const validUserIds = userProfile.referredUsers.filter((userId: string) => userId !== userProfile._id);
+        
+        const referredUsers = validUserIds.map((userId: string, index: number) => {
+          const timestamp = parseInt(userId.substring(0, 8), 16) * 1000;
+          const joinDate = new Date(timestamp);
+          
+          return {
+            _id: userId,
+            name: `Referred User ${index + 1}`,
+            email: `user-${userId.substring(0, 6)}@app.com`,
+            joinedDate: joinDate.toLocaleDateString(),
+            shortId: userId.substring(0, 8),
+          };
+        });
+        
+        setReferredUsersDetails(referredUsers);
+      }
+    } catch (error) {
+      console.error('Failed to fetch referred users details:', error);
+      
+      // Fallback: use ObjectId extraction method
       const validUserIds = userProfile.referredUsers.filter((userId: string) => userId !== userProfile._id);
       
       const referredUsers = validUserIds.map((userId: string, index: number) => {
-        // Extract timestamp from MongoDB ObjectId
         const timestamp = parseInt(userId.substring(0, 8), 16) * 1000;
         const joinDate = new Date(timestamp);
         
@@ -359,8 +407,6 @@ const RewardsScreen: React.FC = () => {
       });
       
       setReferredUsersDetails(referredUsers);
-    } catch (error) {
-      console.error('Failed to fetch referred users details:', error);
     } finally {
       setLoadingReferredUsers(false);
     }
@@ -480,7 +526,6 @@ const RewardsScreen: React.FC = () => {
               <Text style={styles.referralLabel}>Your referral code</Text>
               <View style={styles.referralCodeBox}>
                 <Text style={styles.referralCode}>{userProfile?.referralCode || 'LOADING...'}</Text>
-                {/* Use safe resolver instead of raw referredUsers length */}
                 <Text style={styles.referralStats}>Total referrals: {referralCount(userProfile)}</Text>
               </View>
               <TouchableOpacity style={styles.copyButton}>
@@ -544,9 +589,6 @@ const RewardsScreen: React.FC = () => {
                           <Text style={styles.userDetails}> Joined: {user.joinedDate} </Text>
                           <Text style={styles.userDetails}> ID: {user._id.substring(0, 24)}</Text>
                         </View>
-                        {/* <View style={styles.userBadge}>
-                          <Text style={styles.userBadgeText}>#{index + 1}</Text>
-                        </View> */}
                       </View>
                     ))}
                   </>

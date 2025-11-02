@@ -568,6 +568,16 @@ export const referralAPI = {
       throw error;
     }
   },
+
+  // Get referred users with their actual names
+  getReferredUsers: async () => {
+    try {
+      const response = await api.get('/rewards/referred-users');
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
 };
 
 // Add this new API section after referralAPI
