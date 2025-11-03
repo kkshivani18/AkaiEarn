@@ -1,6 +1,6 @@
 import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -13,9 +13,10 @@ import {
   useColorScheme,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 
 interface SignInModalProps {
   visible: boolean;
@@ -36,7 +37,47 @@ export const Login: React.FC<SignInModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { onLogin } = useAuth();
+  const { onLogin, onGoogleLogin } = useAuth();
+
+  // auth session for web
+  WebBrowser.maybeCompleteAuthSession();
+
+  // Google OAuth request
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.androidClientID,
+    webClientId: process.env.webClientID,
+    scopes: ['openid', 'profile', 'email'],
+  });
+
+  useEffect(() => {
+    const handleGoogleResponse = async () => {
+      if (response?.type !== 'success') return;
+      // Prefer idToken for backend verification if available
+      const idToken = response.authentication?.idToken;
+      if (!idToken) {
+        Alert.alert('Google Sign-In', 'No idToken returned. Check your Google OAuth configuration (add openid scope).');
+        return;
+      }
+      try {
+        const result = await onGoogleLogin?.(idToken);
+        if (result?.success) {
+          onClose();
+          // Navigate based on profile completion if backend returns it
+          const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
+          if (needsProfile) {
+            router.replace('/profile-completion');
+          } else {
+            router.replace('/');
+          }
+        } else {
+          Alert.alert('Google Sign-In Failed', result?.msg || result?.error || 'Could not sign in with Google');
+        }
+      } catch (e: any) {
+        Alert.alert('Google Sign-In Failed', e?.message || 'Unexpected error during Google Sign-In');
+      }
+    };
+    handleGoogleResponse();
+  }, [response]);
 
   const handleLogin = async (): Promise<void> => {
     if (!email || !password) {
@@ -140,7 +181,11 @@ export const Login: React.FC<SignInModalProps> = ({
             </View>
 
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => promptAsync()}
+                disabled={!request}
+              >
                 <AntDesign 
                   name="google" 
                   size={20} 
@@ -149,18 +194,6 @@ export const Login: React.FC<SignInModalProps> = ({
                 />
                 <Text style={styles.socialButtonText}>
                   Google
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.socialButton}>
-                <FontAwesome 
-                  name="facebook" 
-                  size={20} 
-                  color={isDark ? "#fff" : "#4267B2"} 
-                  style={styles.socialIcon} 
-                />
-                <Text style={styles.socialButtonText}>
-                  Facebook
                 </Text>
               </TouchableOpacity>
             </View>
@@ -255,7 +288,8 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     marginBottom: 18,
-    marginHorizontal: 18
+    width: "90%", 
+    marginLeft: 17
   },
   buttonText: {
     color: '#fff',
@@ -263,6 +297,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     fontWeight: '600',
   },
   divider: {
+    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 20,
@@ -279,9 +314,9 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   },
   socialButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: 10,
-    // marginTop: -5
+    paddingHorizontal: 18, 
   },
   socialButton: {
     flexDirection: 'row',
@@ -292,10 +327,11 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: isDark ? '#3a3a3c' : '#e0e0e0',
-    flex: 0.48,
+    width: '100%', 
+    alignSelf: 'stretch', 
   },
   socialIcon: {
-    marginRight: 8,
+    marginRight: 18,
   },
   socialButtonText: {
     color: isDark ? '#fff' : '#000',

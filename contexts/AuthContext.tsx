@@ -8,6 +8,7 @@ interface AuthProps{
   onLogin?: (email: string, password: string) => Promise<any>;
   onLogout?: () => Promise<any>;
   onProfileCompleted?: () => void;
+  onGoogleLogin?: (idToken: string) => Promise<any>;
 }
 
 interface AuthContextType {
@@ -16,11 +17,11 @@ interface AuthContextType {
   onLogin?: (email: string, password: string) => Promise<any>;
   onLogout?: () => Promise<any>;
   onProfileCompleted?: () => void;
+  onGoogleLogin?: (idToken: string) => Promise<any>;
   updateTokenBalance: (tokens: number) => void;
 }
 
 const TOKEN_KEY = 'authToken';
-// Make the context undefined by default so we can detect missing provider
 const AuthContext = createContext<AuthProps | undefined>(undefined);
 
 export const useAuth = () => {
@@ -237,9 +238,49 @@ export const AuthProvider = ({children}: any) => {
         ...prev!,
         user: {
           ...prev!.user,
-          coins: (prev!.user.coins || 0) + tokens  // Changed from 'tokens' to 'coins'
+          coins: (prev!.user.coins || 0) + tokens
         }
       }));
+    }
+  };
+
+  // Add a method to refresh user data after referral
+  const refreshUserData = async () => {
+    try {
+      const userData = await authAPI.getUser();
+      try { 
+        await SecureStore.setItemAsync('userData', JSON.stringify(userData)); 
+      } catch(e) {
+        console.warn('Could not persist userData', e);
+      }
+      
+      setAuthState(prev => ({
+        ...prev!,
+        user: userData.user || userData,
+        profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? prev?.profileCompleted
+      }));
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  };
+
+  const loginWithGoogle = async (idToken: string) => {
+    try {
+      const result = await authAPI.loginWithGoogle(idToken);
+      if (result?.success && result?.authToken) {
+        await SecureStore.setItemAsync(TOKEN_KEY, result.authToken);
+        const userData = await authAPI.getUser();
+        try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){/* ignore */ }
+        setAuthState({
+          token: result.authToken,
+          authenticated: true,
+          user: (userData as any).user || userData,
+          profileCompleted: (userData as any).profileCompleted ?? (userData as any).user?.profileCompleted ?? false
+        });
+      }
+      return result;
+    } catch (e: any) {
+      return { error: true, msg: e.response?.data?.message || e.message || 'Google login failed' };
     }
   };
 
@@ -248,6 +289,7 @@ export const AuthProvider = ({children}: any) => {
     onLogin: login,
     onLogout: logout,
     onProfileCompleted: onProfileCompleted,
+    onGoogleLogin: loginWithGoogle,
     authState: authState,
     updateTokenBalance,
   }

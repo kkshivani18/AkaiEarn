@@ -20,7 +20,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.akaispace.offerwall",
+      "config": {
+        "googleSignIn": {
+          "androidClientId": "${androidClientID}"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -39,11 +45,18 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e1b85df2-75e3-4ca4-aa92-09b53b4a06e2"
+      }
     }
   }
 }

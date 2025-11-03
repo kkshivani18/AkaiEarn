@@ -306,7 +306,7 @@ const RewardsScreen: React.FC = () => {
         return 0;
       }
       
-      // Filter out any self-references but keep the rest
+      // filter out self-references 
       const validReferrals = arr.filter(referredUserId => referredUserId !== user._id);
       return validReferrals.length;
     }

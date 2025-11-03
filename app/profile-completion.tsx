@@ -47,15 +47,7 @@ const ProfileCompletionScreen: React.FC = () => {
   const [loading, setLoading] = React.useState<boolean>(false);
   const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
 
-  // new: interests state
-  // const [interests, setInterests] = React.useState<string[]>([]);
-  // const interestOptions = ['Technology','Science','Arts','Music','Sports','Travel','Food','Fashion'];
-
   const { onProfileCompleted } = useAuth();
-
-  // const toggleInterest = (tag: string) => {
-  //   setInterests(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  // };
 
   const handleLocationAccess = async () => {
     try {
@@ -68,7 +60,7 @@ const ProfileCompletionScreen: React.FC = () => {
         return;
       }
       
-      // Get current location
+      // get current location
       const currentLocation = await Location.getCurrentPositionAsync({});
       const userLocation = {
         lat: currentLocation.coords.latitude,

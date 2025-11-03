@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,11 +11,12 @@ import {
   useColorScheme,
   ScrollView,
 } from 'react-native';
-// import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext'
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser'; 
+import * as Google from 'expo-auth-session/providers/google';
 
 interface SignUpModalProps {
   visible: boolean;
@@ -38,8 +39,18 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { onRegister } = useAuth();
+  const { onRegister, onGoogleLogin } = useAuth();
   const router = useRouter();
+
+  // auth session for web
+  WebBrowser.maybeCompleteAuthSession();
+
+  // Google OAuth request
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.androidClientID,
+    webClientId: process.env.webClientID,
+    scopes: ['openid', 'profile', 'email'],
+  });
 
   const handleSignUp = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -75,6 +86,37 @@ export const SignUp: React.FC<SignUpModalProps> = ({
     }
   };
 
+  useEffect(() => { 
+    const handleGoogleResponse = async () => {
+      if (response?.type !== 'success') return;
+      
+      const idToken = response.authentication?.idToken;
+      if (!idToken) {
+        Alert.alert('Google Sign-In', 'No idToken returned. Check configuration (add openid scope).');
+        return;
+      }
+      try {
+        // Use the onGoogleLogin function from AuthContext
+        const result = await onGoogleLogin?.(idToken);
+        if (result?.success) {
+          onClose();
+          // Navigate based on profile completion flag from the backend
+          const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
+          if (needsProfile) {
+            router.replace('/profile-completion');
+          } else {
+            router.replace('/');
+          }
+        } else {
+          Alert.alert('Google Sign-In Failed', result?.msg || result?.error || 'Could not sign up/in with Google');
+        }
+      } catch (e: any) {
+        Alert.alert('Google Sign-In Failed', e?.message || 'Unexpected error during Google Sign-In');
+      }
+    };
+    handleGoogleResponse();
+  }, [response])
+
   const styles = createStyles(isDark);
 
   if (!visible) return null;
@@ -84,7 +126,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
       colors={['#0f172a', '#1e293b', '#0f172a']}
       style={styles.container}
     >
-      {/* <SafeAreaView style={styles.safeArea}> */}
         <View style={styles.mainContent}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -180,18 +221,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
                   Google
                 </Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={styles.socialButton}>
-                <FontAwesome 
-                  name="facebook" 
-                  size={20} 
-                  color={isDark ? "#fff" : "#4267B2"} 
-                  style={styles.socialIcon} 
-                />
-                <Text style={styles.socialButtonText}>
-                  Facebook
-                </Text>
-              </TouchableOpacity>
             </View>
 
             <View style={styles.footer}>
@@ -202,7 +231,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
             </View>
           </KeyboardAvoidingView>
         </View>
-      {/* </SafeAreaView> */}
     </LinearGradient>
   );
 };
@@ -211,9 +239,6 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
   },
-  // safeArea: {
-  //   flex: 1,
-  // },
   mainContent: {
     marginTop: 25,
     justifyContent: 'center',
@@ -272,13 +297,14 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   eyeIcon: {
     padding: 12,
   },
-  button: {
+button: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     marginBottom: 18,
-    marginHorizontal: 18
+    width: "90%", 
+    marginLeft: 17
   },
   buttonText: {
     color: '#fff',
@@ -286,6 +312,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     fontWeight: '600',
   },
   divider: {
+    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 20,
@@ -302,8 +329,9 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   },
   socialButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: 10,
+    paddingHorizontal: 18, 
   },
   socialButton: {
     flexDirection: 'row',
@@ -314,10 +342,11 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: isDark ? '#3a3a3c' : '#e0e0e0',
-    flex: 0.48,
+    width: '100%', 
+    alignSelf: 'stretch', 
   },
   socialIcon: {
-    marginRight: 8,
+    marginRight: 18,
   },
   socialButtonText: {
     color: isDark ? '#fff' : '#000',

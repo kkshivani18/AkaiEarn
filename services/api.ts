@@ -414,9 +414,19 @@ export const authAPI = {
   login: async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/login', {
-        email,       // Matches your backend validation
-        password,    // Matches your backend validation
+        email,     
+        password,   
       });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Login with Google ID token (server should verify token and return app authToken)
+  loginWithGoogle: async (idToken: string) => {
+    try {
+      const response = await api.post('/auth/google-login', { idToken });
       return response.data;
     } catch (error: any) {
       throw error;
@@ -534,7 +544,6 @@ export const authAPI = {
   // Get user details by ID - try different endpoint patterns
   getUserById: async (userId: string) => {
     try {
-      // Try the most likely pattern that might exist
       // Option 1: Try if there's a public user endpoint
       const response = await api.get(`/auth/user-profile/${userId}`);
       return response.data;
