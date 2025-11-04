@@ -676,9 +676,6 @@ const RewardsScreen: React.FC = () => {
                   
                   <View style={styles.couponBottomSection}>
                     <View style={styles.couponBottomLeft}>
-                      {/* <Text style={styles.couponBottomLabel}>
-                        {getImprovedCouponDescription(coupon)}
-                      </Text> */}
                       <Text style={styles.couponBottomCompany}>{coupon.company}</Text>
                     </View>
                     <View style={styles.couponBottomRight}>

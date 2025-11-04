@@ -12,11 +12,11 @@ const MAX_IQ = 100;
 
 // --- IQ Ranges Configuration ---
 const DEFAULT_IQ_RANGES = [
-  { min: 1,  max: 10, colorHex: "#FF3B30" },   // Red (Lowest)
-  { min: 10, max: 40, colorHex: "#FF9500" },  // Orange
-  { min: 40, max: 70, colorHex: "#FFCC00" },  // Yellow
-  { min: 70, max: 85, colorHex: "#34C759" },  // Green
-  { min: 85, max: 100, colorHex: "#30B158" }, // Dark Green (Highest)
+  { min: 1,  max: 10, colorHex: "#7dbee1ff" }, 
+  { min: 10, max: 40, colorHex: "#4fabddff" },
+    { min: 40, max: 70, colorHex: "#3e92c0ff" },  
+  { min: 70, max: 85, colorHex: "#2c87b8ff" }, 
+  { min: 85, max: 100, colorHex: "#1588c6ff" }, 
 ];
 
 // --- Helper Functions ---
@@ -106,7 +106,7 @@ const IQMeter: React.FC<IQMeterProps> = ({ iqValue = 90 }) => {
       
       <View style={styles.textContainer}>
         <Text style={styles.iqValue}>{Math.round(iqValue)}</Text>
-        <Text style={styles.iqLabel}>{getIqLabel(iqValue)}</Text>
+        {/* <Text style={styles.iqLabel}>{getIqLabel(iqValue)}</Text> */}
       </View>
     </View>
   );

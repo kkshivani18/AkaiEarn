@@ -152,7 +152,7 @@ const AccountMenu = ({ onLogout }: { onLogout: () => void }) => (
             >
                 <View style={styles.menuItemContent}>
                     <View style={styles.iconContainer}><HistoryIcon /></View>
-                    <Text style={styles.menuItemText}>Reward History</Text>
+                    <Text style={styles.menuItemText}>Labelling History</Text>
                 </View>
                 <ChevronRightIcon />
             </TouchableOpacity>
@@ -320,7 +320,6 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* <LinearGradient colors={['#1e3a8a', '#1e40af', '#1d4ed8']} style={StyleSheet.absoluteFill} /> */}
       <LinearGradient
             colors={['#0a101bff', '#060910ff', '#071014ff']}
             style={StyleSheet.absoluteFill}

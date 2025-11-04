@@ -48,6 +48,13 @@ interface RewardStats {
   bestLabelTasks: number;
 }
 
+// Enhanced filter state interface
+interface FilterState {
+  dateRange: 'all' | 'today' | 'week' | 'month' | 'last30days';
+  taskTypes: string[];
+  statuses: string[];
+}
+
 // Icons
 const BackIcon = () => (
   <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.icon}>
@@ -193,24 +200,222 @@ const RewardHistoryItem: React.FC<{ log: LogItem }> = ({ log }) => {
       
       <View style={styles.historyItemContent}>
         <View style={styles.rewardsContainer}>
-          {log.delta_coins > 0 && (
-            <View style={styles.rewardItem}>
-              <Text style={styles.rewardIcon}>💰</Text>
-              <Text style={styles.rewardText}>+{log.delta_coins} coins</Text>
-            </View>
-          )}
-          {log.delta_iq !== 0 && (
-            <View style={styles.rewardItem}>
-              <Text style={styles.rewardIcon}>🧠</Text>
-              <Text style={[styles.rewardText, { color: log.delta_iq > 0 ? '#10B981' : '#EF4444' }]}>
-                {log.delta_iq > 0 ? '+' : ''}{log.delta_iq} IQ
-              </Text>
-            </View>
-          )}
+          {/* Points Earned */}
+          <View style={styles.rewardItem}>
+            <Text style={[styles.rewardText, { 
+              color: (log.delta_coins || 0) > 0 ? '#10B981' : 
+                     (log.delta_coins || 0) < 0 ? '#EF4444' : '#A1A1AA' 
+            }]}> Points: {(log.delta_coins || 0) > 0 ? '+' : ''}{log.delta_coins || 0} 
+            </Text>
+          </View>
+          
+          {/* IQ Earned */}
+          <View style={styles.rewardItem}>
+            <Text style={[styles.rewardText, { 
+              color: (log.delta_iq || 0) > 0 ? '#10B981' : 
+                     (log.delta_iq || 0) < 0 ? '#EF4444' : '#A1A1AA' 
+            }]}> IQ : {(log.delta_iq || 0) > 0 ? '+' : ''}{log.delta_iq || 0} 
+            </Text>
+          </View>
         </View>
         <Text style={styles.dateText}>{formatDate(log.createdAt)}</Text>
       </View>
     </BlurView>
+  );
+};
+
+// Enhanced Filter Modal Component
+const ComprehensiveFilterModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  filters: FilterState;
+  onApplyFilters: (filters: FilterState) => void;
+  logs: LogItem[];
+}> = ({ visible, onClose, filters, onApplyFilters, logs }) => {
+  const [tempFilters, setTempFilters] = useState<FilterState>(filters);
+  
+  // Get unique task types from logs
+  const taskTypes = Array.from(new Set(logs.map(log => log.labelOfferType))).filter(Boolean);
+  
+  const dateRangeOptions = [
+    { key: 'all', label: 'All Time' },
+    { key: 'today', label: 'Today' },
+    { key: 'week', label: 'This Week' },
+    { key: 'month', label: 'This Month' },
+    { key: 'last30days', label: 'Last 30 Days' }
+  ];
+  
+  const statusOptions = [
+    { key: 'success', label: 'Success', color: '#3B82F6' },
+    { key: 'failure', label: 'Failed', color: '#3B82F6' },
+    { key: 'best-label', label: 'Best Label', color: '#3B82F6' },
+    { key: 'verification', label: 'Pending', color: '#3B82F6' }
+  ];
+
+  const handleTaskTypeToggle = (taskType: string) => {
+    setTempFilters(prev => ({
+      ...prev,
+      taskTypes: prev.taskTypes.includes(taskType)
+        ? prev.taskTypes.filter(t => t !== taskType)
+        : [...prev.taskTypes, taskType]
+    }));
+  };
+
+  const handleStatusToggle = (status: string) => {
+    setTempFilters(prev => ({
+      ...prev,
+      statuses: prev.statuses.includes(status)
+        ? prev.statuses.filter(s => s !== status)
+        : [...prev.statuses, status]
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setTempFilters({
+      dateRange: 'all',
+      taskTypes: [],
+      statuses: []
+    });
+  };
+
+  const applyFilters = () => {
+    onApplyFilters(tempFilters);
+    onClose();
+  };
+
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (tempFilters.dateRange !== 'all') count++;
+    count += tempFilters.taskTypes.length;
+    count += tempFilters.statuses.length;
+    return count;
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.filterModalOverlay}>
+        <BlurView intensity={90} tint="dark" style={styles.filterModalContent}>
+          {/* Header */}
+          <View style={styles.filterModalHeader}>
+            <Text style={styles.filterModalTitle}>Filters</Text>
+            <TouchableOpacity onPress={onClose} style={styles.filterCloseButton}>
+              <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.filterCloseIcon}>
+                <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.filterModalBody} showsVerticalScrollIndicator={false}>
+            {/* Date Range Section */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Date Range</Text>
+              <View style={styles.filterOptionsGrid}>
+                {dateRangeOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[
+                      styles.dateRangeOption,
+                      tempFilters.dateRange === option.key && styles.dateRangeOptionSelected
+                    ]}
+                    onPress={() => setTempFilters(prev => ({ ...prev, dateRange: option.key as any }))
+                    }
+                  >
+                    <Text style={[
+                      styles.dateRangeOptionText,
+                      tempFilters.dateRange === option.key && styles.dateRangeOptionTextSelected
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Task Type Section */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>
+                Task Type ({tempFilters.taskTypes.length} selected)
+              </Text>
+              <View style={styles.filterCheckboxContainer}>
+                {taskTypes.map((taskType) => (
+                  <TouchableOpacity
+                    key={taskType}
+                    style={styles.filterCheckboxItem}
+                    onPress={() => handleTaskTypeToggle(taskType)}
+                  >
+                    <View style={[
+                      styles.checkbox,
+                      tempFilters.taskTypes.includes(taskType) && styles.checkboxSelected
+                    ]}>
+                      {tempFilters.taskTypes.includes(taskType) && (
+                        <Svg viewBox="0 0 24 24" fill="white" style={styles.checkIcon}>
+                          <Path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </Svg>
+                      )}
+                    </View>
+                    <Text style={styles.filterCheckboxText}>{taskType}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Status Section */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>
+                Status ({tempFilters.statuses.length} selected)
+              </Text>
+              <View style={styles.filterCheckboxContainer}>
+                {statusOptions.map((status) => (
+                  <TouchableOpacity
+                    key={status.key}
+                    style={styles.filterCheckboxItem}
+                    onPress={() => handleStatusToggle(status.key)}
+                  >
+                    <View style={[
+                      styles.checkbox,
+                      tempFilters.statuses.includes(status.key) && styles.checkboxSelected,
+                      tempFilters.statuses.includes(status.key) && { backgroundColor: status.color }
+                    ]}>
+                      {tempFilters.statuses.includes(status.key) && (
+                        <Svg viewBox="0 0 24 24" fill="white" style={styles.checkIcon}>
+                          <Path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </Svg>
+                      )}
+                    </View>
+                    <Text style={styles.filterCheckboxText}>{status.label}</Text>
+                    {/* <View style={[styles.statusColorIndicator, { backgroundColor: status.color }]} /> */}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Footer Actions */}
+          <View style={styles.filterModalFooter}>
+            <TouchableOpacity
+              style={styles.clearFiltersButton}
+              onPress={clearAllFilters}
+            >
+              <Text style={styles.clearFiltersText}>Clear All</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.applyFiltersButton}
+              onPress={applyFilters}
+            >
+              <Text style={styles.applyFiltersText}>
+                Apply Filters {getActiveFilterCount() > 0 && `(${getActiveFilterCount()})`}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </BlurView>
+      </View>
+    </Modal>
   );
 };
 
@@ -228,6 +433,13 @@ export default function RewardHistoryScreen() {
   const [showSortModal, setShowSortModal] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<string>('newest');
+
+  // Enhanced filter state
+  const [filters, setFilters] = useState<FilterState>({
+    dateRange: 'all',
+    taskTypes: [],
+    statuses: []
+  });
 
   const calculateStats = (logs: LogItem[]): RewardStats => {
     const totalTasks = logs.length;
@@ -337,6 +549,64 @@ export default function RewardHistoryScreen() {
     applyFilterAndSort();
   }, [selectedFilter, selectedSort, logs]);
 
+  // Apply comprehensive filters
+  const applyComprehensiveFilters = () => {
+    let processedLogs = filterLogsByComprehensiveFilters(logs, filters);
+    processedLogs = sortLogs(processedLogs, selectedSort);
+    setFilteredLogs(processedLogs);
+    
+    const filteredStats = calculateStats(processedLogs);
+    setStats(filteredStats);
+  };
+
+  const handleApplyFilters = (newFilters: FilterState) => {
+    setFilters(newFilters);
+  };
+
+  // Filter logs by comprehensive filters
+  const filterLogsByComprehensiveFilters = (logs: LogItem[], filters: FilterState): LogItem[] => {
+    let filtered = [...logs];
+    
+    // Date range filter
+    if (filters.dateRange !== 'all') {
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      filtered = filtered.filter(log => {
+        const logDate = new Date(log.createdAt);
+        
+        switch (filters.dateRange) {
+          case 'today':
+            return logDate >= startOfToday;
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return logDate >= weekAgo;
+          case 'month':
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            return logDate >= monthStart;
+          case 'last30days':
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return logDate >= thirtyDaysAgo;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Task type filter
+    if (filters.taskTypes.length > 0) {
+      filtered = filtered.filter(log => filters.taskTypes.includes(log.labelOfferType));
+    }
+    
+    // Status filter
+    if (filters.statuses.length > 0) {
+      filtered = filtered.filter(log => filters.statuses.includes(log.status));
+    }
+    
+    return filtered;
+  };
+
+  // Loading and error states
   if (loading) {
     return (
       <>
@@ -349,7 +619,7 @@ export default function RewardHistoryScreen() {
             <TouchableOpacity onPress={() => router.back()}>
               <BackIcon />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Reward History</Text>
+            <Text style={styles.headerTitle}>Labelling History</Text>
             <View style={{width: 24}} />
           </BlurView>
           
@@ -374,7 +644,7 @@ export default function RewardHistoryScreen() {
             <TouchableOpacity onPress={() => router.back()}>
               <BackIcon />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Reward History</Text>
+            <Text style={styles.headerTitle}>Labelling History</Text>
             <View style={{width: 24}} />
           </BlurView>
           
@@ -411,10 +681,20 @@ export default function RewardHistoryScreen() {
               <Text style={styles.sectionTitle}>Your Performance</Text>
               <View style={styles.sectionButtons}>
                 <TouchableOpacity 
-                  style={styles.sectionButton} 
+                  style={[
+                    styles.sectionButton,
+                    (filters.dateRange !== 'all' || filters.taskTypes.length > 0 || filters.statuses.length > 0) && styles.sectionButtonActive
+                  ]} 
                   onPress={() => setShowFilterModal(true)}
                 >
                   <FilterIcon />
+                  {(filters.dateRange !== 'all' || filters.taskTypes.length > 0 || filters.statuses.length > 0) && (
+                    <View style={styles.filterBadge}>
+                      <Text style={styles.filterBadgeText}>
+                        {(filters.dateRange !== 'all' ? 1 : 0) + filters.taskTypes.length + filters.statuses.length}
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.sectionButton} 
@@ -451,53 +731,14 @@ export default function RewardHistoryScreen() {
         </ScrollView>
       </View>
 
-      {/* Filter Modal */}
-      <Modal
+      {/* Comprehensive Filter Modal */}
+      <ComprehensiveFilterModal
         visible={showFilterModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowFilterModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <BlurView intensity={80} tint="dark" style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Filter Tasks</Text>
-            <View style={styles.filterOptions}>
-              {[
-                { key: 'all', label: 'All Tasks' },
-                { key: 'success', label: 'Successful Tasks' },
-                { key: 'failure', label: 'Failed Tasks' },
-                { key: 'best-label', label: 'Best Label Tasks' },
-                { key: 'verification', label: 'Verification Tasks' }
-              ].map((option) => (
-                <TouchableOpacity
-                  key={option.key}
-                  style={[
-                    styles.filterOption,
-                    selectedFilter === option.key && styles.filterOptionSelected
-                  ]}
-                  onPress={() => {
-                    setSelectedFilter(option.key);
-                    setShowFilterModal(false);
-                  }}
-                >
-                  <Text style={[
-                    styles.filterOptionText,
-                    selectedFilter === option.key && styles.filterOptionTextSelected
-                  ]}>
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowFilterModal(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </BlurView>
-        </View>
-      </Modal>
+        onClose={() => setShowFilterModal(false)}
+        filters={filters}
+        onApplyFilters={handleApplyFilters}
+        logs={logs}
+      />
 
       {/* Sort Modal */}
       <Modal
@@ -645,6 +886,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
+  sectionButtonActive: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -724,20 +985,25 @@ const styles = StyleSheet.create({
   },
   rewardsContainer: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12, // Reduced gap for better spacing
   },
   rewardItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   rewardIcon: {
-    fontSize: 16,
+    fontSize: 14,
     marginRight: 4,
   },
   rewardText: {
-    fontSize: 14,
-    color: 'white',
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
   },
   dateText: {
     fontSize: 12,
@@ -784,30 +1050,151 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  filterOptions: {
-    width: '100%',
-    marginBottom: 20,
+  filterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
   },
-  filterOption: {
-    paddingVertical: 12,
+  filterModalContent: {
+    flex: 1,
+    marginTop: 60,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  filterModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  filterModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  filterCloseButton: {
+    padding: 4,
+  },
+  filterCloseIcon: {
+    width: 20,
+    height: 20,
+  },
+  filterModalBody: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  filterSection: {
+    marginVertical: 20,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 12,
+  },
+  
+  // Date range styles
+  filterOptionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  dateRangeOption: {
     paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
+    paddingVertical: 8,
+    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  filterOptionSelected: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderColor: '#EF4444',
+  dateRangeOptionSelected: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: '#3B82F6',
   },
-  filterOptionText: {
+  dateRangeOptionText: {
+    color: 'white',
+    fontSize: 14,
+  },
+  dateRangeOptionTextSelected: {
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  
+  // Checkbox styles
+  filterCheckboxContainer: {
+    gap: 12,
+  },
+  filterCheckboxItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  checkIcon: {
+    width: 12,
+    height: 12,
+  },
+  filterCheckboxText: {
+    flex: 1,
+    color: 'white',
+    fontSize: 14,
+  },
+  statusColorIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  
+  // Footer styles
+  filterModalFooter: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 12,
+  },
+  clearFiltersButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+  },
+  clearFiltersText: {
     color: 'white',
     fontSize: 16,
-    textAlign: 'center',
+    fontWeight: '600',
   },
-  filterOptionTextSelected: {
-    color: '#EF4444',
+  applyFiltersButton: {
+    flex: 2,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+  },
+  applyFiltersText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: '600',
   },
   sortOptions: {
