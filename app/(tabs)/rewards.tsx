@@ -21,8 +21,8 @@ import { authAPI, couponsAPI, referralAPI } from '../../services/api';
 import CouponModal from '../../components/CouponModal';
 import SpinWheel from '../../components/SpinWheel';
 import { Coupon } from '../../types/Offer';
+import * as Clipboard from 'expo-clipboard';
 
-// Define Segment type locally to avoid import issues
 interface Segment {
   color: string;
   text: string;
@@ -92,13 +92,12 @@ const RewardsScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch coupons:', error);
-      // Keep existing coupons if refresh fails
     } finally {
       if (showLoading) setRefreshingCoupons(false);
     }
   };
 
-  // Load available coupons for spin wheel from backend
+  // load available coupons for spin wheel from backend
   const loadSpinWheelCoupons = async () => {
     try {
       const response = await couponsAPI.getSpinWheelCoupons();
@@ -107,7 +106,7 @@ const RewardsScreen: React.FC = () => {
         
         // Create wheel segments from backend coupons + some token rewards
         const couponSegments = response.data.map((coupon: any, index: number) => ({
-          color: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'][index % 6],
+          color: ['#76b7ecff', '#93C5FD', '#76b7ecff', '#93C5FD'][index % 4],
           text: `${coupon.company} Coupon`,
           reward: `${coupon.company} Coupon`,
           type: 'coupon' as const,
@@ -115,7 +114,7 @@ const RewardsScreen: React.FC = () => {
             _id: coupon._id,
             company: coupon.company,
             description: coupon.description,
-            couponCode: 'WINNER', // Will be revealed after selection
+            couponCode: 'WINNER', 
             expiryDate: coupon.expiryDate,
             imageLink: coupon.imageLink,
           },
@@ -168,7 +167,7 @@ const RewardsScreen: React.FC = () => {
   };
 
   const handleSpinWheel = () => {
-    // COMMENTED OUT: 24-hour restriction for testing
+    // 24-hour restriction for testing
     // if (hasSpun) {
     //   Alert.alert('Already Spun', 'You can only spin once per day!');
     //   return;
@@ -250,8 +249,6 @@ const RewardsScreen: React.FC = () => {
               text: 'Claim',
               onPress: () => {
                 setShowSpinWheel(false);
-                // For testing: Reset immediately
-                // setTimeout(() => setHasSpun(false), 2000);
                 setTimeout(() => setHasSpun(false), 24 * 60 * 60 * 1000);
               }
             }
@@ -270,8 +267,6 @@ const RewardsScreen: React.FC = () => {
 
   const handleSpinPress = () => {
     setIsSpinning(true);
-    // SpinWheel component will handle the actual spinning
-    // Reset spinning state after animation completes
     setTimeout(() => {
       setIsSpinning(false);
     }, 5000);
@@ -298,10 +293,8 @@ const RewardsScreen: React.FC = () => {
 
     const arr: string[] = Array.isArray(user.referredUsers) ? user.referredUsers : [];
     
-    // If user has referredUsers array, that means they have referred people
-    // The length of this array is the actual referral count
     if (arr.length > 0) {
-      // If the array contains only the user's own ID (self-reference), treat as 0
+      // user's own ID (self-reference), treat as 0
       if (arr.length === 1 && arr[0] === user._id) {
         return 0;
       }
@@ -314,25 +307,50 @@ const RewardsScreen: React.FC = () => {
     return 0;
   };
 
-  const handleCouponPress = (coupon: any) => {
-    // Convert the coupon data to match CouponModal expected format
-    const modalCoupon: Coupon = {
-      _id: coupon._id,
-      company: coupon.company,
-      description: coupon.description,
-      expiryDate: coupon.expiryDate,
-      imageLink: coupon.imageLink || `https://logo.clearbit.com/${coupon.company.toLowerCase()}.com`,
-      couponCode: coupon.couponCode || coupon.discount ? `SAVE${coupon.discount}` : 'GET50',
+  // Enhanced coupon descriptions based on company
+  const getImprovedCouponDescription = (coupon: any): string => {
+    const company = coupon.company?.toLowerCase() || '';
+    const description = coupon.description || '';
+    
+    // Extract discount percentage
+    const discountMatch = description.match(/(\d+)%/);
+    const discount = discountMatch ? discountMatch[1] : '20';
+    
+    // Company-specific descriptions
+    const companyDescriptions: { [key: string]: string } = {
+      'amazon': `${discount}% off on electronics, books & more`,
+      'netflix': `Get ${discount}% off your next subscription`,
+      'spotify': `Save ${discount}% on Premium membership`,
+      'uber': `${discount}% discount on your next 3 rides`,
+      'airbnb': `${discount}% off accommodation bookings`,
+      'dominos': `${discount}% off on pizza orders above $15`,
+      'starbucks': `${discount}% off beverages and snacks`,
+      'nike': `${discount}% off athletic wear and footwear`,
+      'mcdonalds': `${discount}% off meals and combos`,
+      'target': `${discount}% off home essentials & groceries`,
     };
     
-    setSelectedCoupon(modalCoupon);
-    setShowCouponModal(true);
+    return companyDescriptions[company] || `${discount}% discount on your purchase`;
   };
 
-  const handleCloseCouponModal = () => {
-    setShowCouponModal(false);
-    setSelectedCoupon(null);
+  // Copy coupon code to clipboard
+  const handleCopyCouponCode = async (coupon: any) => {
+    try {
+      const code = coupon.couponCode || `SAVE${extractDiscountFromDescription(coupon.description)}`;
+      await Clipboard.setStringAsync(code);
+      
+      Alert.alert(
+        'Code Copied! 📋',
+        `Coupon code "${code}" has been copied to your clipboard.`,
+        [{ text: 'OK', style: 'default' }]
+      );
+    } catch (error) {
+      console.error('Failed to copy coupon code:', error);
+      Alert.alert('Error', 'Failed to copy coupon code. Please try again.');
+    }
   };
+
+  // Remove handleCouponPress function since we're not opening modals
 
   // Fetch details of referred users
   const fetchReferredUsersDetails = async () => {
@@ -349,7 +367,7 @@ const RewardsScreen: React.FC = () => {
         const referredUsers = response.data.map((user: any, index: number) => {
           const userId = userProfile.referredUsers[index] || `temp-${index}`;
           
-          // Extract timestamp from ObjectId for join date
+          // extracted timestamp from ObjectId for join date
           const timestamp = typeof userId === 'string' && userId.length >= 8 
             ? parseInt(userId.substring(0, 8), 16) * 1000 
             : Date.now();
@@ -390,7 +408,7 @@ const RewardsScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch referred users details:', error);
       
-      // Fallback: use ObjectId extraction method
+      // use ObjectId extraction method
       const validUserIds = userProfile.referredUsers.filter((userId: string) => userId !== userProfile._id);
       
       const referredUsers = validUserIds.map((userId: string, index: number) => {
@@ -464,18 +482,16 @@ const RewardsScreen: React.FC = () => {
           <BlurView intensity={40} tint="dark" style={[styles.sectionCard, styles.wheelCard]}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionIcon}>
-                <View style={styles.iconStack}>
-                  <View style={styles.ringLarge} />
-                  <View style={styles.ringSmall} />
+                <Ionicons name="disc-outline" size={28} color="#007AFF" />
+                {/* <View style={styles.iconStack}>
                   <Ionicons name="flash-outline" size={19} color="#FBBF24" />
-                </View>
+                </View> */}
+
               </View>
               <View style={styles.sectionInfo}>
                 <Text style={styles.sectionTitle}>Spin the Wheel Daily!</Text>
                 <Text style={styles.sectionSubtitle}>
-                  {wheelSegments.length > 0
-                    ? `${availableSpinCoupons.length} coupons available. Try your luck to win amazing rewards!`
-                    : 'Preparing your rewards...'}
+                  Spin the wheel. Try your luck to win amazing rewards!
                 </Text>
               </View>
             </View>
@@ -553,7 +569,7 @@ const RewardsScreen: React.FC = () => {
                 <View style={styles.sectionInfo}>
                   <Text style={styles.sectionTitle}>Referred Users</Text>
                   <Text style={styles.sectionSubtitle}>
-                    {referralCount(userProfile)} user{referralCount(userProfile) !== 1 ? 's' : ''} joined using your code
+                    Earn 100 coins for each of your first 5 referrals
                   </Text>
                 </View>
               </View>
@@ -587,7 +603,6 @@ const RewardsScreen: React.FC = () => {
                         <View style={styles.userInfo}>
                           <Text style={styles.userName}>{user.name}</Text>
                           <Text style={styles.userDetails}> Joined: {user.joinedDate} </Text>
-                          <Text style={styles.userDetails}> ID: {user._id.substring(0, 24)}</Text>
                         </View>
                       </View>
                     ))}
@@ -605,7 +620,7 @@ const RewardsScreen: React.FC = () => {
             )}
           </BlurView>
 
-          {/* Your Coupons Section - Show actual user coupons */}
+          {/* Your Coupons Section - Updated without modal opening */}
           <BlurView intensity={40} tint="dark" style={styles.sectionCard}>
             <View style={styles.sectionHeaderWithTitle}>
               <Text style={styles.largeSectionTitle}>Your Coupons</Text>
@@ -622,11 +637,9 @@ const RewardsScreen: React.FC = () => {
             
             {coupons.length > 0 ? (
               coupons.map((coupon) => (
-                <TouchableOpacity 
+                <View 
                   key={coupon._id} 
                   style={styles.modernCouponCard}
-                  onPress={() => handleCouponPress(coupon)}
-                  activeOpacity={0.8}
                 >
                   <View style={styles.couponImageSection}>
                     <View style={styles.couponPattern}>
@@ -645,21 +658,32 @@ const RewardsScreen: React.FC = () => {
                     
                     <View style={styles.couponInfoSection}>
                       <Text style={styles.couponCompanyName}>{coupon.company}</Text>
-                      <Text style={styles.couponDescription}>{coupon.description}</Text>
-                      <Text style={styles.couponCode}>
-                        Code: {coupon.couponCode}
+                      <Text style={styles.couponDescription}>
+                        {getImprovedCouponDescription(coupon)}
                       </Text>
+                      
+                      {/* Copy Code Button */}
+                      <TouchableOpacity
+                        style={styles.copyCodeButton}
+                        onPress={() => handleCopyCouponCode(coupon)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="copy-outline" size={16} color="#007AFF" />
+                        <Text style={styles.copyCodeText}>Copy Code</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                   
                   <View style={styles.couponBottomSection}>
                     <View style={styles.couponBottomLeft}>
-                      <Text style={styles.couponBottomLabel}>{coupon.description}</Text>
+                      {/* <Text style={styles.couponBottomLabel}>
+                        {getImprovedCouponDescription(coupon)}
+                      </Text> */}
                       <Text style={styles.couponBottomCompany}>{coupon.company}</Text>
                     </View>
                     <View style={styles.couponBottomRight}>
                       <Text style={styles.couponSaveTag}>
-                        SAVE{extractDiscountFromDescription(coupon.description)}
+                        SAVE{extractDiscountFromDescription(coupon.description)}%
                       </Text>
                       <Text style={styles.couponExpiry}>
                         Valid until {new Date(coupon.expiryDate).toLocaleDateString('en-US', { 
@@ -669,7 +693,7 @@ const RewardsScreen: React.FC = () => {
                       </Text>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </View>
               ))
             ) : (
               <View style={styles.noCouponsContainer}>
@@ -683,12 +707,6 @@ const RewardsScreen: React.FC = () => {
       </SafeAreaView>
       
       <SpinWheelModal />
-      
-      <CouponModal
-        visible={showCouponModal}
-        onClose={handleCloseCouponModal}
-        coupon={selectedCoupon}
-      />
     </View>
   );
 };
@@ -753,29 +771,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  // icon stack for bolt + rings
-  iconStack: {
-    width: 19, 
-    height: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ringLarge: {
-    position: 'absolute',
-    width: 45,
-    height: 45,
-    borderRadius: 25,
-    borderWidth: 1.5,
-    borderColor: 'rgba(125, 211, 252, 0.45)', // light cyan
-  },
-  ringSmall: {
-    position: 'absolute',
-    width: 35,
-    height: 35,
-    borderRadius: 25,
-    borderWidth: 1.5,
-    borderColor: 'rgba(99, 102, 241, 0.45)', // indigo
-  },
   sectionInfo: {
     flex: 1,
   },
@@ -789,7 +784,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#A1A1AA',
     lineHeight: 20,
-    marginBottom: 6
+    marginBottom: 4,
+    marginRight: 8
   },
   
   // Action Buttons
@@ -982,7 +978,7 @@ const styles = StyleSheet.create({
   },
   couponImageSection: {
     flexDirection: 'row',
-    height: 120,
+    height: 140, // Increased height for copy button
   },
   couponPattern: {
     width: 140,
@@ -1041,12 +1037,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
+    lineHeight: 18,
   },
   couponCode: {
     fontSize: 12,
     color: '#888',
     fontFamily: 'monospace',
+    marginBottom: 12,
   },
+  
+  // New copy button styles
+  copyCodeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F8FF',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
+    // marginTop: 40
+  },
+  copyCodeText: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+
   couponBottomSection: {
     flexDirection: 'row',
     backgroundColor: '#2D2D2D',
@@ -1065,7 +1084,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   couponBottomCompany: {
-    fontSize: 12,
+    fontSize: 17  ,
     color: '#AAA',
   },
   couponBottomRight: {

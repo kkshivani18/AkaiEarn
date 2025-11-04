@@ -72,7 +72,7 @@ const OfferScreen: React.FC = () => {
     image: backendTask.imageLink || 'https://via.placeholder.com/300x140/2a2b33/fff?text=Task',
     difficulty: getDifficultyFromIQ(backendTask.minimumIq || 0),
     minimumIq: backendTask.minimumIq || 0,
-    // Always use S3 creative link instead of backend's example.com
+    // using S3 creative link 
     creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
     penaltyTime: backendTask.penaltyTime || 1,
     type: backendTask.type
@@ -326,9 +326,6 @@ Join me and start earning!`;
                       <Text style={styles.taskCardIQ}>IQ + {item.iqGain}</Text>
                     </View>
                   </View>
-                  <View style={[styles.difficultyBadge, getDifficultyColor(item.difficulty)]}>
-                    <Text style={styles.difficultyText}>{item.difficulty}</Text>
-                  </View>
                   <View style={styles.taskAction}>
                     <Text style={styles.taskActionText}>Tap to Start →</Text>
                   </View>
@@ -409,17 +406,6 @@ Join me and start earning!`;
       </ScrollView>
     </SafeAreaView>
   );
-};
-
-// Helper function for difficulty colors
-const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty) {
-    case 'Easy': return { backgroundColor: '#4CAF50' };
-    case 'Medium': return { backgroundColor: '#FF9800' };
-    case 'Hard': return { backgroundColor: '#f44336' };
-    case 'Expert': return { backgroundColor: '#9C27B0' };
-    default: return { backgroundColor: '#666' };
-  }
 };
 
 const styles = StyleSheet.create({

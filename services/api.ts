@@ -294,7 +294,7 @@ export const couponsAPI = {
     }
   },
 
-  // Select/Win a coupon from spin wheel (uses your existing backend endpoint)
+  // Win a coupon from spin wheel
   selectSpinWheelCoupon: async (couponId: string) => {
     try {
       console.log('🎯 API: Selecting spin wheel coupon:', couponId);
@@ -330,7 +330,7 @@ export const couponsAPI = {
       console.log('🎯 API: Rewarding coupon to user:', couponId);
       const response = await api.post('/coupons/reward', { 
         couponId,
-        userId: userId || undefined // Optional - backend will use authenticated user if not provided
+        userId: userId || undefined 
       });
       console.log('✅ API: Coupon rewarded successfully:', response.data);
       return response.data;
@@ -365,6 +365,20 @@ export const couponsAPI = {
       throw error;
     }
   },
+
+  // Get spin wheel status (canSpin and secondsLeft)
+  getSpinWheelStatus: async () => {
+    try {
+      const response = await api.get('/rewards/spin-wheel/status');
+      return response.data; // { success, canSpin, secondsLeft }
+    } catch (error: any) {
+      // Gracefully fallback if unauthenticated
+      if (error.response?.status === 401) {
+        return { success: true, canSpin: false, secondsLeft: 0 };
+      }
+      throw error;
+    }
+  },
 };
 
 // API functions that match your backend exactly
@@ -395,7 +409,6 @@ export const authAPI = {
     };
   }) => {
     try {
-      // Convert dob to YYYY-MM-DD | if Date is provided
       const payload = {
         ...profileData,
         dob: typeof profileData.dob === 'string'

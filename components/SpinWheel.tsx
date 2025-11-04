@@ -12,8 +12,10 @@ import Svg, {
   RadialGradient,
   Stop,
   Image as SvgImage,
+  Text as SvgText,
 } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { couponsAPI } from '../services/api';
 
 // --- Types ---
 interface Segment {
@@ -31,7 +33,7 @@ interface SpinWheelProps {
   segments: Segment[];
   onSpinComplete: (segment: Segment) => void;
   isSpinning: boolean;
-  isUnlocked: boolean;
+  isUnlocked?: boolean; // make optional
   spinValue: Animated.Value;
   onSpinPress?: () => void;
   wheelSize?: number;
@@ -44,6 +46,9 @@ const STROKE_WIDTH = 4;
 const COOLDOWN_TIME = 24 * 60 * 60; 
 const SPIN_DURATION = 5000;
 const FULL_SPINS = 5;
+const MAX_SEGMENTS = 4; 
+// Optional palette (kept)
+const PALETTE = ['#76b7ecff', '#93C5FD', '#76b7ecff', '#93C5FD'];
 
 // --- Utility Functions ---
 const formatTime = (seconds: number): string => {
@@ -62,7 +67,7 @@ const calculateWheelDimensions = (wheelSize: number) => {
 
 // --- Sub-components ---
 const GradientText: React.FC<{ children: React.ReactNode; style: any }> = ({ children, style }) => (
-  <Text style={[style, { color: '#f97316' }]}>{children}</Text>
+  <Text style={[style, { color: '#1DA1F2' }]}>{children}</Text>
 );
 
 const WheelPointer: React.FC<{ wheelSize: number }> = React.memo(({ wheelSize }) => (
@@ -92,7 +97,7 @@ const SpinButton: React.FC<{
       activeOpacity={0.9}
     >
       <LinearGradient
-        colors={['#f97316', '#fb923c']}
+        colors={['#1DA1F2', '#007AFF']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.spinButtonGradient}
@@ -115,8 +120,7 @@ const StatusDisplay: React.FC<{
       </>
     ) : (
       <>
-        <Text style={styles.readyText}>Ready to Spin!</Text>
-        <Text style={styles.statusLabel}>Tap the wheel to win rewards</Text>
+        {/* <Text style={styles.readyText}>Ready to spin!</Text> */}
       </>
     )}
   </View>
@@ -130,18 +134,15 @@ const WheelSVG: React.FC<{
   logoRadius: number;
 }> = React.memo(({ segments, wheelSize, outerRadius, innerRadius, logoRadius }) => {
   const anglePerSegment = 360 / segments.length;
-  
+
   const renderSegment = useCallback((segment: Segment, index: number) => {
     const startAngleRad = (index * anglePerSegment - 90) * (Math.PI / 180);
     const endAngleRad = ((index + 1) * anglePerSegment - 90) * (Math.PI / 180);
-    
     const x1 = outerRadius + innerRadius * Math.cos(startAngleRad);
     const y1 = outerRadius + innerRadius * Math.sin(startAngleRad);
     const x2 = outerRadius + innerRadius * Math.cos(endAngleRad);
     const y2 = outerRadius + innerRadius * Math.sin(endAngleRad);
-    
     const segmentPath = `M${outerRadius},${outerRadius} L${x1},${y1} A${innerRadius},${innerRadius} 0 0 1 ${x2},${y2} Z`;
-    
     const itemAngleRad = (index * anglePerSegment + anglePerSegment / 2 - 90) * (Math.PI / 180);
     const logoRadiusFromCenter = (45 + innerRadius) / 2;
     const logoX = outerRadius + logoRadiusFromCenter * Math.cos(itemAngleRad);
@@ -153,12 +154,15 @@ const WheelSVG: React.FC<{
     if (segment.type === 'coupon' && segment.couponData?.imageLink) {
       logoUrl = segment.couponData.imageLink;
     } else if (segment.type === 'tokens') {
-      logoUrl = 'https://placehold.co/40x40/FFD700/333333?text=💰';
+      // Tokens: prefer no external image – we’ll render text below
+      logoUrl = undefined as any;
     }
-    
-    if (!logoUrl) {
-      logoUrl = 'https://placehold.co/40x40/8B5CF6/FFFFFF?text=?';
-    }
+
+    // Fallback label (visible when logo is missing)
+    const label =
+      segment.type === 'tokens'
+        ? `${segment.value ?? ''} Tokens`.trim()
+        : segment.couponData?.company || segment.text || 'Reward';
 
     return (
       <G key={`segment-${index}`}>
@@ -168,16 +172,29 @@ const WheelSVG: React.FC<{
           stroke="rgba(249, 115, 22, 0.3)"
           strokeWidth="0.5"
         />
-        <G x={logoX} y={logoY} filter="url(#laserGlow)">
-          <SvgImage
-            href={{ uri: logoUrl }}
-            x={-logoRadius}
-            y={-logoRadius}
-            width={logoRadius * 2}
-            height={logoRadius * 2}
-            clipPath="url(#logoClipPath)"
-          />
-        </G>
+        {logoUrl ? (
+          <G x={logoX} y={logoY} filter="url(#laserGlow)">
+            <SvgImage
+              href={{ uri: logoUrl }}
+              x={-logoRadius}
+              y={-logoRadius}
+              width={logoRadius * 2}
+              height={logoRadius * 2}
+              clipPath="url(#logoClipPath)"
+            />
+          </G>
+        ) : (
+          <SvgText
+            x={logoX}
+            y={logoY + 4}
+            fontSize="12"
+            fontWeight="700"
+            fill="#ffffff"
+            textAnchor="middle"
+          >
+            {label.length > 10 ? `${label.slice(0, 9)}…` : label}
+          </SvgText>
+        )}
       </G>
     );
   }, [anglePerSegment, outerRadius, innerRadius, logoRadius]);
@@ -192,7 +209,7 @@ const WheelSVG: React.FC<{
         <Path 
           key={`line-${index}`} 
           d={`M${outerRadius},${outerRadius} L${x2},${y2}`} 
-          stroke="#f97316" 
+          stroke="#007AFF" 
           strokeWidth="1.5" 
           filter="url(#laserGlow)" 
         />
@@ -206,7 +223,7 @@ const WheelSVG: React.FC<{
       const a = (index * anglePerSegment - 90) * (Math.PI / 180);
       const cx = outerRadius + r * Math.cos(a);
       const cy = outerRadius + r * Math.sin(a);
-      return <Circle key={`dot-${index}`} cx={cx} cy={cy} r="2" fill="#f97316" opacity={0.65} />;
+      return <Circle key={`dot-${index}`} cx={cx} cy={cy} r="2" fill="#1DA1F2" opacity={0.65} />;
     });
   }, [segments, anglePerSegment, outerRadius, innerRadius]);
 
@@ -214,11 +231,11 @@ const WheelSVG: React.FC<{
     <Svg width={wheelSize} height={wheelSize} viewBox={`0 0 ${wheelSize} ${wheelSize}`}>
       <Defs>
         <RadialGradient id="orangeGlow">
-          <Stop offset="0%" stopColor="#f97316" stopOpacity="0.6" />
-          <Stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+          <Stop offset="0%" stopColor="#1DA1F2" stopOpacity="0.6" />
+          <Stop offset="100%" stopColor="#1DA1F2" stopOpacity="0" />
         </RadialGradient>
         <Filter id="laserGlow">
-          <FeDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#ef4444" />
+          <FeDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#007AFF" />
         </Filter>
         <ClipPath id="logoClipPath">
           <Circle cx="0" cy="0" r={logoRadius} />
@@ -274,6 +291,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   // State
   const [timeLeft, setTimeLeft] = useState(0);
   const [result, setResult] = useState('');
+  const [isUnlockedState, setIsUnlockedState] = useState<boolean>(true);
   
   // Refs
   const currentRotationRef = useRef(0);
@@ -295,21 +313,61 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     [spinValue]
   );
 
+  // On mount, fetch spin status from backend
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const status = await couponsAPI.getSpinWheelStatus();
+        if (!mounted || !status?.success) return;
+        setIsUnlockedState(Boolean(status.canSpin));
+        setTimeLeft(Number(status.secondsLeft || 0));
+      } catch {
+        // If status fails, fall back to prop or default
+        setIsUnlockedState(Boolean(isUnlocked ?? true));
+      }
+    })();
+    return () => { mounted = false; };
+  }, [isUnlocked]);
+
+  const canSpin = isUnlocked ?? isUnlockedState;
+
+  // Only coupons and no token placeholders
+  const normalizedSegments = useMemo(() => {
+    const input = Array.isArray(segments) ? segments.filter(Boolean) : [];
+    const couponsOnly = input.filter(s => s && s.type !== 'tokens');
+    // Force new palette colors (ignore existing segment.color)
+    const colored = couponsOnly.map((s, i) => ({
+      ...s,
+      color: PALETTE[i % PALETTE.length], // Always use PALETTE
+    }));
+    let result = colored.slice(0, MAX_SEGMENTS);
+    while (result.length > 0 && result.length < MAX_SEGMENTS) {
+      result.push(result[result.length % colored.length]);
+    }
+    return result;
+  }, [segments]);
+
   // Callbacks
   const startSpinning = useCallback(() => {
-    if (isSpinning || !isUnlocked) return;
-    
+    if (isSpinning || !canSpin) return;
+    if (!normalizedSegments.length) return;
     onSpinPress?.();
 
-    const anglePerSegment = 360 / segments.length;
-    const winningSegmentIndex = Math.floor(Math.random() * segments.length);
+    const anglePerSegment = 360 / normalizedSegments.length;
+    const winningSegmentIndex = Math.floor(Math.random() * normalizedSegments.length);
     const randomOffset = (Math.random() - 0.5) * anglePerSegment * 0.8;
-    const targetRotation = (360 - (winningSegmentIndex * anglePerSegment)) - anglePerSegment / 2 + randomOffset;
-    
-    const newRotation = currentRotationRef.current + (360 * FULL_SPINS) + targetRotation - (currentRotationRef.current % 360);
+    const targetRotation =
+      360 - winningSegmentIndex * anglePerSegment - anglePerSegment / 2 + randomOffset;
+
+    const newRotation =
+      currentRotationRef.current +
+      360 * FULL_SPINS +
+      targetRotation -
+      (currentRotationRef.current % 360);
     currentRotationRef.current = newRotation;
 
-    spinValue.setValue(currentRotationRef.current - (360 * FULL_SPINS));
+    spinValue.setValue(currentRotationRef.current - 360 * FULL_SPINS);
 
     Animated.timing(spinValue, {
       toValue: newRotation,
@@ -317,7 +375,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
       easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       useNativeDriver: true,
     }).start(() => {
-      const winningSegment = segments[winningSegmentIndex];
+      const winningSegment = normalizedSegments[winningSegmentIndex];
       
       // Enhanced result message based on reward type
       let resultMessage = `You won: ${winningSegment.reward}!`;
@@ -328,12 +386,30 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
       }
       
       setResult(resultMessage);
-      setTimeLeft(cooldownTime);
+      setTimeLeft(cooldownTime);       // lock for 24h locally
+      setIsUnlockedState(false);       // lock immediately after spin
       onSpinComplete(winningSegment);
     });
-  }, [isSpinning, isUnlocked, onSpinPress, segments, spinValue, cooldownTime, onSpinComplete]);
+  }, [isSpinning, canSpin, onSpinPress, normalizedSegments, spinValue, cooldownTime, onSpinComplete]);
 
-  // Effects
+  // Countdown while locked; auto-unlock when reaches zero
+  useEffect(() => {
+    if (canSpin || timeLeft <= 0) return;
+    const id = setInterval(() => {
+      setTimeLeft(prev => {
+        const next = prev - 1;
+        if (next <= 0) {
+          clearInterval(id);
+          setIsUnlockedState(true);
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [canSpin, timeLeft]);
+
+  // animation effect
   useEffect(() => {
     const glowAnimation = Animated.loop(
       Animated.sequence([
@@ -357,6 +433,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     };
   }, [glowOpacity]);
 
+  // Timer for cooldown display
   useEffect(() => {
     if (!isUnlocked && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -419,7 +496,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
             ]}
           >
             <WheelSVG
-              segments={segments}
+              segments={normalizedSegments}
               wheelSize={wheelSize}
               outerRadius={outerRadius}
               innerRadius={innerRadius}
@@ -429,7 +506,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
           
           <SpinButton
             onPress={startSpinning}
-            disabled={isSpinning || !isUnlocked}
+            disabled={isSpinning || !canSpin}
             isSpinning={isSpinning}
             pulseScale={pulseScale}
           />
@@ -441,7 +518,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
           ) : null}
         </View>
 
-        <StatusDisplay isUnlocked={isUnlocked} timeLeft={timeLeft} />
+        <StatusDisplay isUnlocked={canSpin} timeLeft={timeLeft} />
       </BlurView>
     </View>
   );
@@ -467,12 +544,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 27,
+    fontSize: 24,
     fontWeight: '800',
     marginBottom: 10,
     textAlign: 'center',
-    color: 'white', 
-    textShadowColor: 'rgba(249, 115, 22, 0.5)',
+    color: '#007AFF', 
+    textShadowColor: '#007AFF',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
@@ -499,7 +576,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     zIndex: 10,
-    shadowColor: '#ef4444',
+    shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 5,
@@ -510,10 +587,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#1DA1F2',
     marginBottom: 2,
     borderWidth: 1,
-    borderColor: '#f59e0b',
+    borderColor: '#1DA1F2',
     marginTop: -27
   },
   pointer: {
@@ -525,7 +602,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 20,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: '#f97316',
+    borderTopColor: '#007AFF',
   },
 
   // Center button and decor
@@ -544,12 +621,12 @@ const styles = StyleSheet.create({
   },
   centerRingLarge: {
     position: 'absolute',
-    width: 110,
-    height: 110,
+    width: 100,
+    height: 100,
     borderRadius: 55,
     borderWidth: 2,
-    borderColor: 'rgba(249, 115, 22, 0.35)',
-    backgroundColor: 'rgba(249, 115, 22, 0.06)',
+    borderColor: '#87bce0ff',
+    // backgroundColor: 'rgba(233, 225, 219, 0.06)',
   },
   centerRingSmall: {
     position: 'absolute',
@@ -558,18 +635,18 @@ const styles = StyleSheet.create({
     borderRadius: 43,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(206, 194, 194, 0.04)',
   },
   spinButton: {
     width: 84,
     height: 84,
     borderRadius: 42,
-    backgroundColor: '#f97316',
+    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
-    shadowColor: '#f97316',
+    borderColor: '#1DA1F2',
+    shadowColor: '#1DA1F2',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.85,
     shadowRadius: 20,
@@ -616,13 +693,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#9ca3af',
   },
   timerText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#ef4444',
+    color: '#1DA1F2',
     textShadowColor: 'rgba(239, 68, 68, 0.5)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,

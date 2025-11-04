@@ -43,14 +43,18 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   const router = useRouter();
 
   // auth session for web
-  WebBrowser.maybeCompleteAuthSession();
+  // WebBrowser.maybeCompleteAuthSession();
 
-  // Google OAuth request
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: process.env.androidClientID,
-    webClientId: process.env.webClientID,
-    scopes: ['openid', 'profile', 'email'],
-  });
+  // const ANDROID_ID = process.env.androidClientID;
+  // const WEB_ID = process.env.webClientID
+  // const EXPO_ID = process.env.expoClientID || '';
+  
+    // Google OAuth request
+    // const [request, response, promptAsync] = Google.useAuthRequest({
+    //   androidClientId: ANDROID_ID,
+    //   webClientId: WEB_ID,
+    //   scopes: ['openid', 'profile', 'email'],
+    // });
 
   const handleSignUp = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -86,36 +90,36 @@ export const SignUp: React.FC<SignUpModalProps> = ({
     }
   };
 
-  useEffect(() => { 
-    const handleGoogleResponse = async () => {
-      if (response?.type !== 'success') return;
+  // useEffect(() => { 
+  //   const handleGoogleResponse = async () => {
+  //     if (response?.type !== 'success') return;
       
-      const idToken = response.authentication?.idToken;
-      if (!idToken) {
-        Alert.alert('Google Sign-In', 'No idToken returned. Check configuration (add openid scope).');
-        return;
-      }
-      try {
-        // Use the onGoogleLogin function from AuthContext
-        const result = await onGoogleLogin?.(idToken);
-        if (result?.success) {
-          onClose();
-          // Navigate based on profile completion flag from the backend
-          const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
-          if (needsProfile) {
-            router.replace('/profile-completion');
-          } else {
-            router.replace('/');
-          }
-        } else {
-          Alert.alert('Google Sign-In Failed', result?.msg || result?.error || 'Could not sign up/in with Google');
-        }
-      } catch (e: any) {
-        Alert.alert('Google Sign-In Failed', e?.message || 'Unexpected error during Google Sign-In');
-      }
-    };
-    handleGoogleResponse();
-  }, [response])
+  //     const idToken = response.authentication?.idToken;
+  //     if (!idToken) {
+  //       Alert.alert('Google Sign-In', 'No idToken returned. Check configuration (add openid scope).');
+  //       return;
+  //     }
+  //     try {
+  //       // Use the onGoogleLogin function from AuthContext
+  //       const result = await onGoogleLogin?.(idToken);
+  //       if (result?.success) {
+  //         onClose();
+  //         // Navigate based on profile completion flag from the backend
+  //         const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
+  //         if (needsProfile) {
+  //           router.replace('/profile-completion');
+  //         } else {
+  //           router.replace('/');
+  //         }
+  //       } else {
+  //         Alert.alert('Google Sign-In Failed', result?.msg || result?.error || 'Could not sign up/in with Google');
+  //       }
+  //     } catch (e: any) {
+  //       Alert.alert('Google Sign-In Failed', e?.message || 'Unexpected error during Google Sign-In');
+  //     }
+  //   };
+  //   handleGoogleResponse();
+  // }, [response])
 
   const styles = createStyles(isDark);
 
@@ -210,7 +214,21 @@ export const SignUp: React.FC<SignUpModalProps> = ({
             </View>
 
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                // onPress={() => {
+                //   if (Platform.OS === 'android' && !ANDROID_ID && !EXPO_ID) {
+                //     Alert.alert('Google Sign-In not configured', 'Set androidClientID (and optionally expoClientID) in .env');
+                //     return;
+                //   }
+                //   if (Platform.OS === 'web' && !WEB_ID) {
+                //     Alert.alert('Google Sign-In not configured', 'Set webClientID in .env');
+                //     return;
+                //   }
+                //   promptAsync();
+                // }}
+                // disabled={!request || (Platform.OS === 'android' && !ANDROID_ID && !EXPO_ID) || (Platform.OS === 'web' && !WEB_ID)}
+              >
                 <AntDesign 
                   name="google" 
                   size={20} 
