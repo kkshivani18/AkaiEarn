@@ -264,7 +264,6 @@ export const couponsAPI = {
       return response.data;
     } catch (error: any) {
       console.error('Failed to fetch spin wheel coupons:', error);
-      // Fallback to mock data if API fails
       return {
         success: true,
         data: [
@@ -366,13 +365,13 @@ export const couponsAPI = {
     }
   },
 
-  // Get spin wheel status (canSpin and secondsLeft)
+  // get spin wheel status (canSpin and secondsLeft)
   getSpinWheelStatus: async () => {
     try {
       const response = await api.get('/rewards/spin-wheel/status');
-      return response.data; // { success, canSpin, secondsLeft }
+      return response.data; 
     } catch (error: any) {
-      // Gracefully fallback if unauthenticated
+      // fallback if unauthenticated
       if (error.response?.status === 401) {
         return { success: true, canSpin: false, secondsLeft: 0 };
       }

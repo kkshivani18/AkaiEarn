@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import React from 'react';
 import {
   Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -27,7 +28,15 @@ const ProfileCompletionScreen: React.FC = () => {
   const [gender, setGender] = React.useState<string>('');
   const [dobDate, setDobDate] = React.useState<Date | null>(null);
   const [showDobPicker, setShowDobPicker] = React.useState<boolean>(false);
-  
+  const [referralCode, setReferralCode] = React.useState<string>('');
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
+
+  // Add referral verification states
+  const [referralVerificationStatus, setReferralVerificationStatus] = React.useState<'idle' | 'verifying' | 'valid' | 'invalid'>('idle');
+  const [referralVerificationMessage, setReferralVerificationMessage] = React.useState<string>('');
+  const [isReferralVerified, setIsReferralVerified] = React.useState<boolean>(false);
+
   const genderItems = [
     { label: 'Male', value: 'male' },
     { label: 'Female', value: 'female' },
@@ -43,10 +52,6 @@ const ProfileCompletionScreen: React.FC = () => {
     return `${mm}/${dd}/${yyyy}`;
   };
   
-  const [referralCode, setReferralCode] = React.useState<string>('');
-  const [loading, setLoading] = React.useState<boolean>(false);
-  const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
-
   const { onProfileCompleted } = useAuth();
 
   const handleLocationAccess = async () => {
@@ -75,6 +80,65 @@ const ProfileCompletionScreen: React.FC = () => {
     }
   };
 
+  // Add referral verification function
+  const verifyReferralCode = async () => {
+    const trimmedCode = referralCode.trim();
+    
+    if (!trimmedCode) {
+      setReferralVerificationStatus('invalid');
+      setReferralVerificationMessage('Please enter a referral code');
+      return;
+    }
+
+    // Basic format validation
+    const referralCodeRegex = /^[a-zA-Z0-9]{6,12}$/;
+    if (!referralCodeRegex.test(trimmedCode)) {
+      setReferralVerificationStatus('invalid');
+      setReferralVerificationMessage('Invalid format (6-12 alphanumeric characters)');
+      return;
+    }
+
+    setReferralVerificationStatus('verifying');
+    setReferralVerificationMessage('Verifying...');
+
+    try {
+      // Call backend to verify referral code (you may need to create this endpoint)
+      // For now, we'll simulate the verification by trying to use the code
+      await referralAPI.useReferralCode(trimmedCode);
+      
+      setReferralVerificationStatus('valid');
+      setReferralVerificationMessage('Valid referral code!');
+      setIsReferralVerified(true);
+    } catch (error: any) {
+      console.error('Referral verification error:', error);
+      
+      let errorMessage = 'Invalid referral code';
+      if (error.response?.status === 400) {
+        errorMessage = 'Cannot use your own referral code';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Referral code not found';
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Referral already used';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      setReferralVerificationStatus('invalid');
+      setReferralVerificationMessage(errorMessage);
+      setIsReferralVerified(false);
+    }
+  };
+
+  // Reset verification when referral code changes
+  const handleReferralCodeChange = (text: string) => {
+    setReferralCode(text);
+    if (referralVerificationStatus !== 'idle') {
+      setReferralVerificationStatus('idle');
+      setReferralVerificationMessage('');
+      setIsReferralVerified(false);
+    }
+  };
+
   const handleNext = async () => {
     console.log('Profile completion with data:', {
       fullName,
@@ -82,7 +146,8 @@ const ProfileCompletionScreen: React.FC = () => {
       gender,
       dobDate,
       referralCode,
-      location
+      location,
+      isReferralVerified
     });
     
     if (!fullName || !occupation || !dobDate || !gender) {
@@ -127,40 +192,25 @@ const ProfileCompletionScreen: React.FC = () => {
     setLoading(true);
     
     try {
-      // Handle referral code if provided
-      if (referralCode.trim()) {
-        // Basic referral code validation (alphanumeric, 6-12 characters)
-        const referralCodeRegex = /^[a-zA-Z0-9]{6,12}$/;
-        if (!referralCodeRegex.test(referralCode.trim())) {
-          Alert.alert('Invalid Referral Code', 'Referral code must be 6-12 alphanumeric characters');
-          setLoading(false);
-          return;
-        }
-        
-        try {
-          await referralAPI.useReferralCode(referralCode.trim());
-          console.log('✅ Referral code applied successfully');
-        } catch (referralError: any) {
-          console.warn('⚠️ Referral code error:', referralError);
-          // Don't block profile completion for referral code errors
-          Alert.alert(
-            'Referral Code Warning', 
-            'Profile will be completed, but referral code could not be applied. You can try again later.'
-          );
-        }
+      // Handle referral code if provided and verified
+      if (referralCode.trim() && !isReferralVerified) {
+        Alert.alert('Referral Code Not Verified', 'Please verify your referral code before proceeding, or leave it empty.');
+        setLoading(false);
+        return;
       }
+
+      // Note: If referral is verified, we've already applied it during verification
+      // So we skip the referral code application here
       
       // Format the data to match what the backend expects
       const profileData = {
         occupation: occupation || '',
         dob: dobDate ? dobDate.toISOString().split('T')[0] : '',
         gender: gender.toLowerCase(),
-        // tags: interests, 
         location: location || { lat: 0, lng: 0 } 
       };
       
       console.log('Sending profile data:', profileData);
-      console.log('API endpoint: /auth/submit-form');
       
       const result = await authAPI.updateProfile(profileData);
       console.log('✅ Profile update result:', result);
@@ -340,15 +390,68 @@ const ProfileCompletionScreen: React.FC = () => {
               </View> */}
 
               <Text style={styles.label}>Referral Code (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter code"
-                placeholderTextColor="#a1a1aa"
-                value={referralCode}
-                onChangeText={setReferralCode}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              <View style={styles.referralContainer}>
+                <TextInput
+                  style={[
+                    styles.referralInput,
+                    referralVerificationStatus === 'valid' && styles.inputValid,
+                    referralVerificationStatus === 'invalid' && styles.inputInvalid
+                  ]}
+                  placeholder="Enter code"
+                  placeholderTextColor="#a1a1aa"
+                  value={referralCode}
+                  onChangeText={handleReferralCodeChange}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isReferralVerified}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.verifyButton,
+                    referralVerificationStatus === 'verifying' && styles.verifyButtonDisabled,
+                    referralVerificationStatus === 'valid' && styles.verifyButtonValid,
+                    isReferralVerified && styles.verifyButtonDisabled
+                  ]}
+                  onPress={verifyReferralCode}
+                  disabled={referralVerificationStatus === 'verifying' || isReferralVerified || !referralCode.trim()}
+                >
+                  {referralVerificationStatus === 'verifying' ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : referralVerificationStatus === 'valid' ? (
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  ) : (
+                    <Text style={styles.verifyButtonText}>Verify</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              
+              {/* Verification status message */}
+              {referralVerificationMessage && (
+                <View style={[
+                  styles.verificationMessage,
+                  referralVerificationStatus === 'valid' && styles.verificationMessageValid,
+                  referralVerificationStatus === 'invalid' && styles.verificationMessageInvalid
+                ]}>
+                  <Ionicons 
+                    name={
+                      referralVerificationStatus === 'valid' ? 'checkmark-circle' :
+                      referralVerificationStatus === 'invalid' ? 'alert-circle' : 'information-circle'
+                    } 
+                    size={14} 
+                    color={
+                      referralVerificationStatus === 'valid' ? '#10B981' :
+                      referralVerificationStatus === 'invalid' ? '#EF4444' : '#3B82F6'
+                    } 
+                  />
+                  <Text style={[
+                    styles.verificationMessageText,
+                    referralVerificationStatus === 'valid' && styles.verificationMessageTextValid,
+                    referralVerificationStatus === 'invalid' && styles.verificationMessageTextInvalid
+                  ]}>
+                    {referralVerificationMessage}
+                  </Text>
+                </View>
+              )}
 
               <View style={styles.locationCard}>
                 <Text style={styles.locationTitle}>Location</Text>
@@ -477,6 +580,83 @@ const styles = StyleSheet.create({
   },
   nextButtonDisabled: { opacity: 0.6 },
   nextButtonText: { color: 'white', fontSize: 16, fontWeight: '700' },
+
+  // New referral verification styles
+  referralContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  referralInput: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    color: 'white',
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 15,
+  },
+  inputValid: {
+    borderColor: '#10B981',
+    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+  },
+  inputInvalid: {
+    borderColor: '#EF4444',
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+  },
+  verifyButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyButtonDisabled: {
+    backgroundColor: '#6B7280',
+    opacity: 0.6,
+  },
+  verifyButtonValid: {
+    backgroundColor: '#10B981',
+  },
+  verifyButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  verificationMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  verificationMessageValid: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  verificationMessageInvalid: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  verificationMessageText: {
+    color: '#3B82F6',
+    fontSize: 12,
+    marginLeft: 6,
+  },
+  verificationMessageTextValid: {
+    color: '#10B981',
+  },
+  verificationMessageTextInvalid: {
+    color: '#EF4444',
+  },
 });
 
 export default ProfileCompletionScreen;

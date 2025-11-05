@@ -103,11 +103,11 @@ export const Login: React.FC<SignInModalProps> = ({
         onClose();
         // If backend returns user/profileCompleted info, route accordingly.
         const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
-        if (needsProfile) {
+        if (!needsProfile) {
           router.replace('/profile-completion');
         } else {
           // adjust target route as appropriate for your app
-          router.replace('/');
+          router.replace('/(tabs)/offer');
         }
       } else {
         Alert.alert('Login Failed', result?.msg || result?.error || 'Invalid credentials');
