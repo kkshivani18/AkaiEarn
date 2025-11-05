@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
 
-// Define types at module level
+// types at module level
 type OfferTask = {
   id: string;
   title: string;
@@ -201,7 +201,7 @@ const OfferScreen: React.FC = () => {
 
   const handleReferFriend = async () => {
     try {
-      // Get user's referral code (add this to your user profile)
+      // Get user's referral code 
       // const userReferralCode = userProfile?.referralCode || 'USER123';
       const userReferralCode = 'USER123';
       
@@ -275,10 +275,11 @@ Join me and start earning!`;
           <View style={styles.balanceCard}>
             <View style={{flexDirection: 'row'}}>
               <Text style={styles.balanceTokens}>{userProfile?.coins?.toLocaleString() || 0}</Text>
-              <Text style={styles.balanceLabel}> Tokens</Text>
+              <Text style={styles.balanceLabel}> Points</Text>
             </View>
-            <View style={styles.balanceDivider} />
-            <Text style={styles.balanceInr}>₹{((userProfile?.inrBalance || 0)).toFixed(2)}</Text>
+            {/* <View style={styles.balanceDivider} /> */}
+            {/* <Text style={styles.balanceLabel}>{userProfile?.iq || 0} IQ</Text> */}
+            {/* <Text style={styles.balanceInr}>{userProfile?.iq || 0} IQ</Text> */}
           </View>
         </View>
 
@@ -320,10 +321,10 @@ Join me and start earning!`;
                   <Text style={styles.taskCardTitle}>{item.title}</Text>
                   <Text style={styles.taskCardDescription}>{item.description}</Text>
                   <View style={styles.taskCardReward}>
-                    <Text style={styles.taskCardTokens}>Reward: {item.reward} Tokens</Text>
+                    <Text style={styles.taskCardTokens}>Reward: +{item.reward} Points</Text>
                     <View style={styles.iqBadge}>
-                      <Ionicons name='apps-outline' size={12} color="#fff" />
-                      <Text style={styles.taskCardIQ}>IQ + {item.iqGain}</Text>
+                      {/* <Ionicons name='contract-sharp' size={12} color="#fff" /> */}
+                      <Text style={styles.taskCardIQ}>IQ: +{item.iqGain}</Text>
                     </View>
                   </View>
                   <View style={styles.taskAction}>
@@ -453,13 +454,13 @@ const styles = StyleSheet.create({
    },
    userName: {
      color: '#fff',
-     fontSize: 16,
+     fontSize: 18,
      fontWeight: 'bold',
      marginBottom: 2,
    },
    userIQ: {
      color: '#888',
-     fontSize: 13,
+     fontSize: 15,
    },
   
   // Translucent balance card (right side)
@@ -490,11 +491,11 @@ const styles = StyleSheet.create({
      backgroundColor: 'rgba(255,255,255,0.1)',
      marginBottom: 2,
    },
-   balanceInr: {
-     color: '#4CAF50',
-     fontSize: 14,
-     fontWeight: '600',
-   },
+  //  balanceInr: {
+  //    color: '#4CAF50',
+  //    fontSize: 14,
+  //    fontWeight: '600',
+  //  },
 
   // Section
   section: {
