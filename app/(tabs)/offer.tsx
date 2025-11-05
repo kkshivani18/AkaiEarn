@@ -36,7 +36,6 @@ const OfferScreen: React.FC = () => {
     email: string;
     iq?: number;
     coins?: number;
-    inrBalance?: number;
   } | null>(null);
 
   // ALWAYS call these refs - no conditional logic
@@ -78,15 +77,31 @@ const OfferScreen: React.FC = () => {
     type: backendTask.type
   });
 
-  // Handle task selection
+  // Check if task is locked based on user IQ
+  const isTaskLocked = (task: OfferTask): boolean => {
+    const userIQ = userProfile?.iq || 0;
+    return userIQ < task.minimumIq;
+  };
+
+  // Handle task selection with IQ check
   const handleTaskSelect = (task: OfferTask) => {
     console.log('🎯 Task selected:', task);
+    
+    // Check if task is locked due to insufficient IQ
+    if (isTaskLocked(task)) {
+      Alert.alert(
+        '🔒 Task Locked',
+        `You need at least ${task.minimumIq} IQ to unlock this task. Current IQ: ${userProfile?.iq || 0}.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     
     // Navigate to creative screen with task data
     router.push({
       pathname: '/creative-task',
       params: {
-        labelOfferId: task.id, // Changed from taskId to labelOfferId
+        labelOfferId: task.id,
         creativeLink: task.creativeLink || 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
         taskTitle: task.title,
         reward: task.reward.toString(),
@@ -155,18 +170,15 @@ const OfferScreen: React.FC = () => {
             email: userData.email,
             iq: userData.iq || 0,
             coins: userData.coins || 0,
-            inrBalance: userData.inrBalance || 0,
           });
         }
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
-        // fallback data
         setUserProfile({
           name: 'User',
           email: 'user@example.com',
           iq: 0,
           coins: 0,
-          inrBalance: 0,
         });
       }
     };
@@ -228,7 +240,7 @@ const OfferScreen: React.FC = () => {
     try {
       const progressMessage = `I just completed another task on OfferWall! 🔥
 Current IQ: ${userProfile?.iq || 0}
-Tokens earned: ${userProfile?.coins || 0}
+Points earned: ${userProfile?.coins || 0}
 
 Join me and start earning!`;
 
@@ -271,15 +283,12 @@ Join me and start earning!`;
             </View>
           </View>
           
-          {/* translucent balance card */}
+          {/* Updated balance card - removed INR */}
           <View style={styles.balanceCard}>
             <View style={{flexDirection: 'row'}}>
               <Text style={styles.balanceTokens}>{userProfile?.coins?.toLocaleString() || 0}</Text>
               <Text style={styles.balanceLabel}> Points</Text>
             </View>
-            {/* <View style={styles.balanceDivider} /> */}
-            {/* <Text style={styles.balanceLabel}>{userProfile?.iq || 0} IQ</Text> */}
-            {/* <Text style={styles.balanceInr}>{userProfile?.iq || 0} IQ</Text> */}
           </View>
         </View>
 
@@ -298,7 +307,7 @@ Join me and start earning!`;
             <Text style={styles.errorText}>⚠️ {error}</Text>
           )}
           
-          {/* Horizontal Carousel of All Tasks */}
+          {/* Updated task cards with lock state */}
           <FlatList
             ref={flatListRef}
             data={allTasks}
@@ -308,31 +317,61 @@ Join me and start earning!`;
             keyExtractor={(item) => String(item.id)}
             snapToAlignment="start"
             decelerationRate="fast"
-            snapToInterval={CARD_WIDTH + 16} // card width + margin
+            snapToInterval={CARD_WIDTH + 16}
             contentContainerStyle={{ paddingRight: 0 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={styles.taskCard}
-                onPress={() => handleTaskSelect(item)}
-                activeOpacity={0.8}
-              >
-                <Image source={{ uri: item.image }} style={styles.taskCardImage} />
-                <View style={styles.taskCardInfo}>
-                  <Text style={styles.taskCardTitle}>{item.title}</Text>
-                  <Text style={styles.taskCardDescription}>{item.description}</Text>
-                  <View style={styles.taskCardReward}>
-                    <Text style={styles.taskCardTokens}>Reward: +{item.reward} Points</Text>
-                    <View style={styles.iqBadge}>
-                      {/* <Ionicons name='contract-sharp' size={12} color="#fff" /> */}
-                      <Text style={styles.taskCardIQ}>IQ: +{item.iqGain}</Text>
+            renderItem={({ item }) => {
+              const locked = isTaskLocked(item);
+              
+              return (
+                <TouchableOpacity 
+                  style={[
+                    styles.taskCard,
+                    locked && styles.taskCardLocked
+                  ]}
+                  onPress={() => handleTaskSelect(item)}
+                  activeOpacity={locked ? 1 : 0.8}
+                >
+                  <View style={styles.taskImageContainer}>
+                    <Image source={{ uri: item.image }} style={styles.taskCardImage} />
+                    {locked && (
+                      <View style={styles.lockOverlay}>
+                        <View style={styles.lockIconContainer}>
+                          <Ionicons name="lock-closed" size={24} color="#fff" />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                  
+                  <View style={styles.taskCardInfo}>
+                    <Text style={[styles.taskCardTitle, locked && styles.lockedText]}>
+                      {item.title}
+                    </Text>
+                    <Text style={[styles.taskCardDescription, locked && styles.lockedText]}>
+                      {item.description}
+                    </Text>
+                    
+                    {locked ? (
+                      <Text style={styles.lockMessage}>
+                        Requires {item.minimumIq} IQ
+                      </Text>
+                    ) : (
+                      <Text style={styles.taskCardMinIQ}>Minimum IQ: {item.minimumIq}</Text>
+                    )}
+                    
+                    <View style={styles.taskCardReward}>
+                      <Text style={[styles.taskCardTokens, locked && styles.lockedText]}>
+                        +{item.reward} Points
+                      </Text>
+                      <View style={[styles.iqBadge, locked && styles.iqBadgeLocked]}>
+                        <Text style={[styles.taskCardIQ, locked && styles.lockedText]}>
+                          IQ: +{item.iqGain}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                  <View style={styles.taskAction}>
-                    <Text style={styles.taskActionText}>Tap to Start →</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
+                </TouchableOpacity>
+              );
+            }}
             onViewableItemsChanged={onViewableItemsChangedRef.current}
             viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
           />
@@ -363,7 +402,7 @@ Join me and start earning!`;
               </View>
               <View style={styles.socialTaskInfo}>
                 <Text style={styles.socialTaskTitle}>Follow Us on X</Text>
-                <Text style={styles.socialTaskReward}>+50 Tokens</Text>
+                <Text style={styles.socialTaskReward}>+50 Points</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.followButton} onPress={handleFollowTwitter}>
@@ -379,7 +418,7 @@ Join me and start earning!`;
               </View>
               <View style={styles.socialTaskInfo}>
                 <Text style={styles.socialTaskTitle}>Refer a Friend</Text>
-                <Text style={styles.socialTaskReward}>+200 Tokens</Text>
+                <Text style={styles.socialTaskReward}>+200 Points</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.referButton} onPress={handleReferFriend}>
@@ -395,7 +434,7 @@ Join me and start earning!`;
               </View>
               <View style={styles.socialTaskInfo}>
                 <Text style={styles.socialTaskTitle}>Share your progress</Text>
-                <Text style={styles.socialTaskReward}>+25 Tokens</Text>
+                <Text style={styles.socialTaskReward}>+25 Points</Text>
               </View>
             </View>
             <View style={styles.completedBadge}>
@@ -463,7 +502,7 @@ const styles = StyleSheet.create({
      fontSize: 15,
    },
   
-  // Translucent balance card (right side)
+  // Updated balance card styles
   balanceCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 35,
@@ -475,27 +514,16 @@ const styles = StyleSheet.create({
     minWidth: 90,
   },
   balanceTokens: {
-     color: '#fff',
-     fontSize: 15,
-     fontWeight: '600',
-     marginBottom: 2,
-   },
-   balanceLabel: {
-     color: '#888',
-     fontSize: 15,
-     marginBottom: 2,
-   },
-   balanceDivider: {
-     width: '100%',
-     height: 1,
-     backgroundColor: 'rgba(255,255,255,0.1)',
-     marginBottom: 2,
-   },
-  //  balanceInr: {
-  //    color: '#4CAF50',
-  //    fontSize: 14,
-  //    fontWeight: '600',
-  //  },
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  balanceLabel: {
+    color: '#888',
+    fontSize: 15,
+    marginBottom: 2,
+  },
 
   // Section
   section: {
@@ -518,11 +546,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2a2b33',
   },
+  taskCardLocked: {
+    opacity: 0.6,
+    borderColor: '#444',
+  },
+  taskImageContainer: {
+    position: 'relative',
+  },
   taskCardImage: {
     width: '100%',
     height: 140,
     resizeMode: 'cover',
     backgroundColor: '#2a2b33',
+  },
+  lockOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   taskCardInfo: {
     padding: 12,
@@ -537,6 +590,20 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
     marginBottom: 8,
+  },
+  taskCardMinIQ: {
+    color: '#A1A1AA',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  lockMessage: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  lockedText: {
+    color: '#666',
   },
   taskCardReward: {
     flexDirection: 'row',
@@ -556,6 +623,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
+  },
+  iqBadgeLocked: {
+    backgroundColor: '#2a2a2a',
   },
   taskCardIQ: {
     color: '#fff',
@@ -684,32 +754,6 @@ const styles = StyleSheet.create({
     color: '#ff6b6b',
     fontSize: 12,
     marginBottom: 10,
-    textAlign: 'center',
-  },
-  difficultyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-    marginTop: 6,
-  },
-  difficultyText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  taskAction: {
-    marginTop: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(0, 122, 255, 0.2)',
-    borderRadius: 6,
-    alignSelf: 'center',
-  },
-  taskActionText: {
-    color: '#007AFF',
-    fontSize: 12,
-    fontWeight: '600',
     textAlign: 'center',
   },
 });

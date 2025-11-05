@@ -569,7 +569,7 @@ const RewardsScreen: React.FC = () => {
                 <View style={styles.sectionInfo}>
                   <Text style={styles.sectionTitle}>Referred Users</Text>
                   <Text style={styles.sectionSubtitle}>
-                    Earn 100 coins for each of your first 5 referrals
+                    Earn 100 points for each of your first 5 referrals
                   </Text>
                 </View>
               </View>

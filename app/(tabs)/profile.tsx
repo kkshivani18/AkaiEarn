@@ -81,14 +81,11 @@ const StatsGrid = ({ userProfile, balance }: { userProfile: any, balance: number
   const resolveReferralCount = (user: any) => {
     if (!user) return 0;
     
-    // Prefer authoritative counter if backend provides it
     if (typeof user.referredCount === 'number') return user.referredCount;
 
     const arr: string[] = Array.isArray(user.referredUsers) ? user.referredUsers : [];
-    
-    // If user has referredUsers array, that means they have referred people
     if (arr.length > 0) {
-      // If the array contains only the user's own ID (self-reference), treat as 0
+      // array contains self-reference, treat as 0
       if (arr.length === 1 && arr[0] === user._id) {
         return 0;
       }
@@ -101,35 +98,7 @@ const StatsGrid = ({ userProfile, balance }: { userProfile: any, balance: number
     return 0;
   };
 
-  return (
-    <View style={styles.statsGrid}>
-      {/* Token Card */}
-      <View style={styles.statCard}>
-        <View style={styles.statCardLeft}>
-          <View style={styles.statIcon}>
-            <Text style={styles.statIconText}>🪙</Text>
-          </View>
-        </View>
-        <View style={styles.statCardRight}>
-          <Text style={styles.statSubValue}>{balance.toLocaleString()}</Text>
-          <Text style={styles.statSubLabel}>Token Balance</Text>
-        </View>
-      </View>
-
-      {/* INR Balance */}
-      <View style={styles.statCard}>
-        <View style={styles.statCardLeft}>
-          <View style={styles.statIcon}>
-            <Text style={styles.statIconText}>💰</Text>
-          </View>
-        </View>
-        <View style={styles.statCardRight}>
-          <Text style={styles.statSubValue}>₹ {(balance * 0.1).toFixed(2)}</Text>
-          <Text style={styles.statSubLabel}>INR Balance</Text>
-        </View>
-      </View>
-    </View>
-  );
+  return null; // Remove the old stats grid since we're moving points to separate section
 };
 
 const AccountMenu = ({ onLogout }: { onLogout: () => void }) => (
@@ -331,17 +300,29 @@ export default function ProfileScreen() {
       </BlurView>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* keeps the top content centered */}
         <View style={styles.centeredContent}>
           <AnimatedSection delay={100}>
             <ProfileHeader userProfile={userProfile} />
           </AnimatedSection>
 
-          <AnimatedSection delay={200}>
-              <StatsGrid userProfile={userProfile} balance={balance} />
-          </AnimatedSection>
         </View>
+
+        {/* Points Balance */}
+        <AnimatedSection delay={200}>
+          <View style={styles.iqSectionContainer}>
+            <View style={styles.statCard}>
+              <View style={styles.statCardLeft}>
+                <View style={styles.statIcon}>
+                  <Text style={styles.statIconText}>🪙</Text>
+                </View>
+                <View style={styles.statInfo}>
+                  <Text style={styles.statLabel}>Points Balance</Text>
+                  <Text style={styles.statValue}>{balance.toLocaleString()}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </AnimatedSection>
 
         {/* Full width sections */}
         <AnimatedSection delay={300}>
@@ -492,35 +473,22 @@ const styles = StyleSheet.create({
   },
   // Stats Grid
   statsGrid: {
-    width: '100%',
-    flexDirection: 'row',
-    marginBottom: 20,
-    gap: 13, 
+    display: 'none', // Hide since we're not using it anymore
   },
   statCard: {
-    // flex: 1, 
-    // flexDirection: 'row',
-    // justifyContent: 'space-between',
-    // alignItems: 'center',
-    // backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    // borderRadius: 13,
-    // // padding: 10,
-    // borderWidth: 1,
-    // borderColor: 'rgba(255, 255, 255, 0.1)',
-
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     padding: 16,
-    // marginBottom: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
+  
   statCardLeft: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     flex: 1,
     marginLeft: 45
   },

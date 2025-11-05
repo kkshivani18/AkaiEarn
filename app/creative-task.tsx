@@ -351,7 +351,7 @@ const CreativeTaskScreen: React.FC = () => {
         case 'SUBMIT':
           console.log('✅ Task completed:', message.data);
           setTaskCompleted(true);
-          handleTaskCompletion(message.data || {});
+          // handleTaskCompletion(message.data || {});
           break;
           
         case 'ERROR':
@@ -375,71 +375,68 @@ const CreativeTaskScreen: React.FC = () => {
   };
 
   // Handle task completion
-  const handleTaskCompletion = async (taskData: any) => {
-    if (submitting) return;
+  // const handleTaskCompletion = async (taskData: any) => {
+  //   if (submitting) return;
     
-    setSubmitting(true);
+  //   setSubmitting(true);
     
-    try {
-      // Create a unique task type to avoid conflicts
-      const uniqueTaskType = `${taskType}-completed-${Date.now()}`;
+  //   try {
+  //     // Create a unique task type to avoid conflicts
+  //     const uniqueTaskType = `${taskType}-completed-${Date.now()}`;
       
-      const labelOfferData = {
-        imageLink: taskData.imageUrl || 'https://via.placeholder.com/300x200/2a2b33/fff?text=Completed+Task',
-        type: uniqueTaskType,
-        creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
-        rewards: {
-          coinsOnCorrect: reward,
-          iqDeltaOnCorrect: iqGain,
-          iqDeltaOnIncorrect: -Math.max(1, Math.floor(iqGain / 2)),
-        },
-        minimumIq: 0,
-        description: taskData.description || `Completed ${taskTitle} task by ${userInfo?.firstName || 'User'}`,
-        penaltyTime: 1,
-      };
+  //     const labelOfferData = {
+  //       imageLink: taskData.imageUrl || 'https://via.placeholder.com/300x200/2a2b33/fff?text=Completed+Task',
+  //       type: uniqueTaskType,
+  //       creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
+  //       rewards: {
+  //         coinsOnCorrect: reward,
+  //         iqDeltaOnCorrect: iqGain,
+  //         iqDeltaOnIncorrect: -Math.max(1, Math.floor(iqGain / 2)),
+  //       },
+  //       minimumIq: 0,
+  //       description: taskData.description || `Completed ${taskTitle} task by ${userInfo?.firstName || 'User'}`,
+  //       penaltyTime: 1,
+  //     };
 
-      console.log('📤 Creating label offer:', labelOfferData);
+  //     console.log('📤 Creating label offer:', labelOfferData);
       
-      // THIS is where createOffer is called
-      const response = await offersAPI.createOffer(labelOfferData);
+  //     // THIS is where createOffer is called
+  //     const response = await offersAPI.createOffer(labelOfferData);
       
-      if (response.success) {
-        console.log('✅ Label offer created successfully');
+  //     if (response.success) {
+  //       console.log('✅ Label offer created successfully');
         
-        Alert.alert(
-          'Task Completed! 🎉',
-          `Great job! You've earned ${reward} tokens and +${iqGain} IQ points.`,
-          [{ text: 'Continue', onPress: () => router.back() }]
-        );
-      } else {
-        throw new Error(response.message || 'Failed to create label offer');
-      }
-    } catch (error: any) {
-      console.error('❌ Error creating label offer:', error);
-      Alert.alert(
-        'Submission Error',
-        error.message || 'Failed to submit task. Please try again.',
-        [
-          { text: 'Retry', onPress: () => setSubmitting(false) },
-          { text: 'Cancel', onPress: () => router.back() }
-        ]
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  //       Alert.alert(
+  //         'Task Completed! 🎉',
+  //         `Great job! You've earned ${reward} tokens and +${iqGain} IQ points.`,
+  //         [{ text: 'Continue', onPress: () => router.back() }]
+  //       );
+  //     } else {
+  //       throw new Error(response.message || 'Failed to create label offer');
+  //     }
+  //   } catch (error: any) {
+  //     console.error('❌ Error creating label offer:', error);
+  //     Alert.alert(
+  //       'Submission Error',
+  //       error.message || 'Failed to submit task. Please try again.',
+  //       [
+  //         { text: 'Retry', onPress: () => setSubmitting(false) },
+  //         { text: 'Cancel', onPress: () => router.back() }
+  //       ]
+  //     );
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
 
-  // Don't render until parameters are ready - UPDATED PARAMETER NAME
+  // Don't render until parameters are ready
   if (!parametersReady || !userInfo) {
     return (
       <LinearGradient colors={['#0f172a', '#1e293b', '#0f172a']} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Preparing task...</Text>
-            <Text style={styles.loadingSubtext}>
-              Task: {labelOfferId} | User: {userInfo?.firstName || 'Loading...'}
-            </Text>
+            <Text style={styles.loadingText}>Preparing your task...</Text>
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -486,7 +483,6 @@ const CreativeTaskScreen: React.FC = () => {
           
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle}>{taskTitle}</Text>
-            <Text style={styles.headerReward}>🪙 {reward} tokens • 🧠 +{iqGain} IQ</Text>
           </View>
           
           <View style={styles.headerRight}>
@@ -503,10 +499,7 @@ const CreativeTaskScreen: React.FC = () => {
           {loading && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color="#007AFF" />
-              <Text style={styles.loadingText}>Loading creative...</Text>
-              <Text style={styles.loadingSubtext}>
-                ✅ Parameters ready | Task: {taskTitle} | User: {userInfo?.firstName}
-              </Text>
+              <Text style={styles.loadingText}>Loading your task...</Text>
             </View>
           )}
           
@@ -536,27 +529,6 @@ const CreativeTaskScreen: React.FC = () => {
           <View style={styles.footer}>
             <ActivityIndicator size="small" color="#007AFF" />
             <Text style={styles.footerText}>Submitting your work...</Text>
-          </View>
-        )}
-        
-        {/* Manual completion button for testing */}
-        {!loading && !submitting && !taskCompleted && (
-          <View style={styles.footer}>
-            <TouchableOpacity 
-              style={styles.testButton}
-              onPress={() => handleTaskCompletion({ method: 'manual_test' })}
-            >
-              <Text style={styles.testButtonText}>Complete Task (Test)</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Debug info - UPDATED PARAMETER NAME */}
-        {!loading && (
-          <View style={styles.debugFooter}>
-            <Text style={styles.debugText}>
-              Debug: {labelOfferId} | {userInfo?.firstName} | {reward} tokens
-            </Text>
           </View>
         )}
       </SafeAreaView>
