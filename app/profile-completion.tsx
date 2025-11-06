@@ -102,13 +102,23 @@ const ProfileCompletionScreen: React.FC = () => {
     setReferralVerificationMessage('Verifying...');
 
     try {
-      // Call backend to verify referral code (you may need to create this endpoint)
-      // For now, we'll simulate the verification by trying to use the code
-      await referralAPI.useReferralCode(trimmedCode);
+      const result = await referralAPI.useReferralCode(trimmedCode);
       
       setReferralVerificationStatus('valid');
-      setReferralVerificationMessage('Valid referral code!');
+      const message = result.coinsAwarded 
+        ? `Valid! You and your referrer will each earn 100 points!`
+        : `Valid referral code!`;
+      setReferralVerificationMessage(message);
       setIsReferralVerified(true);
+      
+      if (result.coinsAwarded) {
+        Alert.alert(
+          'Referral Success! 🎉',
+          `You and your referrer each earned 100 points!`,
+          [{ text: 'Awesome!', style: 'default' }]
+        );
+      }
+      
     } catch (error: any) {
       console.error('Referral verification error:', error);
       
@@ -198,11 +208,8 @@ const ProfileCompletionScreen: React.FC = () => {
         setLoading(false);
         return;
       }
-
-      // Note: If referral is verified, we've already applied it during verification
-      // So we skip the referral code application here
       
-      // Format the data to match what the backend expects
+      // Format the data to match with backend
       const profileData = {
         occupation: occupation || '',
         dob: dobDate ? dobDate.toISOString().split('T')[0] : '',
@@ -212,13 +219,12 @@ const ProfileCompletionScreen: React.FC = () => {
       
       console.log('Sending profile data to /api/auth/submit-form:', profileData);
       
-      // Use the existing submit-form endpoint
+      // using submit-form endpoint
       const result = await authAPI.updateProfile(profileData);
       console.log('✅ Profile update result:', result);
-      
-      // Check if profile was marked as completed
+
       if (result.success && result.profileCompleted) {
-        // Mark profile as completed in auth context
+        // mark profile completed in auth context
         if (onProfileCompleted) {
           onProfileCompleted();
         }
@@ -377,28 +383,6 @@ const ProfileCompletionScreen: React.FC = () => {
                 />
               )}
 
-              {/* <Text style={[styles.label, { marginTop: 6 }]}>Interests</Text>
-              <View style={styles.chipsContainer}>
-                {interestOptions.map((tag) => {
-                  const selected = interests.includes(tag);
-                  return (
-                    <TouchableOpacity
-                      key={tag}
-                      onPress={() => toggleInterest(tag)}
-                      style={[
-                        styles.chip,
-                        selected ? styles.chipSelected : styles.chipUnselected
-                      ]}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={selected ? styles.chipTextSelected : styles.chipTextUnselected}>
-                        {tag}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View> */}
-
               <Text style={styles.label}>Referral Code (Optional)</Text>
               <View style={styles.referralContainer}>
                 <TextInput
@@ -533,7 +517,7 @@ const styles = StyleSheet.create({
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8, // supported on newer RN; if not supported, margins on chips handle spacing
+    gap: 8,
     marginBottom: 16,
   },
   chip: {
@@ -545,7 +529,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipSelected: {
-    backgroundColor: '#0ea5ff', // light blue when selected
+    backgroundColor: '#0ea5ff', 
     borderColor: '#0ea5ff',
   },
   chipUnselected: {

@@ -514,14 +514,14 @@ export const authAPI = {
     }
   },
 
-  // Update basic profile info (name, email, profile picture)
+  // Update basic profile info
   updateBasicProfile: async (profileData: {
     name?: string;
     email?: string;
     profilePicture?: string;
   }) => {
     try {
-      // Use the existing user-data endpoint that's available on the backend
+      // using user-data endpoint
       const response = await api.post('/auth/user-data', profileData);
       return response.data;
     } catch (error: any) {
@@ -575,6 +575,18 @@ export const authAPI = {
         }
       }
     }
+  },
+
+  // auth/forgot-password endpoint
+  forgotPassword: async (email: string) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+  
+  // auth/reset-password endpoint
+  resetPassword: async (token: string, password: string) => {
+    const response = await api.post('/auth/reset-password', { token, password });
+    return response.data;
   },
 };
 

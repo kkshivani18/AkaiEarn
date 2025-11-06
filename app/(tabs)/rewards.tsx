@@ -80,7 +80,7 @@ const RewardsScreen: React.FC = () => {
     }
   };
 
-  // Enhanced fetchCoupons to refresh after spin
+  // fetchCoupons to refresh after spin
   const fetchCoupons = async (showLoading = false) => {
     try {
       if (showLoading) setRefreshingCoupons(true);
@@ -101,69 +101,83 @@ const RewardsScreen: React.FC = () => {
   const loadSpinWheelCoupons = async () => {
     try {
       const response = await couponsAPI.getSpinWheelCoupons();
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.length > 0) {
         setAvailableSpinCoupons(response.data);
         
-        // Create wheel segments from backend coupons + some token rewards
-        const couponSegments = response.data.map((coupon: any, index: number) => ({
-          color: ['#76b7ecff', '#93C5FD', '#76b7ecff', '#93C5FD'][index % 4],
-          text: `${coupon.company} Coupon`,
-          reward: `${coupon.company} Coupon`,
-          type: 'coupon' as const,
-          couponData: {
-            _id: coupon._id,
-            company: coupon.company,
-            description: coupon.description,
-            couponCode: 'WINNER', 
-            expiryDate: coupon.expiryDate,
-            imageLink: coupon.imageLink,
-          },
-          coupon: { 
-            company: coupon.company, 
-            imageLink: coupon.imageLink 
-          }
-        }));
+        // 4 segments from available coupons
+        const availableCoupons = response.data;
+        const segmentColors = ['#76b7ecff', '#93C5FD', '#60A5FA', '#3B82F6'];
 
-        // Add some token segments to balance the wheel
-        const tokenSegments = [
-          {
-            color: '#FFD700',
-            text: '50 Tokens',
-            reward: '50 Tokens',
-            type: 'tokens' as const,
-            value: 50,
-            coupon: { company: 'Tokens', imageLink: 'https://placehold.co/40x40/FFD700/333333?text=💰' }
-          },
-          {
-            color: '#32CD32',
-            text: '100 Tokens',
-            reward: '100 Tokens',
-            type: 'tokens' as const,
-            value: 100,
-            coupon: { company: 'Tokens', imageLink: 'https://placehold.co/40x40/32CD32/FFFFFF?text=💰' }
-          }
-        ];
+        const couponSegments = Array.from({ length: 4 }, (_, index) => {
+          const couponIndex = index % availableCoupons.length;
+          const coupon = availableCoupons[couponIndex];
+          
+          return {
+            color: segmentColors[index],
+            text: `${coupon.company}`,
+            reward: `${coupon.company} Coupon`,
+            type: 'coupon' as const,
+            couponData: {
+              _id: coupon._id,
+              company: coupon.company,
+              description: coupon.description,
+              couponCode: 'WINNER',
+              expiryDate: coupon.expiryDate,
+              imageLink: coupon.imageLink,
+            },
+            coupon: {
+              company: coupon.company,
+              imageLink: coupon.imageLink
+            }
+          };
+        });
 
-        // Combine and shuffle segments
-        const allSegments = [...couponSegments, ...tokenSegments];
-        setWheelSegments(allSegments);
-        
-        console.log('✅ Spin wheel segments loaded:', allSegments.length);
+        setWheelSegments(couponSegments);
+        console.log('✅ Spin wheel segments loaded (4 segments):', couponSegments.length);
+        console.log('📋 Segments:', couponSegments.map(s => s.text));
+      } else {
+        console.warn('⚠️ No coupons available for spin wheel');
+        // Create fallback segments with sample data
+        createFallbackSegments();
       }
     } catch (error) {
       console.error('Failed to load spin wheel coupons:', error);
-      // Use fallback segments
-      setWheelSegments([
-        {
-          color: '#FF6B6B',
-          text: '50 Tokens',
-          reward: '50 Tokens',
-          type: 'tokens',
-          value: 50,
-          coupon: { company: 'Tokens', imageLink: 'https://placehold.co/40x40/FF6B6B/FFFFFF?text=💰' }
-        }
-      ]);
+      createFallbackSegments();
     }
+  };
+
+  // Helper function to create fallback segments
+  const createFallbackSegments = () => {
+    const fallbackCoupons = [
+      { company: 'Amazon', description: '20% off electronics' },
+      { company: 'Netflix', description: '15% off subscription' },
+      { company: 'Starbucks', description: '10% off beverages' },
+      { company: 'Nike', description: '25% off footwear' }
+    ];
+    
+    const segmentColors = ['#76b7ecff', '#93C5FD', '#76b7ecff', '#76b7ecff'];
+    
+    const fallbackSegments = fallbackCoupons.map((coupon, index) => ({
+      color: segmentColors[index],
+      text: coupon.company,
+      reward: `${coupon.company} Coupon`,
+      type: 'coupon' as const,
+      couponData: {
+        _id: `fallback-${index}`,
+        company: coupon.company,
+        description: coupon.description,
+        couponCode: 'SAMPLE20',
+        expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        imageLink: `https://placehold.co/40x40/${segmentColors[index].replace('#', '')}/FFFFFF?text=${coupon.company.charAt(0)}`
+      },
+      coupon: {
+        company: coupon.company,
+        imageLink: `https://placehold.co/40x40/${segmentColors[index].replace('#', '')}/FFFFFF?text=${coupon.company.charAt(0)}`
+      }
+    }));
+    
+    setWheelSegments(fallbackSegments);
+    console.log('✅ Fallback segments created');
   };
 
   const handleSpinWheel = () => {
@@ -181,14 +195,14 @@ const RewardsScreen: React.FC = () => {
     setShowSpinWheel(true);
   };
 
-  // Enhanced spin completion handler using backend endpoint
+  // Enhanced spin completion handler - remove token handling
   const handleSpinComplete = async (segment: Segment) => {
     console.log('🎉 Spin completed! Won:', segment);
     setHasSpun(true);
     
     try {
+      // Only handle coupon type since we removed tokens
       if (segment.type === 'coupon' && segment.couponData) {
-        // Use the backend spin wheel selection endpoint
         console.log('🎟️ Selecting coupon via backend:', segment.couponData._id);
         
         try {
@@ -214,9 +228,6 @@ const RewardsScreen: React.FC = () => {
                   setShowSpinWheel(false);
                   // 24-hour spin-wheel reset
                   setTimeout(() => setHasSpun(false), 24 * 60 * 60 * 1000);
-                  
-                  // For testing: Reset immediately
-                  // setTimeout(() => setHasSpun(false), 2000);
                 }
               }
             ]
@@ -237,22 +248,13 @@ const RewardsScreen: React.FC = () => {
             [{ text: 'OK', onPress: () => setShowSpinWheel(false) }]
           );
         }
-      } else if (segment.type === 'tokens') {
-        // Award tokens - you can implement token API call here
-        console.log('🪙 Awarding tokens:', segment.value);
-        
+      } else {
+        // This shouldn't happen since we only have coupons now
+        console.warn('⚠️ Unexpected segment type:', segment.type);
         Alert.alert(
-          'Congratulations! 🎉',
-          `You won ${segment.value} tokens!`,
-          [
-            {
-              text: 'Claim',
-              onPress: () => {
-                setShowSpinWheel(false);
-                setTimeout(() => setHasSpun(false), 24 * 60 * 60 * 1000);
-              }
-            }
-          ]
+          'Error',
+          'Something went wrong with your spin. Please try again.',
+          [{ text: 'OK', onPress: () => setShowSpinWheel(false) }]
         );
       }
     } catch (error) {
@@ -349,8 +351,6 @@ const RewardsScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to copy coupon code. Please try again.');
     }
   };
-
-  // Remove handleCouponPress function since we're not opening modals
 
   // Fetch details of referred users
   const fetchReferredUsersDetails = async () => {
@@ -483,9 +483,6 @@ const RewardsScreen: React.FC = () => {
             <View style={styles.sectionHeader}>
               <View style={styles.sectionIcon}>
                 <Ionicons name="disc-outline" size={28} color="#007AFF" />
-                {/* <View style={styles.iconStack}>
-                  <Ionicons name="flash-outline" size={19} color="#FBBF24" />
-                </View> */}
 
               </View>
               <View style={styles.sectionInfo}>
@@ -569,7 +566,7 @@ const RewardsScreen: React.FC = () => {
                 <View style={styles.sectionInfo}>
                   <Text style={styles.sectionTitle}>Referred Users</Text>
                   <Text style={styles.sectionSubtitle}>
-                    Earn 100 points for each of your first 5 referrals
+                    Earn 100 points for each of your first 5 referrals 
                   </Text>
                 </View>
               </View>

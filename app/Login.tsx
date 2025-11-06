@@ -2,8 +2,10 @@ import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -17,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import { authAPI } from '../services/api';
 
 interface SignInModalProps {
   visible: boolean;
@@ -36,6 +39,9 @@ export const Login: React.FC<SignInModalProps> = ({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
 
   const { onLogin, onGoogleLogin } = useAuth();
 
@@ -121,15 +127,65 @@ export const Login: React.FC<SignInModalProps> = ({
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    if (!forgotPasswordEmail.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+
+    try {
+      const data = await authAPI.forgotPassword(forgotPasswordEmail);
+
+      if (data.success) {
+        Alert.alert(
+          'Reset Link Sent',
+          'If an account with that email exists, a password reset link has been sent.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setShowForgotPassword(false);
+                setForgotPasswordEmail('');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', data.message || 'Failed to send reset email');
+      }
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      let errorMessage = 'Network error. Please try again.';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
   const styles = createStyles(isDark);
 
   if (!visible) return null;
 
   return (
-    <LinearGradient
-      colors={['#0f172a', '#1e293b', '#0f172a']}
-      style={styles.container}
-    >
+    <>
+      <LinearGradient
+        colors={['#0f172a', '#1e293b', '#0f172a']}
+        style={styles.container}
+      >
         <View style={styles.mainContent}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -173,7 +229,10 @@ export const Login: React.FC<SignInModalProps> = ({
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity 
+              style={styles.forgotPassword} 
+              onPress={() => setShowForgotPassword(true)}
+            >
               <Text style={styles.forgotPasswordText}>Forgot password?</Text>
             </TouchableOpacity>
 
@@ -222,7 +281,57 @@ export const Login: React.FC<SignInModalProps> = ({
             </View>
           </KeyboardAvoidingView>
         </View>
-    </LinearGradient>
+      </LinearGradient>
+
+      {/* Forgot Password Modal */}
+      <Modal
+        visible={showForgotPassword}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowForgotPassword(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.forgotPasswordModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Reset Password</Text>
+              <TouchableOpacity
+                onPress={() => setShowForgotPassword(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalDescription}>
+              Enter your email address and we'll send you a link to reset your password.
+            </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter your email"
+              placeholderTextColor="#999"
+              value={forgotPasswordEmail}
+              onChangeText={setForgotPasswordEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoFocus
+            />
+
+            <TouchableOpacity
+              style={[styles.modalButton, forgotPasswordLoading && styles.modalButtonDisabled]}
+              onPress={handleForgotPassword}
+              disabled={forgotPasswordLoading}
+            >
+              {forgotPasswordLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.modalButtonText}>Send Reset Link</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -368,6 +477,65 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   linkText: {
     color: isDark ? '#0a84ff' : '#007AFF',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  forgotPasswordModal: {
+    backgroundColor: isDark ? '#1f2937' : 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: isDark ? 'white' : '#1f2937',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: isDark ? '#9ca3af' : '#6b7280',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  modalInput: {
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#f9fafb',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#e5e7eb',
+    color: isDark ? 'white' : '#1f2937',
+  },
+  modalButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+  },
+  modalButtonDisabled: {
+    opacity: 0.6,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
