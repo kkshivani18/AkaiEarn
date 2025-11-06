@@ -1,5 +1,5 @@
 import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -42,8 +42,26 @@ export const Login: React.FC<SignInModalProps> = ({
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  
+  // Add reset password states
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
 
   const { onLogin, onGoogleLogin } = useAuth();
+  const params = useLocalSearchParams();
+
+  // Check for reset token on component mount
+  React.useEffect(() => {
+    const token = params.token as string;
+    if (token && visible) {
+      setResetToken(token);
+      setShowResetPassword(true);
+      setShowForgotPassword(false);
+    }
+  }, [params.token, visible]);
 
   // auth session for web
   // WebBrowser.maybeCompleteAuthSession();
@@ -145,8 +163,8 @@ export const Login: React.FC<SignInModalProps> = ({
 
       if (data.success) {
         Alert.alert(
-          'Reset Link Sent',
-          'If an account with that email exists, a password reset link has been sent.',
+          'Reset Link Sent! 📧',
+          'If an account with that email exists, a password reset link has been sent. Please check your email and click the link to reset your password.',
           [
             {
               text: 'OK',
@@ -173,6 +191,64 @@ export const Login: React.FC<SignInModalProps> = ({
       Alert.alert('Error', errorMessage);
     } finally {
       setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    setResetPasswordLoading(true);
+
+    try {
+      const data = await authAPI.resetPassword(resetToken, newPassword);
+
+      if (data.success) {
+        Alert.alert(
+          'Password Reset Successful! ✅',
+          'Your password has been reset successfully. You can now log in with your new password.',
+          [
+            {
+              text: 'Login Now',
+              onPress: () => {
+                setShowResetPassword(false);
+                setNewPassword('');
+                setConfirmPassword('');
+                setResetToken('');
+                // Clear the token from URL if present
+                router.replace('/Login');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', data.message || 'Failed to reset password');
+      }
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      let errorMessage = 'Failed to reset password. Please try again.';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setResetPasswordLoading(false);
     }
   };
 
@@ -285,7 +361,7 @@ export const Login: React.FC<SignInModalProps> = ({
 
       {/* Forgot Password Modal */}
       <Modal
-        visible={showForgotPassword}
+        visible={showForgotPassword && !showResetPassword}
         transparent={true}
         animationType="fade"
         onRequestClose={() => setShowForgotPassword(false)}
@@ -326,6 +402,68 @@ export const Login: React.FC<SignInModalProps> = ({
                 <ActivityIndicator size="small" color="white" />
               ) : (
                 <Text style={styles.modalButtonText}>Send Reset Link</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reset Password Modal */}
+      <Modal
+        visible={showResetPassword}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowResetPassword(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.forgotPasswordModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Set New Password</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowResetPassword(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  router.replace('/Login');
+                }}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalDescription}>
+              Enter your new password below. Make sure it's at least 6 characters long.
+            </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="New password"
+              placeholderTextColor="#999"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              autoFocus
+            />
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Confirm new password"
+              placeholderTextColor="#999"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+            />
+
+            <TouchableOpacity
+              style={[styles.modalButton, resetPasswordLoading && styles.modalButtonDisabled]}
+              onPress={handleResetPassword}
+              disabled={resetPasswordLoading}
+            >
+              {resetPasswordLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.modalButtonText}>Reset Password</Text>
               )}
             </TouchableOpacity>
           </View>
