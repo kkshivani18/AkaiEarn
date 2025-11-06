@@ -210,33 +210,47 @@ const ProfileCompletionScreen: React.FC = () => {
         location: location || { lat: 0, lng: 0 } 
       };
       
-      console.log('Sending profile data:', profileData);
+      console.log('Sending profile data to /api/auth/submit-form:', profileData);
       
+      // Use the existing submit-form endpoint
       const result = await authAPI.updateProfile(profileData);
       console.log('✅ Profile update result:', result);
       
-      // Mark profile as completed
-      if (onProfileCompleted) {
-        onProfileCompleted();
+      // Check if profile was marked as completed
+      if (result.success && result.profileCompleted) {
+        // Mark profile as completed in auth context
+        if (onProfileCompleted) {
+          onProfileCompleted();
+        }
+        
+        Alert.alert(
+          'Profile Completed! 🎉',
+          'Thank you for completing your profile! You can now access all features.',
+          [
+            {
+              text: 'Get Started',
+              onPress: () => router.replace('/(tabs)/offer')
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Profile Saved',
+          'Your profile has been saved, but some required information may be missing.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/(tabs)/offer')
+            }
+          ]
+        );
       }
-      
-      Alert.alert(
-        'Profile Submitted',
-        'Thank you for completing your profile!',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)/offer')
-          }
-        ]
-      );
       
     } catch (error: any) {
       console.error('❌ Profile completion error:', error);
       
       let errorMessage = 'Failed to update profile';
       if (error.response?.data?.errors) {
-        // Handle validation errors from backend
         const errors = error.response.data.errors;
         errorMessage = errors.map((err: any) => err.msg).join(', ');
       } else if (error.response?.data?.message) {
@@ -257,10 +271,6 @@ const ProfileCompletionScreen: React.FC = () => {
 
   const handleBackNavigation = async () => {
     try {
-      // Optional: Clear auth state
-      // if (onLogout) {
-      //   await onLogout();
-      // }
       // Navigate to Login
       router.replace('/Login');
     } catch (error) {

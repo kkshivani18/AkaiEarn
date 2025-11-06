@@ -101,12 +101,14 @@ export const Login: React.FC<SignInModalProps> = ({
       const result = await onLogin(email, password); 
       if (result?.success) {
         onClose();
-        // If backend returns user/profileCompleted info, route accordingly.
-        const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
-        if (!needsProfile) {
+        // Check if profile is completed
+        const profileCompleted = result?.user?.profileCompleted || result?.profileCompleted;
+        
+        if (!profileCompleted) {
+          // Profile not completed, redirect to profile completion
           router.replace('/profile-completion');
         } else {
-          // adjust target route as appropriate for your app
+          // Profile completed, redirect to main app
           router.replace('/(tabs)/offer');
         }
       } else {
