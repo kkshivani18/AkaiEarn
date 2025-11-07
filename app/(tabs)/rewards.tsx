@@ -22,6 +22,7 @@ import CouponModal from '../../components/CouponModal';
 import SpinWheel from '../../components/SpinWheel';
 import { Coupon } from '../../types/Offer';
 import * as Clipboard from 'expo-clipboard';
+import { router } from 'expo-router';
 
 interface Segment {
   color: string;
@@ -133,7 +134,7 @@ const RewardsScreen: React.FC = () => {
         });
 
         setWheelSegments(couponSegments);
-        console.log('✅ Spin wheel segments loaded (4 segments):', couponSegments.length);
+        console.log('✅ Spin wheel segments loaded:', couponSegments.length);
         console.log('📋 Segments:', couponSegments.map(s => s.text));
       } else {
         console.warn('⚠️ No coupons available for spin wheel');
@@ -465,6 +466,10 @@ const RewardsScreen: React.FC = () => {
     </Modal>
   );
 
+  const handleNavigateToLootBoxes = () => {
+    router.push('/lootboxes');
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0a101bff', '#060910ff', '#071014ff']} style={StyleSheet.absoluteFill} />
@@ -477,6 +482,44 @@ const RewardsScreen: React.FC = () => {
               <Ionicons name="gift-outline" size={24} color="#007AFF" />
             </View>
           </View>
+
+          {/* LootBox Section */}
+          <BlurView intensity={40} tint="dark" style={[styles.sectionCard, styles.lootboxCard]}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIcon}>
+                <Ionicons name="cube-outline" size={28} color="#007AFF" />
+              </View>
+              <View style={styles.sectionInfo}>
+                <Text style={styles.sectionTitle}>LootBoxes</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Open loot boxes containing rare rewards, bonus points and surprise items!
+                </Text>
+              </View>
+            </View>
+
+            {/* CTA */}
+            <TouchableOpacity
+              style={styles.lootboxCta}
+              onPress={handleNavigateToLootBoxes}
+              activeOpacity={0.9}
+            >
+              <LinearGradient
+                colors={['#0EA5E9', '#2563EB']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.lootboxCtaGradient}
+              >
+                <Ionicons name="cube" size={18} color="#ffffff" />
+                <Text style={styles.lootboxCtaText}>Open LootBoxes</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Meta row */}
+            {/* <View style={styles.cardMetaRow}>
+              <Ionicons name="star-outline" size={15} color="#A1A1AA" />
+              <Text style={styles.metaText}>Earn keys through tasks & achievements</Text>
+            </View> */}
+          </BlurView>
 
           {/* Spin the Wheel Daily Section */}
           <BlurView intensity={40} tint="dark" style={[styles.sectionCard, styles.wheelCard]}>
@@ -750,6 +793,11 @@ const styles = StyleSheet.create({
   wheelCard: {
     paddingTop: 16,
     paddingBottom: 16,
+  },
+  lootboxCard: {
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderColor: 'rgba(255, 255, 255, 0.1)', 
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -1167,6 +1215,27 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   metaText: { color: '#A1A1AA', fontSize: 13 },
+
+  // LootBox  
+  lootboxCta: {
+    borderRadius: 28,
+    overflow: 'hidden',
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  lootboxCtaGradient: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  lootboxCtaText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
 });
 
 export default RewardsScreen;
