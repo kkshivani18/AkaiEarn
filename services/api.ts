@@ -697,4 +697,49 @@ export const logsAPI = {
   },
 };
 
+export const lootBoxAPI = {
+  // Get all lootboxes or by crypto type
+  getLootBoxes: async (crypto?: string, limit: number = 20) => {
+    let url = `/lootboxes?limit=${limit}`;
+    if (crypto) {
+      url += `&crypto=${crypto}`;
+    }
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get available cryptocurrencies
+  getAvailableCryptos: async () => {
+    const response = await api.get('/lootboxes/cryptocurrencies');
+    return response.data;
+  },
+
+  // Open a lootbox
+  openLootBox: async (lootBoxId: string, pointsToSpend: number) => {
+    const response = await api.post('/lootboxes/open', {
+      lootBoxId,
+      pointsToSpend
+    });
+    return response.data;
+  },
+
+  // lootbox statistics
+  getStats: async () => {
+    const response = await api.get('/lootboxes/stats');
+    return response.data;
+  },
+
+  // recent transactions (public)
+  getRecentTransactions: async (limit: number = 10) => {
+    const response = await api.get(`/lootboxes/transactions/recent?limit=${limit}`);
+    return response.data;
+  },
+
+  // user's transactions (protected)
+  getUserTransactions: async (limit: number = 20) => {
+    const response = await api.get(`/lootboxes/transactions/user?limit=${limit}`);
+    return response.data;
+  },
+};
+
 export default api;

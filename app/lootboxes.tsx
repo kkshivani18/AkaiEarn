@@ -9,6 +9,7 @@ import {
   FlatList,
   Dimensions,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,206 +17,10 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI, lootBoxAPI } from '../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LOOTBOX_CARD_WIDTH = SCREEN_WIDTH * 0.7;
-
-// Mock transaction data
-const mockTransactions = [
-  {
-    id: 1,
-    user: 'Ansome25',
-    type: 'COMMON',
-    reward: '$0.08',
-    timeAgo: 'a minute ago',
-    avatar: 'A'
-  },
-  {
-    id: 2,
-    user: 'Ethylene',
-    type: 'RARE',
-    reward: '$0.10',
-    timeAgo: '2 minutes ago',
-    avatar: 'E'
-  },
-  {
-    id: 3,
-    user: 'Ethylene',
-    type: 'RARE',
-    reward: '$0.60',
-    timeAgo: '2 minutes ago',
-    avatar: 'E'
-  },
-  {
-    id: 4,
-    user: 'BAROABBA454',
-    type: 'COMMON',
-    reward: '$0.02',
-    timeAgo: '8 minutes ago',
-    avatar: 'B'
-  },
-  {
-    id: 5,
-    user: 'SAHIKKHAN',
-    type: 'COMMON',
-    reward: '$0.05',
-    timeAgo: '11 minutes ago',
-    avatar: 'S'
-  }
-];
-
-// Mock cryptocurrency data
-const cryptocurrencies = [
-  { id: 'all', name: 'All Coins', symbol: '🪙', color: '#FFD700' },
-  { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', color: '#627EEA' },
-  { id: 'bnb', name: 'BNB', symbol: 'BNB', color: '#F3BA2F' },
-  { id: 'solana', name: 'Solana', symbol: 'SOL', color: '#9945FF' },
-  { id: 'bitcoin', name: 'Bitcoin', symbol: 'BTC', color: '#F7931A' },
-  { id: 'cardano', name: 'Cardano', symbol: 'ADA', color: '#0033AD' },
-];
-
-// Enhanced lootbox data with crypto categories
-const getAllLootBoxes = () => [
-  // Ethereum boxes
-  {
-    id: 1,
-    name: 'ETH Bronze',
-    description: 'Common Ethereum rewards',
-    cost: 100,
-    rarity: 'common',
-    color: '#627EEA',
-    crypto: 'ethereum',
-    rewards: ['0.01-0.05 ETH', 'Gas Fee Coupons', 'NFT Whitelist'],
-    estimatedValue: '$15-50',
-  },
-  {
-    id: 2,
-    name: 'ETH Silver',
-    description: 'Premium Ethereum rewards',
-    cost: 250,
-    rarity: 'rare',
-    color: '#627EEA',
-    crypto: 'ethereum',
-    rewards: ['0.05-0.15 ETH', 'DeFi Tokens', 'Exclusive NFTs'],
-    estimatedValue: '$50-150',
-  },
-  {
-    id: 3,
-    name: 'ETH Gold',
-    description: 'Legendary Ethereum rewards',
-    cost: 500,
-    rarity: 'legendary',
-    color: '#627EEA',
-    crypto: 'ethereum',
-    rewards: ['0.1-0.5 ETH', 'Rare NFTs', 'Staking Rewards'],
-    estimatedValue: '$150-500',
-  },
-  
-  // BNB boxes
-  {
-    id: 4,
-    name: 'BNB Bronze',
-    description: 'Common BNB rewards',
-    cost: 100,
-    rarity: 'common',
-    color: '#F3BA2F',
-    crypto: 'bnb',
-    rewards: ['5-25 BNB', 'BSC Tokens', 'Pancake LP'],
-    estimatedValue: '$15-50',
-  },
-  {
-    id: 5,
-    name: 'BNB Silver',
-    description: 'Premium BNB rewards',
-    cost: 250,
-    rarity: 'rare',
-    color: '#F3BA2F',
-    crypto: 'bnb',
-    rewards: ['25-75 BNB', 'DeFi Yields', 'Launchpad Access'],
-    estimatedValue: '$50-150',
-  },
-  {
-    id: 6,
-    name: 'BNB Gold',
-    description: 'Legendary BNB rewards',
-    cost: 500,
-    rarity: 'legendary',
-    color: '#F3BA2F',
-    crypto: 'bnb',
-    rewards: ['50-200 BNB', 'VIP Staking', 'Exclusive Tokens'],
-    estimatedValue: '$150-500',
-  },
-
-  // Solana boxes
-  {
-    id: 7,
-    name: 'SOL Bronze',
-    description: 'Common Solana rewards',
-    cost: 100,
-    rarity: 'common',
-    color: '#9945FF',
-    crypto: 'solana',
-    rewards: ['2-10 SOL', 'SPL Tokens', 'Solana NFTs'],
-    estimatedValue: '$15-50',
-  },
-  {
-    id: 8,
-    name: 'SOL Silver',
-    description: 'Premium Solana rewards',
-    cost: 250,
-    rarity: 'rare',
-    color: '#9945FF',
-    crypto: 'solana',
-    rewards: ['10-30 SOL', 'DeFi Rewards', 'Validator Stakes'],
-    estimatedValue: '$50-150',
-  },
-  {
-    id: 9,
-    name: 'SOL Gold',
-    description: 'Legendary Solana rewards',
-    cost: 500,
-    rarity: 'legendary',
-    color: '#9945FF',
-    crypto: 'solana',
-    rewards: ['25-100 SOL', 'Rare Collections', 'Ecosystem Tokens'],
-    estimatedValue: '$150-500',
-  },
-
-  // Bitcoin boxes  
-  {
-    id: 10,
-    name: 'BTC Bronze',
-    description: 'Common Bitcoin rewards',
-    cost: 100,
-    rarity: 'common',
-    color: '#F7931A',
-    crypto: 'bitcoin',
-    rewards: ['0.001-0.005 BTC', 'Lightning Network', 'Ordinals'],
-    estimatedValue: '$15-50',
-  },
-  {
-    id: 11,
-    name: 'BTC Silver', 
-    description: 'Premium Bitcoin rewards',
-    cost: 250,
-    rarity: 'rare',
-    color: '#F7931A',
-    crypto: 'bitcoin',
-    rewards: ['0.005-0.015 BTC', 'Hardware Wallet', 'Mining Pool'],
-    estimatedValue: '$50-150',
-  },
-  {
-    id: 12,
-    name: 'BTC Gold',
-    description: 'Legendary Bitcoin rewards',
-    cost: 500,
-    rarity: 'legendary', 
-    color: '#F7931A',
-    crypto: 'bitcoin',
-    rewards: ['0.01-0.05 BTC', 'Cold Storage', 'Rare Inscriptions'],
-    estimatedValue: '$150-500',
-  },
-];
 
 const LootBoxesScreen: React.FC = () => {
   const { authState } = useAuth();
@@ -223,49 +28,225 @@ const LootBoxesScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'CO' | 'RT' | 'YT'>('CO');
   const [selectedCrypto, setSelectedCrypto] = useState('all');
-  const [allLootBoxes] = useState(getAllLootBoxes());
   const [showCryptoDropdown, setShowCryptoDropdown] = useState(false);
+  const [openingLootBox, setOpeningLootBox] = useState<string | null>(null);
+  const [userPoints, setUserPoints] = useState<number>(0);
+  
+  // Updated state for real data
+  const [lootBoxes, setLootBoxes] = useState<any[]>([]);
+  const [availableCryptos, setAvailableCryptos] = useState<any[]>([]);
+  const [loadingLootBoxes, setLoadingLootBoxes] = useState(false);
+  
+  // Add real transaction states
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [userTransactions, setUserTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-  // Mock loot box data - replace with actual API calls later
-  const [lootBoxes] = useState([
-    {
-      id: 1,
-      name: 'Bronze Box',
-      description: 'Common rewards with surprise bonuses',
-      cost: 100,
-      rarity: 'common',
-      color: '#CD7F32',
-      rewards: ['10-50 Coins', 'Basic Coupons', 'Small IQ Boost'],
-    },
-    {
-      id: 2,
-      name: 'Silver Box',
-      description: 'Premium rewards and exclusive items',
-      cost: 250,
-      rarity: 'rare',
-      color: '#C0C0C0',
-      rewards: ['50-150 Coins', 'Premium Coupons', 'Medium IQ Boost'],
-    },
-    {
-      id: 3,
-      name: 'Gold Box',
-      description: 'Legendary rewards and massive bonuses',
-      cost: 500,
-      rarity: 'legendary',
-      color: '#FFD700',
-      rewards: ['100-500 Coins', 'Exclusive Coupons', 'Large IQ Boost'],
-    },
-  ]);
+  // Fetch available cryptocurrencies
+  const fetchAvailableCryptos = async () => {
+    try {
+      const response = await lootBoxAPI.getAvailableCryptos();
+      if (response.success) {
+        // Add "All Coins" option at the beginning
+        const allOption = { id: 'all', name: 'All Coins', symbol: '🪙', color: '#FFD700' };
+        setAvailableCryptos([allOption, ...response.data]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch cryptocurrencies:', error);
+      // Fallback to static data
+      setAvailableCryptos([
+        { id: 'all', name: 'All Coins', symbol: '🪙', color: '#FFD700' },
+        { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', color: '#627EEA' },
+        { id: 'bnb', name: 'BNB', symbol: 'BNB', color: '#F3BA2F' },
+        { id: 'solana', name: 'Solana', symbol: 'SOL', color: '#9945FF' },
+        { id: 'bitcoin', name: 'Bitcoin', symbol: 'BTC', color: '#F7931A' },
+      ]);
+    }
+  };
 
+  // Fetch lootboxes by selected crypto
+  const fetchLootBoxes = async (crypto: string = 'all') => {
+    setLoadingLootBoxes(true);
+    try {
+      console.log('🔄 Fetching lootboxes for crypto:', crypto);
+      
+      // 'all' case, otherwise pass the crypto value
+      const cryptoParam = crypto === 'all' ? undefined : crypto;
+      
+      const response = await lootBoxAPI.getLootBoxes(
+        cryptoParam,
+        20 // limit
+      );
+
+      console.log('📦 API Response:', response);
+
+      if (response.success) {
+        console.log('✅ Fetched lootboxes:', response.data.length);
+        setLootBoxes(response.data);
+      } else {
+        console.error('❌ Failed to fetch lootboxes:', response);
+        setLootBoxes([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching lootboxes:', error);
+      setLootBoxes([]);
+    } finally {
+      setLoadingLootBoxes(false);
+    }
+  };
+
+  // Fetch user points
+  const fetchUserPoints = async () => {
+    try {
+      const response = await authAPI.getUser();
+      const userData = response.user || response.data || response;
+      setUserPoints(userData.coins || 0);
+    } catch (error) {
+      console.error('Failed to fetch user points:', error);
+    }
+  };
+
+  // Fetch recent transactions (public)
+  const fetchRecentTransactions = async () => {
+    try {
+      console.log('🔄 Fetching recent transactions...');
+      const response = await lootBoxAPI.getRecentTransactions(15);
+      console.log('📦 Recent transactions response:', response);
+      
+      if (response.success) {
+        console.log('✅ Fetched recent transactions:', response.data.length);
+        setRecentTransactions(response.data);
+      } else {
+        console.error('❌ Failed to fetch recent transactions:', response);
+        setRecentTransactions([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching recent transactions:', error);
+      setRecentTransactions([]);
+    }
+  };
+
+  // Fetch user transactions (protected)
+  const fetchUserTransactions = async () => {
+    setLoadingTransactions(true);
+    try {
+      console.log('🔄 Fetching user transactions...');
+      const response = await lootBoxAPI.getUserTransactions(20);
+      console.log('📦 User transactions response:', response);
+      
+      if (response.success) {
+        console.log('✅ Fetched user transactions:', response.data.length);
+        setUserTransactions(response.data);
+      } else {
+        console.error('❌ Failed to fetch user transactions:', response);
+        setUserTransactions([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching user transactions:', error);
+      setUserTransactions([]);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  // Initialize data
   useEffect(() => {
-    setLoading(false);
+    const initializeData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchAvailableCryptos(),
+        fetchLootBoxes(selectedCrypto),
+        fetchUserPoints(),
+        fetchRecentTransactions()
+      ]);
+      setLoading(false);
+    };
+
+    initializeData();
   }, []);
 
-  const handleOpenLootBox = (lootBox: any) => {
-    // TODO: Implement loot box opening logic
-    console.log('Opening loot box:', lootBox);
-    // For now, just show an alert
-    alert(`Opening ${lootBox.name}! This feature is coming soon.`);
+  // Fetch user transactions when YT tab is selected
+  useEffect(() => {
+    if (activeTab === 'YT' && userTransactions.length === 0) {
+      fetchUserTransactions();
+    }
+  }, [activeTab]);
+
+  // Fetch lootboxes when crypto selection changes
+  useEffect(() => {
+    if (availableCryptos.length > 0) {
+      fetchLootBoxes(selectedCrypto);
+    }
+  }, [selectedCrypto]);
+
+  // Enhanced lootbox opening handler
+  const handleOpenLootBox = async (lootBox: any) => {
+    // Show points selection modal
+    Alert.alert(
+      `Open ${lootBox.name}`,
+      `Exchange Rate: ${lootBox.exchangeRate?.pointsRequired || 100} points = ${lootBox.exchangeRate?.cryptoAmount || 0.001} ${lootBox.exchangeRate?.cryptoSymbol || 'CRYPTO'}\n\nYour Points: ${userPoints}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Open with 100 pts', 
+          onPress: () => openLootBox(lootBox, 100)
+        },
+        { 
+          text: 'Open with 250 pts', 
+          onPress: () => openLootBox(lootBox, 250)
+        },
+        { 
+          text: 'Open with 500 pts', 
+          onPress: () => openLootBox(lootBox, 500)
+        }
+      ]
+    );
+  };
+
+  const openLootBox = async (lootBox: any, pointsToSpend: number) => {
+    if (pointsToSpend > userPoints) {
+      Alert.alert('Insufficient Points', `You need ${pointsToSpend} points but only have ${userPoints}.`);
+      return;
+    }
+
+    setOpeningLootBox(lootBox._id);
+    
+    try {
+      console.log('🎲 Opening lootbox:', { lootBoxId: lootBox._id, pointsToSpend });
+      
+      const response = await lootBoxAPI.openLootBox(lootBox._id, pointsToSpend);
+      
+      if (response.success) {
+        const reward = response.reward;
+        
+        // Update user points
+        setUserPoints(response.userStats.remainingPoints);
+        
+        // Refresh transactions to show the new one
+        await fetchRecentTransactions();
+        if (activeTab === 'YT') {
+          await fetchUserTransactions();
+        }
+        
+        // Show success message
+        Alert.alert(
+          'Lootbox Opened! 🎉',
+          `Congratulations! You received:\n\n💰 ${reward.cryptoAmount} ${reward.cryptoSymbol}\n📊 Worth ~$${lootBox.estimatedValue}\n\n${reward.isBonus ? `🎯 Bonus: ${reward.bonusMultiplier}!` : ''}\n\nRemaining Points: ${response.userStats.remainingPoints}`,
+          [{ text: 'Awesome!', style: 'default' }]
+        );
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to open lootbox:', error);
+      
+      let errorMessage = 'Failed to open lootbox. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setOpeningLootBox(null);
+    }
   };
 
   const handleGoBack = () => {
@@ -274,120 +255,145 @@ const LootBoxesScreen: React.FC = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'COMMON':
-        return '#9CA3AF';
-      case 'RARE':
-        return '#8B5CF6';
-      case 'LEGENDARY':
-        return '#F59E0B';
+      case 'ethereum':
+        return '#627EEA';
+      case 'bnb':
+        return '#F3BA2F';
+      case 'solana':
+        return '#9945FF';
+      case 'bitcoin':
+        return '#F7931A';
       default:
         return '#9CA3AF';
     }
   };
 
-  // Filter lootboxes by selected cryptocurrency
-  const getFilteredLootBoxes = () => {
-    if (selectedCrypto === 'all') {
-      return allLootBoxes;
+  const getTypeSymbol = (type: string) => {
+    switch (type) {
+      case 'ethereum':
+        return 'ETH';
+      case 'bnb':
+        return 'BNB';
+      case 'solana':
+        return 'SOL';
+      case 'bitcoin':
+        return 'BTC';
+      default:
+        return type.toUpperCase();
     }
-    return allLootBoxes.filter(box => box.crypto === selectedCrypto);
   };
 
-  // Cryptocurrency Dropdown Component
+  // Get current crypto info from real data
   const getCurrentCrypto = () => {
-    return cryptocurrencies.find(crypto => crypto.id === selectedCrypto) || cryptocurrencies[0];
+    return availableCryptos.find(crypto => crypto.id === selectedCrypto) || availableCryptos[0];
   };
-  
+
+  // Filter lootboxes
+  const getFilteredLootBoxes = () => {
+    return lootBoxes;
+  };
+
+  // cryptocurrency dropdown component
   const CryptocurrencyDropdown = () => {
-      return (
-        <View style={styles.dropdownContainer}>
-          <Text style={styles.sectionTitle}>Choose Coins</Text>
-          
-          {/* Dropdown Button */}
-          <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setShowCryptoDropdown(true)}
-            activeOpacity={0.8}
+    return (
+      <View style={styles.dropdownContainer}>
+        <Text style={styles.sectionTitle}>Choose Coins</Text>
+        
+        {/* Dropdown Button */}
+        <TouchableOpacity
+          style={styles.dropdownButton}
+          onPress={() => setShowCryptoDropdown(true)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.dropdownButtonContent}>
+            <View style={[styles.cryptoIconContainer, { backgroundColor: getCurrentCrypto()?.color + '20' }]}>
+              <Text style={[styles.cryptoSymbol, { color: getCurrentCrypto()?.color }]}>
+                {getCurrentCrypto()?.symbol}
+              </Text>
+            </View>
+            <Text style={styles.dropdownButtonText}>{getCurrentCrypto()?.name}</Text>
+            <Ionicons 
+              name="chevron-down" 
+              size={20} 
+              color="#A1A1AA" 
+              style={[styles.dropdownIcon, showCryptoDropdown && styles.dropdownIconOpen]} 
+            />
+          </View>
+        </TouchableOpacity>
+
+        {/* Dropdown Modal */}
+        <Modal
+          visible={showCryptoDropdown}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowCryptoDropdown(false)}
+        >
+          <TouchableOpacity 
+            style={styles.dropdownOverlay}
+            activeOpacity={1}
+            onPress={() => setShowCryptoDropdown(false)}
           >
-            <View style={styles.dropdownButtonContent}>
-              <View style={[styles.cryptoIconContainer, { backgroundColor: getCurrentCrypto().color + '20' }]}>
-                <Text style={[styles.cryptoSymbol, { color: getCurrentCrypto().color }]}>
-                  {getCurrentCrypto().symbol}
-                </Text>
+            <View style={styles.dropdownModal}>
+              <View style={styles.dropdownHeader}>
+                <Text style={styles.dropdownTitle}>Select Coins</Text>
+                <TouchableOpacity 
+                  onPress={() => setShowCryptoDropdown(false)}
+                  style={styles.dropdownCloseButton}
+                >
+                  <Ionicons name="close" size={20} color="#A1A1AA" />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.dropdownButtonText}>{getCurrentCrypto().name}</Text>
-              <Ionicons 
-                name="chevron-down" 
-                size={20} 
-                color="#A1A1AA" 
-                style={[styles.dropdownIcon, showCryptoDropdown && styles.dropdownIconOpen]} 
-              />
+              
+              <ScrollView style={styles.dropdownList}>
+                {availableCryptos.map((crypto) => (
+                  <TouchableOpacity
+                    key={crypto.id}
+                    style={[
+                      styles.dropdownItem,
+                      selectedCrypto === crypto.id && styles.dropdownItemSelected
+                    ]}
+                    onPress={() => {
+                      setSelectedCrypto(crypto.id);
+                      setShowCryptoDropdown(false);
+                    }}
+                  >
+                    <View style={[styles.cryptoIconContainer, { backgroundColor: crypto.color + '20' }]}>
+                      <Text style={[styles.cryptoSymbol, { color: crypto.color }]}>
+                        {crypto.symbol}
+                      </Text>
+                    </View>
+                    <Text style={[
+                      styles.dropdownItemText,
+                      selectedCrypto === crypto.id && styles.dropdownItemTextSelected
+                    ]}>
+                      {crypto.name}
+                    </Text>
+                    {selectedCrypto === crypto.id && (
+                      <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           </TouchableOpacity>
-  
-          {/* Dropdown Modal */}
-          <Modal
-            visible={showCryptoDropdown}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setShowCryptoDropdown(false)}
-          >
-            <TouchableOpacity 
-              style={styles.dropdownOverlay}
-              activeOpacity={1}
-              onPress={() => setShowCryptoDropdown(false)}
-            >
-              <View style={styles.dropdownModal}>
-                <View style={styles.dropdownHeader}>
-                  <Text style={styles.dropdownTitle}>Select Coins</Text>
-                  <TouchableOpacity 
-                    onPress={() => setShowCryptoDropdown(false)}
-                    style={styles.dropdownCloseButton}
-                  >
-                    <Ionicons name="close" size={20} color="#A1A1AA" />
-                  </TouchableOpacity>
-                </View>
-                
-                <ScrollView style={styles.dropdownList}>
-                  {cryptocurrencies.map((crypto) => (
-                    <TouchableOpacity
-                      key={crypto.id}
-                      style={[
-                        styles.dropdownItem,
-                        selectedCrypto === crypto.id && styles.dropdownItemSelected
-                      ]}
-                      onPress={() => {
-                        setSelectedCrypto(crypto.id);
-                        setShowCryptoDropdown(false);
-                      }}
-                    >
-                      <View style={[styles.cryptoIconContainer, { backgroundColor: crypto.color + '20' }]}>
-                        <Text style={[styles.cryptoSymbol, { color: crypto.color }]}>
-                          {crypto.symbol}
-                        </Text>
-                      </View>
-                      <Text style={[
-                        styles.dropdownItemText,
-                        selectedCrypto === crypto.id && styles.dropdownItemTextSelected
-                      ]}>
-                        {crypto.name}
-                      </Text>
-                      {selectedCrypto === crypto.id && (
-                        <Ionicons name="checkmark" size={20} color="#007AFF" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            </TouchableOpacity>
-          </Modal>
-        </View>
-      );
-    };
+        </Modal>
+      </View>
+    );
+  };
 
-  // Tab content renderers
+  // combined content renderer
   const renderCombinedContent = () => (
     <View style={styles.tabContent}>
+      {/* User Points Display */}
+      <View style={styles.userPointsCard}>
+        <View style={styles.pointsHeader}>
+          <Text style={styles.pointsTitle}>Points: {userPoints.toLocaleString()}</Text>
+          <TouchableOpacity onPress={fetchUserPoints}>
+            <Ionicons name="refresh" size={20} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Cryptocurrency Dropdown */}
       <CryptocurrencyDropdown />
 
@@ -395,84 +401,122 @@ const LootBoxesScreen: React.FC = () => {
       <View style={styles.lootBoxSection}>
         <View style={styles.lootBoxHeader}>
           <Text style={styles.sectionTitle}>
-            {getCurrentCrypto().name} LootBoxes
+            {getCurrentCrypto()?.name} LootBoxes 
           </Text>
           <View style={styles.cryptoIndicator}>
-            <Text style={[styles.cryptoSymbol, { color: getCurrentCrypto().color }]}>
-              {getCurrentCrypto().symbol}
-            </Text>
+            <Text style={[styles.cryptoSymbol, { color: getCurrentCrypto()?.color }]}> {getCurrentCrypto()?.symbol}</Text>
           </View>
         </View>
-        
-        <FlatList
-          data={getFilteredLootBoxes()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={styles.lootBoxScrollContainer}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={[styles.horizontalLootBoxCard, { borderColor: item.color + '40' }]}
-              onPress={() => handleOpenLootBox(item)}
-              activeOpacity={0.8}
-            >
-              {/* Header */}
-              <View style={[styles.lootBoxCardHeader, { backgroundColor: item.color + '15' }]}>
-                <View style={styles.lootBoxCardIcon}>
-                  <Ionicons name="cube" size={24} color={item.color} />
-                </View>
-                <View style={[styles.rarityBadgeHorizontal, { backgroundColor: item.color + '25' }]}>
-                  <Text style={[styles.rarityTextHorizontal, { color: item.color }]}>
-                    {item.rarity.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
 
-              {/* Content */}
-              <View style={styles.lootBoxCardContent}>
-                <Text style={styles.lootBoxCardName}>{item.name}</Text>
-                <Text style={styles.lootBoxCardDescription}>{item.description}</Text>
-                <Text style={styles.estimatedValue}>{item.estimatedValue}</Text>
-                
-                {/* Rewards Preview */}
-                <View style={styles.rewardsPreview}>
-                  {item.rewards.slice(0, 2).map((reward, index) => (
-                    <View key={index} style={styles.rewardPreviewItem}>
-                      <Ionicons name="gift-outline" size={12} color="#A1A1AA" />
-                      <Text style={styles.rewardPreviewText}>{reward}</Text>
-                    </View>
-                  ))}
-                  {item.rewards.length > 2 && (
-                    <Text style={styles.moreRewards}>+{item.rewards.length - 2} more</Text>
-                  )}
+        {loadingLootBoxes ? (
+          <View style={styles.loadingLootBoxes}>
+            <ActivityIndicator size="small" color="#007AFF" />
+            <Text style={styles.loadingText}>Loading lootboxes...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={getFilteredLootBoxes()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => String(item._id)}
+            contentContainerStyle={styles.lootBoxScrollContainer}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={[
+                  styles.horizontalLootBoxCard, 
+                  { borderColor: item.color + '40' },
+                  openingLootBox === item._id && styles.lootBoxOpening
+                ]}
+                onPress={() => handleOpenLootBox(item)}
+                activeOpacity={0.8}
+                disabled={openingLootBox === item._id}
+              >
+                {/* Header */}
+                <View style={[styles.lootBoxCardHeader, { backgroundColor: item.color + '15' }]}>
+                  <View style={styles.lootBoxCardIcon}>
+                    <Ionicons name="cube" size={24} color={item.color} />
+                  </View>
+                  <View style={styles.cryptoBadge}>
+                    <Text style={[styles.cryptoBadgeText, { color: item.crypto?.toUpperCase() === 'ETH' ? '#627EEA' : item.color }]}>
+                      {item.crypto?.toUpperCase()}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              {/* Footer */}
-              <View style={styles.lootBoxCardFooter}>
-                <View style={styles.keyRequirement}>
-                  <Ionicons name="key" size={14} color={item.color} />
-                  <Text style={[styles.keyRequirementText, { color: item.color }]}>
-                    {item.cost} keys
-                  </Text>
+                {/* Content */}
+                <View style={styles.lootBoxCardContent}>
+                  <Text style={styles.lootBoxCardName}>{item.name}</Text>
+                  {/* <Text style={styles.lootBoxCardDescription}>{item.description}</Text> */}
+                  <Text style={styles.estimatedValue}>${item.estimatedValue}</Text>
+                  
+                  {/* Rewards Preview */}
+                  {/* <View style={styles.rewardsPreview}>
+                    {item.rewards.slice(0, 2).map((reward: string, index: number) => (
+                      <View key={index} style={styles.rewardPreviewItem}>
+                        <Ionicons name="gift-outline" size={12} color="#A1A1AA" />
+                        <Text style={styles.rewardPreviewText}>{reward}</Text>
+                      </View>
+                    ))}
+                    {item.rewards.length > 2 && (
+                      <Text style={styles.moreRewards}>+{item.rewards.length - 2} more</Text>
+                    )}
+                  </View> */}
                 </View>
+
+                {/* Footer with enhanced exchange rate display */}
+                <View style={styles.lootBoxCardFooter}>
+                  <View style={styles.exchangeRateInfo}>
+                    <Text style={styles.exchangeRateText}>
+                      {item.exchangeRate?.pointsRequired || 100} points
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={[
+                      styles.openButtonSmall, 
+                      { backgroundColor: item.color },
+                      openingLootBox === item._id && styles.openButtonDisabled
+                    ]}
+                    onPress={() => handleOpenLootBox(item)}
+                    disabled={openingLootBox === item._id}
+                  >
+                    {openingLootBox === item._id ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Text style={styles.openButtonSmallText}>Open</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyLootBoxes}>
+                <Ionicons name="cube-outline" size={48} color="#666" />
+                <Text style={styles.emptyLootBoxesText}>
+                  No lootboxes available for {getCurrentCrypto()?.name}
+                </Text>
+                <Text style={styles.emptyLootBoxesSubtext}>
+                  {selectedCrypto === 'all' 
+                    ? 'Try running the seed script or check if lootboxes are marked as active'
+                    : 'Try selecting a different cryptocurrency'
+                  }
+                </Text>
                 <TouchableOpacity 
-                  style={[styles.openButtonSmall, { backgroundColor: item.color }]}
-                  onPress={() => handleOpenLootBox(item)}
+                  style={styles.retryButton}
+                  onPress={() => fetchLootBoxes(selectedCrypto)}
                 >
-                  <Text style={styles.openButtonSmallText}>Open</Text>
+                  <Text style={styles.retryButtonText}>Retry</Text>
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          )}
-        />
+            )}
+          />
+        )}
       </View>
 
-      {/* Recent Activity Preview */}
+      {/* Recent Activity */}
       <View style={styles.recentActivityPreview}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {mockTransactions.slice(0, 3).map((transaction) => (
-          <View key={transaction.id} style={styles.transactionItem}>
+        {recentTransactions.slice(0, 3).map((transaction, index) => (
+          <View key={transaction._id || index} style={styles.transactionItem}>
             <View style={styles.transactionLeft}>
               <View style={styles.userAvatar}>
                 <Text style={styles.avatarText}>{transaction.avatar}</Text>
@@ -484,7 +528,7 @@ const LootBoxesScreen: React.FC = () => {
             </View>
             <View style={styles.transactionRight}>
               <Text style={[styles.transactionType, { color: getTypeColor(transaction.type) }]}>
-                {transaction.type}
+                {getTypeSymbol(transaction.type)}
               </Text>
               <Text style={styles.transactionReward}>{transaction.reward}</Text>
             </View>
@@ -499,8 +543,8 @@ const LootBoxesScreen: React.FC = () => {
       <Text style={styles.sectionTitle}>Recent Transactions</Text>
       <Text style={styles.sectionSubtitle}>Latest lootbox openings from all users</Text>
       
-      {mockTransactions.map((transaction) => (
-        <BlurView key={transaction.id} intensity={40} tint="dark" style={styles.transactionCard}>
+      {recentTransactions.map((transaction, index) => (
+        <BlurView key={transaction._id || index} intensity={40} tint="dark" style={styles.transactionCard}>
           <View style={styles.transactionItem}>
             <View style={styles.transactionLeft}>
               <View style={styles.userAvatar}>
@@ -510,7 +554,7 @@ const LootBoxesScreen: React.FC = () => {
                 <Text style={styles.transactionUser}>{transaction.user}</Text>
                 <Text style={styles.transactionDescription}>
                   opened <Text style={[styles.transactionType, { color: getTypeColor(transaction.type) }]}>
-                    {transaction.type}
+                    {getTypeSymbol(transaction.type)}
                   </Text> lootbox and received
                 </Text>
                 <Text style={styles.transactionTime}>{transaction.timeAgo}</Text>
@@ -522,28 +566,79 @@ const LootBoxesScreen: React.FC = () => {
           </View>
         </BlurView>
       ))}
+      
+      {recentTransactions.length === 0 && (
+        <BlurView intensity={40} tint="dark" style={styles.emptyState}>
+          <Ionicons name="time-outline" size={48} color="#666" />
+          <Text style={styles.emptyStateTitle}>No Recent Activity</Text>
+          <Text style={styles.emptyStateText}>
+            No transactions yet. Be the first to open a lootbox!
+          </Text>
+        </BlurView>
+      )}
     </View>
   );
 
   const renderYourTransactionsContent = () => (
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Your Transactions</Text>
-      <Text style={styles.sectionSubtitle}>Your lootbox opening history</Text>
       
-      {/* Empty state for user transactions */}
-      <BlurView intensity={40} tint="dark" style={styles.emptyState}>
-        <Ionicons name="cube-outline" size={48} color="#666" />
-        <Text style={styles.emptyStateTitle}>No Transactions Yet</Text>
-        <Text style={styles.emptyStateText}>
-          You haven't opened any lootboxes yet. Complete tasks to earn keys and start opening lootboxes!
-        </Text>
-        <TouchableOpacity 
-          style={styles.earnKeysButton}
-          onPress={() => router.push('/(tabs)/offer')}
-        >
-          <Text style={styles.earnKeysButtonText}>Earn Keys</Text>
-        </TouchableOpacity>
-      </BlurView>
+      {loadingTransactions ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#007AFF" />
+          <Text style={styles.loadingText}>Loading your transactions...</Text>
+        </View>
+      ) : userTransactions.length > 0 ? (
+        <>
+          {userTransactions.map((transaction, index) => (
+            <BlurView key={transaction._id || index} intensity={40} tint="dark" style={styles.transactionCard}>
+              <View style={styles.transactionItem}>
+                <View style={styles.transactionLeft}>
+                  <View style={styles.lootBoxIconContainer}>
+                    <Ionicons name="cube" size={20} color={getTypeColor(transaction.type)} />
+                  </View>
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.transactionUser}>
+                      {transaction.lootBoxId?.name || 'Lootbox'}
+                    </Text>
+                    <Text style={styles.transactionDescription}>
+                      You earned {transaction.cryptoAmount} {transaction.cryptoSymbol}
+                    </Text>
+                    <Text style={styles.transactionTime}>{transaction.timeAgo}</Text>
+                  </View>
+                </View>
+                <View style={styles.transactionRight}>
+                  <Text style={[styles.transactionType, { color: getTypeColor(transaction.type) }]}>
+                    -{transaction.pointsSpent} pts
+                  </Text>
+                  <Text style={styles.transactionReward}>{transaction.reward}</Text>
+                </View>
+              </View>
+            </BlurView>
+          ))}
+          <TouchableOpacity 
+            style={styles.refreshButton}
+            onPress={fetchUserTransactions}
+          >
+            <Ionicons name="refresh" size={16} color="#007AFF" />
+            <Text style={styles.refreshButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <BlurView intensity={40} tint="dark" style={styles.emptyState}>
+          <Ionicons name="cube-outline" size={48} color="#666" />
+          <Text style={styles.emptyStateTitle}>No Transactions Yet</Text>
+          <Text style={styles.emptyStateText}>
+            You haven't opened any lootboxes yet. Complete tasks to earn points and start opening lootboxes!
+          </Text>
+          <TouchableOpacity 
+            style={styles.earnKeysButton}
+            onPress={() => router.push('/(tabs)/offer')}
+          >
+            <Text style={styles.earnKeysButtonText}>Earn Points</Text>
+          </TouchableOpacity>
+        </BlurView>
+      )}
     </View>
   );
 
@@ -574,20 +669,6 @@ const LootBoxesScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* User Stats */}
-        {/* <BlurView intensity={40} tint="dark" style={styles.statsCard}>
-          <View style={styles.statsHeader}>
-            <Text style={styles.statsTitle}>Your Keys</Text>
-            <View style={styles.keyBalance}>
-              <Ionicons name="key" size={20} color="#F59E0B" />
-              <Text style={styles.keyBalanceText}>0</Text>
-            </View>
-          </View>
-          <Text style={styles.statsSubtext}>
-            Complete tasks to earn keys and unlock amazing rewards!
-          </Text>
-        </BlurView> */}
-
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
@@ -595,9 +676,6 @@ const LootBoxesScreen: React.FC = () => {
             onPress={() => setActiveTab('CO')}
           >
             <Text style={[styles.tabText, activeTab === 'CO' && styles.activeTabText]}>
-              CO
-            </Text>
-            <Text style={[styles.tabLabel, activeTab === 'CO' && styles.activeTabLabel]}>
               Combined
             </Text>
           </TouchableOpacity>
@@ -607,9 +685,6 @@ const LootBoxesScreen: React.FC = () => {
             onPress={() => setActiveTab('RT')}
           >
             <Text style={[styles.tabText, activeTab === 'RT' && styles.activeTabText]}>
-              RT
-            </Text>
-            <Text style={[styles.tabLabel, activeTab === 'RT' && styles.activeTabLabel]}>
               Recent Transactions
             </Text>
           </TouchableOpacity>
@@ -619,9 +694,6 @@ const LootBoxesScreen: React.FC = () => {
             onPress={() => setActiveTab('YT')}
           >
             <Text style={[styles.tabText, activeTab === 'YT' && styles.activeTabText]}>
-              YT
-            </Text>
-            <Text style={[styles.tabLabel, activeTab === 'YT' && styles.activeTabLabel]}>
               Your Transactions
             </Text>
           </TouchableOpacity>
@@ -736,6 +808,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#A1A1AA',
+    textAlign: 'center',
     marginBottom: 2,
   },
   activeTabText: {
@@ -1090,7 +1163,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   
-  // Horizontal LootBox Card (similar to offer.tsx style)
+  // LootBox Card
   horizontalLootBoxCard: {
     width: LOOTBOX_CARD_WIDTH,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -1114,12 +1187,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  rarityBadgeHorizontal: {
+  cryptoBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  rarityTextHorizontal: {
+  cryptoBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
   },
@@ -1128,6 +1202,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   lootBoxCardName: {
+    marginTop: 5,
     fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
@@ -1191,6 +1266,115 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+  },
+
+  // New styles
+  loadingLootBoxes: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 40,
+  },
+  emptyLootBoxes: {
+    alignItems: 'center' as const,
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyLootBoxesText: {
+    fontSize: 16,
+    fontWeight: 'bold' as const,
+    color: 'white',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center' as const,
+  },
+  emptyLootBoxesSubtext: {
+    fontSize: 14,
+    color: '#A1A1AA',
+    textAlign: 'center' as const,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // User Points Card
+  userPointsCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  pointsHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: 5,
+  },
+  pointsTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: 'white',
+  },
+  pointsValue: {
+    fontSize: 28,
+    fontWeight: 'bold' as const,
+    color: '#4CAF50',
+    marginBottom: 4,
+  },
+  pointsSubtext: {
+    fontSize: 12,
+    color: '#A1A1AA',
+  },
+  lootBoxOpening: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+  exchangeRateInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  exchangeRateText: {
+    fontSize: 14,
+    color: '#A1A1AA',
+    fontWeight: '500' as const,
+  },
+  openButtonDisabled: {
+    opacity: 0.6,
+  },
+
+  // Add new styles for transaction features
+  lootBoxIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  refreshButtonText: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
   },
 });
 
