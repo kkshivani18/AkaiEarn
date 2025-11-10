@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, ViewToken, Dimensions, Linking, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, ViewToken, Dimensions, Linking, Share, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { authAPI, offersAPI } from '../../services/api';
+import { authAPI, offersAPI, socialAPI } from '../../services/api';
 import { router } from 'expo-router';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -24,8 +24,22 @@ type OfferTask = {
   type?: string;
 };
 
+// Add types for social offers
+type SocialOffer = {
+  _id: string;
+  imageLink: string;
+  type: string;
+  description: string;
+  redirectLink: string;
+  reward: {
+    coinsOnCorrect: number;
+    iqDeltaOnCorrect: number;
+    iqDeltaOnIncorrect: number;
+  };
+  completed?: boolean;
+};
+
 const OfferScreen: React.FC = () => {
-  // ALL HOOKS MUST BE AT THE TOP LEVEL - ALWAYS CALLED IN SAME ORDER
   const { authState } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [allTasks, setAllTasks] = useState<OfferTask[]>([]);
@@ -37,8 +51,10 @@ const OfferScreen: React.FC = () => {
     iq?: number;
     coins?: number;
   } | null>(null);
+  
+  // tab state for task types
+  const [activeTaskTab, setActiveTaskTab] = useState<'audio' | 'image' | 'video'>('video');
 
-  // ALWAYS call these refs - no conditional logic
   const flatListRef = useRef<FlatList<any> | null>(null);
   const onViewableItemsChangedRef = useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
     if (viewableItems && viewableItems[0]) {
@@ -46,7 +62,12 @@ const OfferScreen: React.FC = () => {
     }
   });
 
-  // Helper functions
+  // social offers
+  const [socialOffers, setSocialOffers] = useState<SocialOffer[]>([]);
+  const [loadingSocial, setLoadingSocial] = useState(false);
+  const [completingSocialOffer, setCompletingSocialOffer] = useState<string | null>(null);
+
+  // helper functions
   const getDifficultyFromIQ = (minimumIq: number): string => {
     if (minimumIq <= 20) return 'Beginner';
     if (minimumIq <= 40) return 'Easy';
@@ -62,22 +83,36 @@ const OfferScreen: React.FC = () => {
       .join(' ');
   };
 
-  const mapBackendTaskToFrontend = (backendTask: any): OfferTask => ({
-    id: backendTask._id || `task-${Date.now()}`,
-    title: cleanTaskTitle(backendTask.type || 'Labelling Task'),
-    description: backendTask.description || 'Complete this task to earn rewards',
-    reward: backendTask.rewards?.coinsOnCorrect || 0,
-    iqGain: backendTask.rewards?.iqDeltaOnCorrect || 0,
-    image: backendTask.imageLink || 'https://via.placeholder.com/300x140/2a2b33/fff?text=Task',
-    difficulty: getDifficultyFromIQ(backendTask.minimumIq || 0),
-    minimumIq: backendTask.minimumIq || 0,
-    // using S3 creative link 
-    creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
-    penaltyTime: backendTask.penaltyTime || 1,
-    type: backendTask.type
-  });
+  const mapBackendTaskToFrontend = (backendTask: any): OfferTask => {
+    // determine creative link based on task type
+    let creativeLink = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html';
+    let taskType = backendTask.type || 'video-labelling';
+    
+    // map diff task types to their creative links
+    if (backendTask.type?.includes('audio')) {
+      creativeLink = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/audio-task.html';
+      taskType = 'audio-labelling';
+    } else if (backendTask.type?.includes('image')) {
+      creativeLink = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/image-task.html';
+      taskType = 'image-labelling';
+    }
+    
+    return {
+      id: backendTask._id || `task-${Date.now()}`,
+      title: cleanTaskTitle(taskType),
+      description: backendTask.description || 'Complete this task to earn rewards',
+      reward: backendTask.rewards?.coinsOnCorrect || 0,
+      iqGain: backendTask.rewards?.iqDeltaOnCorrect || 0,
+      image: backendTask.imageLink || 'https://via.placeholder.com/300x140/2a2b33/fff?text=Task',
+      difficulty: getDifficultyFromIQ(backendTask.minimumIq || 0),
+      minimumIq: backendTask.minimumIq || 0,
+      creativeLink: creativeLink,
+      penaltyTime: backendTask.penaltyTime || 1,
+      type: taskType
+    };
+  };
 
-  // Check if task is locked based on user IQ
+  // check if task is locked based on user IQ
   const isTaskLocked = (task: OfferTask): boolean => {
     const userIQ = userProfile?.iq || 0;
     return userIQ < task.minimumIq;
@@ -97,7 +132,7 @@ const OfferScreen: React.FC = () => {
       return;
     }
     
-    // Navigate to creative screen with task data
+    // navigate to creative screen with task data
     router.push({
       pathname: '/creative-task',
       params: {
@@ -111,7 +146,7 @@ const OfferScreen: React.FC = () => {
     });
   };
 
-  // Fetch tasks from backend
+  // fetch tasks from backend
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -151,13 +186,13 @@ const OfferScreen: React.FC = () => {
       }
     };
 
-    // Only fetch if user is authenticated
+    // fetch if user is authenticated
     if (authState?.authenticated) {
       fetchTasks();
     }
   }, [authState?.authenticated]);
 
-  // Fetch user profile data
+  // fetch user profile data
   React.useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -188,70 +223,116 @@ const OfferScreen: React.FC = () => {
     }
   }, [authState?.authenticated]);
 
-  // Social media handlers
-  const handleFollowTwitter = async () => {
+  // fetch social offers from backend
+  const fetchSocialOffers = async () => {
+    setLoadingSocial(true);
     try {
-      // Try to open Twitter app first, fallback to web
-      const twitterUrl = 'twitter://user?screen_name=akaispacexyz'; 
-      const webUrl = 'https://twitter.com/akaispacexyz'; 
+      console.log('📡 Fetching social offers from backend...');
+      const response = await socialAPI.getAllSocialOffers();
+      console.log('✅ Social offers response:', response);
       
-      const canOpen = await Linking.canOpenURL(twitterUrl);
+      if (response.success && response.data) {
+        setSocialOffers(response.data);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch social offers:', error);
+      // Set empty array on error
+      setSocialOffers([]);
+    } finally {
+      setLoadingSocial(false);
+    }
+  };
+
+  // fetch social offers when component mounts
+  useEffect(() => {
+    if (authState?.authenticated) {
+      fetchSocialOffers();
+    }
+  }, [authState?.authenticated]);
+
+  // handle completing a social offer
+  const handleCompleteSocialOffer = async (offer: SocialOffer) => {
+    // First, try to open the redirect link
+    try {
+      const canOpen = await Linking.canOpenURL(offer.redirectLink);
       if (canOpen) {
-        await Linking.openURL(twitterUrl);
+        await Linking.openURL(offer.redirectLink);
+      }
+    } catch (error) {
+      console.error('Failed to open link:', error);
+      Alert.alert('Error', 'Failed to open link. Please try again.');
+      return;
+    }
+
+    // Then mark as completed in backend
+    setCompletingSocialOffer(offer._id);
+    
+    try {
+      console.log('🎯 Completing social offer:', offer._id);
+      const response = await socialAPI.completeSocialOffer(offer._id);
+      
+      if (response.success) {
+        // Update local state
+        setSocialOffers(prev => 
+          prev.map(o => o._id === offer._id ? { ...o, completed: true } : o)
+        );
+        
+        // update user points
+        if (userProfile) {
+          setUserProfile({
+            ...userProfile,
+            coins: response.coins || ((userProfile.coins || 0) + offer.reward.coinsOnCorrect)
+          });
+        }
+        
+        // Show success message
+        Alert.alert(
+          'Task Completed! 🎉',
+          `You earned ${offer.reward.coinsOnCorrect} points!`,
+          [{ text: 'Great!', style: 'default' }]
+        );
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to complete social offer:', error);
+      
+      let errorMessage = 'Failed to complete task. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      if (error.response?.status !== 409) {
+        Alert.alert('Error', errorMessage);
       } else {
-        await Linking.openURL(webUrl);
+        // task completed, update local state
+        setSocialOffers(prev => 
+          prev.map(o => o._id === offer._id ? { ...o, completed: true } : o)
+        );
       }
-      
-      // You could also call an API to mark this task as completed and award tokens
-      // await socialAPI.completeSocialOffer('twitter-follow');
-      
-    } catch (error) {
-      console.error('Failed to open Twitter:', error);
-      Alert.alert('Error', 'Failed to open Twitter. Please try again.');
+    } finally {
+      setCompletingSocialOffer(null);
     }
   };
 
-  const handleReferFriend = async () => {
-    try {
-      // Get user's referral code 
-      // const userReferralCode = userProfile?.referralCode || 'USER123';
-      const userReferralCode = 'USER123';
-      
-      const shareMessage = `🎯 Join me on OfferWall and earn tokens by completing tasks! Use my referral code: ${userReferralCode}\n\nDownload the app: https://play.google.com/store/apps/details?id=com.offerwall.app`;
-      
-      const result = await Share.share({
-        message: shareMessage,
-        title: 'Join OfferWall - Earn Tokens!',
-        url: 'https://play.google.com/store/apps/details?id=com.offerwall.app', 
-      });
-
-      if (result.action === Share.sharedAction) {
-        // User shared successfully - you could award tokens here
-        console.log('Referral shared successfully');
-        // await socialAPI.completeSocialOffer('refer-friend');
-      }
-    } catch (error) {
-      console.error('Failed to share referral:', error);
-      Alert.alert('Error', 'Failed to share referral. Please try again.');
-    }
+  // get social offer icon based on type
+  const getSocialOfferIcon = (type: string): keyof typeof Ionicons.glyphMap => {
+    const lowerType = type.toLowerCase();
+    if (lowerType.includes('twitter') || lowerType.includes('x')) return 'logo-twitter';
+    if (lowerType.includes('refer') || lowerType.includes('friend')) return 'person-add-outline';
+    if (lowerType.includes('share')) return 'share-outline';
+    if (lowerType.includes('follow')) return 'person-add';
+    if (lowerType.includes('like')) return 'heart-outline';
+    if (lowerType.includes('discord')) return 'logo-discord';
+    if (lowerType.includes('telegram')) return 'send';
+    return 'gift-outline';
   };
 
-  const handleShareProgress = async () => {
-    try {
-      const progressMessage = `I just completed another task on OfferWall! 🔥
-Current IQ: ${userProfile?.iq || 0}
-Points earned: ${userProfile?.coins || 0}
-
-Join me and start earning!`;
-
-      await Share.share({
-        message: progressMessage,
-        title: 'My OfferWall Progress!',
-      });
-    } catch (error) {
-      console.error('Failed to share progress:', error);
-      Alert.alert('Error', 'Failed to share progress. Please try again.');
-    }
+  // Get social offer color based on type
+  const getSocialOfferColor = (type: string): string => {
+    const lowerType = type.toLowerCase();
+    if (lowerType.includes('twitter') || lowerType.includes('x')) return '#1DA1F2';
+    if (lowerType.includes('discord')) return '#5865F2';
+    if (lowerType.includes('telegram')) return '#0088cc';
+    return '#ffffff';
   };
 
   // Loading state
@@ -264,6 +345,19 @@ Join me and start earning!`;
       </SafeAreaView>
     );
   }
+
+  // Filter tasks based on active tab
+  const getFilteredTasks = (): OfferTask[] => {
+    return allTasks.filter(task => {
+      if (activeTaskTab === 'audio') {
+        return task.type?.includes('audio');
+      } else if (activeTaskTab === 'image') {
+        return task.type?.includes('image');
+      } else {
+        return task.type?.includes('video') || !task.type?.includes('audio') && !task.type?.includes('image');
+      }
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -306,11 +400,83 @@ Join me and start earning!`;
           {error && (
             <Text style={styles.errorText}>⚠️ {error}</Text>
           )}
+
+          {/* Tab Navigation for Task Types */}
+          <View style={styles.taskTabContainer}>
+            <TouchableOpacity
+              style={[
+                styles.taskTab,
+                activeTaskTab === 'audio' && styles.taskTabActive
+              ]}
+              onPress={() => {
+                setActiveTaskTab('audio');
+                setActiveIndex(0);
+              }}
+            >
+              <Ionicons 
+                name="musical-notes" 
+                size={16} 
+                color={activeTaskTab === 'audio' ? '#007AFF' : '#A1A1AA'} 
+              />
+              <Text style={[
+                styles.taskTabText,
+                activeTaskTab === 'audio' && styles.taskTabTextActive
+              ]}>
+                Audio Task
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.taskTab,
+                activeTaskTab === 'image' && styles.taskTabActive
+              ]}
+              onPress={() => {
+                setActiveTaskTab('image');
+                setActiveIndex(0);
+              }}
+            >
+              <Ionicons 
+                name="image" 
+                size={16} 
+                color={activeTaskTab === 'image' ? '#007AFF' : '#A1A1AA'} 
+              />
+              <Text style={[
+                styles.taskTabText,
+                activeTaskTab === 'image' && styles.taskTabTextActive
+              ]}>
+                Image Task
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.taskTab,
+                activeTaskTab === 'video' && styles.taskTabActive
+              ]}
+              onPress={() => {
+                setActiveTaskTab('video');
+                setActiveIndex(0);
+              }}
+            >
+              <Ionicons 
+                name="videocam" 
+                size={16} 
+                color={activeTaskTab === 'video' ? '#007AFF' : '#A1A1AA'} 
+              />
+              <Text style={[
+                styles.taskTabText,
+                activeTaskTab === 'video' && styles.taskTabTextActive
+              ]}>
+                Video Task
+              </Text>
+            </TouchableOpacity>
+          </View>
           
-          {/* Updated task cards with lock state */}
+          {/* Task Cards with taskType */}
           <FlatList
             ref={flatListRef}
-            data={allTasks}
+            data={getFilteredTasks()}
             horizontal
             pagingEnabled={false}
             showsHorizontalScrollIndicator={false}
@@ -374,74 +540,114 @@ Join me and start earning!`;
             }}
             onViewableItemsChanged={onViewableItemsChangedRef.current}
             viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyTasksContainer}>
+                <Ionicons name="folder-open-outline" size={48} color="#666" />
+                <Text style={styles.emptyTasksText}>
+                  No {activeTaskTab} tasks available
+                </Text>
+                <Text style={styles.emptyTasksSubtext}>
+                  Check back later or try another task type
+                </Text>
+              </View>
+            )}
           />
 
-          {/* Dots indicator */}
-          <View style={styles.dotsContainer}>
-            {allTasks.map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  i === activeIndex ? styles.dotActive : styles.dotInactive,
-                ]}
-              />
-            ))}
-          </View>
+          {/* dots indicator - show when there are tasks */}
+          {getFilteredTasks().length > 0 && (
+            <View style={styles.dotsContainer}>
+              {getFilteredTasks().map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    i === activeIndex ? styles.dotActive : styles.dotInactive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Social Tasks Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Social Tasks</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Social Tasks</Text>
+            {loadingSocial && (
+              <ActivityIndicator size="small" color="#007AFF" />
+            )}
+          </View>
           
-          {/* Follow Us on X */}
-          <TouchableOpacity style={styles.socialTaskCard}>
-            <View style={styles.socialTaskLeft}>
-              <View style={styles.socialIcon}>
-                <Ionicons name="logo-twitter" size={20} color="#1DA1F2" />
-              </View>
-              <View style={styles.socialTaskInfo}>
-                <Text style={styles.socialTaskTitle}>Follow Us on X</Text>
-                <Text style={styles.socialTaskReward}>+50 Points</Text>
-              </View>
+          {loadingSocial ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading social tasks...</Text>
             </View>
-            <TouchableOpacity style={styles.followButton} onPress={handleFollowTwitter}>
-              <Text style={styles.followButtonText}>Follow</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-
-          {/* Refer a Friend */}
-          <TouchableOpacity style={styles.socialTaskCard}>
-            <View style={styles.socialTaskLeft}>
-              <View style={styles.socialIcon}>
-                <Ionicons name="person-add-outline" size={20} color="white" />
-              </View>
-              <View style={styles.socialTaskInfo}>
-                <Text style={styles.socialTaskTitle}>Refer a Friend</Text>
-                <Text style={styles.socialTaskReward}>+200 Points</Text>
-              </View>
+          ) : socialOffers.length > 0 ? (
+            socialOffers.map((offer) => (
+              <TouchableOpacity 
+                key={offer._id}
+                style={[
+                  styles.socialTaskCard,
+                  offer.completed && styles.socialTaskCardCompleted
+                ]}
+                onPress={() => !offer.completed && handleCompleteSocialOffer(offer)}
+                disabled={offer.completed || completingSocialOffer === offer._id}
+              >
+                <View style={styles.socialTaskLeft}>
+                  <View style={[
+                    styles.socialIcon,
+                    offer.completed && styles.socialIconCompleted
+                  ]}>
+                    <Ionicons 
+                      name={getSocialOfferIcon(offer.type)} 
+                      size={20} 
+                      color={offer.completed ? '#4CAF50' : getSocialOfferColor(offer.type)} 
+                    />
+                  </View>
+                  <View style={styles.socialTaskInfo}>
+                    <Text style={[
+                      styles.socialTaskTitle,
+                      offer.completed && styles.socialTaskTitleCompleted
+                    ]}>
+                      {offer.description}
+                    </Text>
+                    <Text style={[
+                      styles.socialTaskReward,
+                      offer.completed && styles.socialTaskRewardCompleted
+                    ]}>
+                      +{offer.reward.coinsOnCorrect} Points
+                    </Text>
+                  </View>
+                </View>
+                
+                {offer.completed ? (
+                  <View style={styles.completedBadge}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.completedText}>Completed</Text>
+                  </View>
+                ) : completingSocialOffer === offer._id ? (
+                  <ActivityIndicator size="small" color="#007AFF" />
+                ) : (
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => handleCompleteSocialOffer(offer)}
+                  >
+                    <Text style={styles.actionButtonText}>
+                      {offer.type.toLowerCase().includes('follow') ? 'Follow' :
+                       offer.type.toLowerCase().includes('refer') ? 'Refer' :
+                       offer.type.toLowerCase().includes('share') ? 'Share' : 'Complete'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyTasksContainer}>
+              <Ionicons name="gift-outline" size={48} color="#666" />
+              <Text style={styles.emptyTasksText}>No social tasks available</Text>
+              <Text style={styles.emptyTasksSubtext}>Check back later for new tasks</Text>
             </View>
-            <TouchableOpacity style={styles.referButton} onPress={handleReferFriend}>
-              <Text style={styles.referButtonText}>Refer</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-
-          {/* Share your progress */}
-          <TouchableOpacity style={styles.socialTaskCard} onPress={handleShareProgress}>
-            <View style={styles.socialTaskLeft}>
-              <View style={styles.socialIcon}>
-                <Ionicons name="share-outline" size={20} color="white" />
-              </View>
-              <View style={styles.socialTaskInfo}>
-                <Text style={styles.socialTaskTitle}>Share your progress</Text>
-                <Text style={styles.socialTaskReward}>+25 Points</Text>
-              </View>
-            </View>
-            <View style={styles.completedBadge}>
-              <Ionicons name="share-social" size={12} color="#4CAF50" />
-              <Text style={styles.completedText}>Share</Text>
-            </View>
-          </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -650,7 +856,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
 
-  // Social Task Cards
+  // Social Task Cards - Updated
   socialTaskCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -661,6 +867,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#2a2b33',
+  },
+  socialTaskCardCompleted: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderColor: 'rgba(76, 175, 80, 0.3)',
   },
   socialTaskLeft: {
     flexDirection: 'row',
@@ -676,6 +886,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  socialIconCompleted: {
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+  },
   socialTaskInfo: {
     flex: 1,
   },
@@ -684,32 +897,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  socialTaskTitleCompleted: {
+    color: '#A1A1AA',
+  },
   socialTaskReward: {
     color: '#4CAF50',
     fontSize: 14,
     marginTop: 2,
   },
+  socialTaskRewardCompleted: {
+    color: '#666',
+  },
   
-  // Action Buttons
-  followButton: {
-    // backgroundColor: '#1DA1F2',
+  // Action Buttons - Updated
+  actionButton: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  followButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  referButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  referButtonText: {
+  actionButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
@@ -717,15 +924,15 @@ const styles = StyleSheet.create({
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a2e1a',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
     gap: 4,
   },
   completedText: {
     color: '#4CAF50',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 
@@ -755,6 +962,64 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 10,
     textAlign: 'center',
+  },
+
+  // Task Tab Navigation Styles
+  taskTabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  taskTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  taskTabActive: {
+    backgroundColor: 'rgba(0, 122, 255, 0.15)',
+  },
+  taskTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#A1A1AA',
+  },
+  taskTabTextActive: {
+    color: '#007AFF',
+  },
+
+  // Empty state for filtered tasks
+  emptyTasksContainer: {
+    width: CARD_WIDTH,
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1a1b23',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2a2b33',
+    marginRight: 16,
+  },
+  emptyTasksText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptyTasksSubtext: {
+    color: '#888',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });
 

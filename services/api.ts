@@ -206,58 +206,20 @@ export const offersAPI = {
 export const socialAPI = {
   // Get all social offers
   getAllSocialOffers: async () => {
-    try {
-      const response = await api.get('/social/offers');
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await api.get('/social/offers');
+    return response.data;
   },
 
-  // Complete social offer
+  // Complete a social offer
   completeSocialOffer: async (offerId: string) => {
-    try {
-      const response = await api.post('/social/complete', { offerId });
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
-  },
-
-  // Create social offer
-  createSocialOffer: async (offerData: {
-    imageLink: string;
-    type: string;
-    description: string;
-    redirectLink: string;
-    reward: {
-      coinsOnCorrect: number;
-      iqDeltaOnCorrect: number;
-      iqDeltaOnIncorrect: number;
-    };
-  }) => {
-    try {
-      const response = await api.post('/social/offers', offerData);
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
-  },
-
-  // Delete social offer
-  deleteSocialOffer: async (offerId: string) => {
-    try {
-      const response = await api.delete(`/social/offers/${offerId}`);
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await api.post('/social/complete', { offerId });
+    return response.data;
   },
 };
 
 // Rewards/Coupons API - Updated to use proper backend endpoints
 export const couponsAPI = {
-  // Get available spin wheel coupons (6 random valid coupons without coupon codes)
+  // get available spin wheel coupons 
   getSpinWheelCoupons: async () => {
     try {
       const response = await api.get('/rewards/spin-wheel');
