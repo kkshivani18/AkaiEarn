@@ -223,7 +223,7 @@ const OfferScreen: React.FC = () => {
     }
   }, [authState?.authenticated]);
 
-  // fetch social offers from backend
+  // Fetch social offers from backend
   const fetchSocialOffers = async () => {
     setLoadingSocial(true);
     try {
@@ -232,11 +232,15 @@ const OfferScreen: React.FC = () => {
       console.log('✅ Social offers response:', response);
       
       if (response.success && response.data) {
+        // Log each offer's completion status
+        console.log('📦 Social offers with completion status:');
+        response.data.forEach((offer: any) => {
+          console.log(`  - ${offer.description}: completed=${offer.completed}, id=${offer._id}`);
+        });
         setSocialOffers(response.data);
       }
     } catch (error) {
       console.error('❌ Failed to fetch social offers:', error);
-      // Set empty array on error
       setSocialOffers([]);
     } finally {
       setLoadingSocial(false);
@@ -250,13 +254,39 @@ const OfferScreen: React.FC = () => {
     }
   }, [authState?.authenticated]);
 
-  // handle completing a social offer
+  // Handle completing a social offer
   const handleCompleteSocialOffer = async (offer: SocialOffer) => {
+    console.log('🎯 Attempting to complete social offer:', { 
+      offerId: offer._id, 
+      completed: offer.completed,
+      description: offer.description 
+    });
+
+    // ✅ CRITICAL: Check if already completed BEFORE any action
+    if (offer.completed) {
+      console.log('⚠️ Offer already completed, showing info');
+      Alert.alert(
+        '✅ Already Completed', 
+        `You've already completed this task and earned ${offer.reward.coinsOnCorrect} points!`,
+        [{ text: 'OK' }]
+      );
+      return; // EXIT EARLY - don't proceed
+    }
+
+    // Prevent multiple simultaneous completions of the same offer
+    if (completingSocialOffer === offer._id) {
+      console.log('⚠️ Already processing this offer');
+      return;
+    }
+
     // First, try to open the redirect link
     try {
+      console.log('🔗 Opening redirect link:', offer.redirectLink);
       const canOpen = await Linking.canOpenURL(offer.redirectLink);
       if (canOpen) {
         await Linking.openURL(offer.redirectLink);
+      } else {
+        console.warn('⚠️ Cannot open URL:', offer.redirectLink);
       }
     } catch (error) {
       console.error('Failed to open link:', error);
@@ -268,45 +298,57 @@ const OfferScreen: React.FC = () => {
     setCompletingSocialOffer(offer._id);
     
     try {
-      console.log('🎯 Completing social offer:', offer._id);
+      console.log('📤 Calling completeSocialOffer API for:', offer._id);
       const response = await socialAPI.completeSocialOffer(offer._id);
+      console.log('✅ Social offer API response:', response);
       
       if (response.success) {
-        // Update local state
-        setSocialOffers(prev => 
-          prev.map(o => o._id === offer._id ? { ...o, completed: true } : o)
-        );
+        console.log('✅ Social offer completed successfully');
         
-        // update user points
+        // Refresh social offers from backend to get updated completion status
+        await fetchSocialOffers();
+        
+        // Update user coins locally
         if (userProfile) {
+          const newCoins = response.coins || ((userProfile.coins || 0) + offer.reward.coinsOnCorrect);
+          console.log('💰 Updating user coins:', { old: userProfile.coins, new: newCoins });
           setUserProfile({
             ...userProfile,
-            coins: response.coins || ((userProfile.coins || 0) + offer.reward.coinsOnCorrect)
+            coins: newCoins
           });
         }
         
         // Show success message
         Alert.alert(
-          'Task Completed! 🎉',
+          '🎉 Task Completed!',
           `You earned ${offer.reward.coinsOnCorrect} points!`,
           [{ text: 'Great!', style: 'default' }]
         );
       }
     } catch (error: any) {
       console.error('❌ Failed to complete social offer:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        data: error.response?.data
+      });
       
-      let errorMessage = 'Failed to complete task. Please try again.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      
-      if (error.response?.status !== 409) {
-        Alert.alert('Error', errorMessage);
-      } else {
-        // task completed, update local state
-        setSocialOffers(prev => 
-          prev.map(o => o._id === offer._id ? { ...o, completed: true } : o)
+      // If task was already completed (409), refresh to get correct status
+      if (error.response?.status === 409) {
+        console.log('⚠️ Task already completed (409), refreshing list...');
+        await fetchSocialOffers(); // This will update the UI with completed=true
+        Alert.alert(
+          '✅ Already Completed', 
+          'You have already completed this task.',
+          [{ text: 'OK' }]
         );
+      } else {
+        // Other errors
+        let errorMessage = 'Failed to complete task. Please try again.';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+        Alert.alert('Error', errorMessage);
       }
     } finally {
       setCompletingSocialOffer(null);
@@ -580,6 +622,7 @@ const OfferScreen: React.FC = () => {
           
           {loadingSocial ? (
             <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#007AFF" />
               <Text style={styles.loadingText}>Loading social tasks...</Text>
             </View>
           ) : socialOffers.length > 0 ? (
@@ -590,8 +633,8 @@ const OfferScreen: React.FC = () => {
                   styles.socialTaskCard,
                   offer.completed && styles.socialTaskCardCompleted
                 ]}
-                onPress={() => !offer.completed && handleCompleteSocialOffer(offer)}
-                disabled={offer.completed || completingSocialOffer === offer._id}
+                onPress={() => handleCompleteSocialOffer(offer)}
+                activeOpacity={offer.completed ? 0.9 : 0.7}
               >
                 <View style={styles.socialTaskLeft}>
                   <View style={[
@@ -599,9 +642,9 @@ const OfferScreen: React.FC = () => {
                     offer.completed && styles.socialIconCompleted
                   ]}>
                     <Ionicons 
-                      name={getSocialOfferIcon(offer.type)} 
+                      name={getSocialOfferIcon(offer.type)}
                       size={20} 
-                      color={offer.completed ? '#4CAF50' : getSocialOfferColor(offer.type)} 
+                      color={getSocialOfferColor(offer.type)} 
                     />
                   </View>
                   <View style={styles.socialTaskInfo}>
@@ -615,18 +658,20 @@ const OfferScreen: React.FC = () => {
                       styles.socialTaskReward,
                       offer.completed && styles.socialTaskRewardCompleted
                     ]}>
-                      +{offer.reward.coinsOnCorrect} Points
+                      {offer.completed ? `${offer.reward.coinsOnCorrect} Points` : `+${offer.reward.coinsOnCorrect} Points`}
                     </Text>
                   </View>
                 </View>
                 
                 {offer.completed ? (
                   <View style={styles.completedBadge}>
-                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
                     <Text style={styles.completedText}>Completed</Text>
                   </View>
                 ) : completingSocialOffer === offer._id ? (
-                  <ActivityIndicator size="small" color="#007AFF" />
+                  <View style={styles.processingBadge}>
+                    <ActivityIndicator size="small" color="#007AFF" />
+                  </View>
                 ) : (
                   <TouchableOpacity 
                     style={styles.actionButton}
@@ -856,7 +901,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
 
-  // Social Task Cards - Updated
+  // Social Task Cards - Enhanced completed state
   socialTaskCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -869,8 +914,8 @@ const styles = StyleSheet.create({
     borderColor: '#2a2b33',
   },
   socialTaskCardCompleted: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderColor: 'rgba(76, 175, 80, 0.3)',
+    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+    borderColor: 'rgba(76, 175, 80, 0.4)',
   },
   socialTaskLeft: {
     flexDirection: 'row',
@@ -887,7 +932,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   socialIconCompleted: {
-    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    backgroundColor: 'rgba(76, 175, 80, 0.25)',
   },
   socialTaskInfo: {
     flex: 1,
@@ -904,12 +949,14 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 14,
     marginTop: 2,
+    fontWeight: '500',
   },
   socialTaskRewardCompleted: {
-    color: '#666',
+    color: '#4CAF50',
+    fontWeight: '600',
   },
   
-  // Action Buttons - Updated
+  // Action Buttons
   actionButton: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 16,
@@ -924,16 +971,20 @@ const styles = StyleSheet.create({
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(76, 175, 80, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(76, 175, 80, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
-    gap: 4,
+    gap: 6,
   },
   completedText: {
     color: '#4CAF50',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  processingBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
 
   // Loading state
@@ -991,12 +1042,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#A1A1AA',
+    textAlign: 'center',
+    paddingHorizontal: 3,
   },
   taskTabTextActive: {
     color: '#007AFF',
   },
 
-  // Empty state for filtered tasks
+  // empty container for filtered tasks
   emptyTasksContainer: {
     width: CARD_WIDTH,
     height: 250,

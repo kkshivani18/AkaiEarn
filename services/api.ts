@@ -142,7 +142,6 @@ export const offersAPI = {
     penaltyTime?: number;
   }) => {
     try {
-      console.log('📤 Creating label offer via API:', offerData);
       const response = await api.post('/offers/create-label-offer', offerData);
       console.log('✅ Label offer created:', response.data);
       return response.data;
@@ -258,9 +257,7 @@ export const couponsAPI = {
   // Win a coupon from spin wheel
   selectSpinWheelCoupon: async (couponId: string) => {
     try {
-      console.log('🎯 API: Selecting spin wheel coupon:', couponId);
       const response = await api.post('/rewards/spin-wheel/select', { couponId });
-      console.log('✅ API: Spin wheel coupon selected successfully:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('❌ API: Failed to select spin wheel coupon:', error);
@@ -288,12 +285,10 @@ export const couponsAPI = {
   // Reward coupon to user - matches your backend /coupons/reward endpoint
   rewardCouponToUser: async (couponId: string, userId?: string) => {
     try {
-      console.log('🎯 API: Rewarding coupon to user:', couponId);
       const response = await api.post('/coupons/reward', { 
         couponId,
         userId: userId || undefined 
       });
-      console.log('✅ API: Coupon rewarded successfully:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('❌ API: Failed to reward coupon:', error);
@@ -420,8 +415,6 @@ export const authAPI = {
   // Upload profile image - matches your /api/auth/upload-profile-image endpoint
   uploadProfileImage: async (imageUri: string) => {
     try {
-      console.log('📤 Uploading profile image:', imageUri);
-      
       const formData = new FormData();
       
       // Determine file type from URI
@@ -435,8 +428,6 @@ export const authAPI = {
         name: fileName,
       } as any);
 
-      console.log('📤 FormData prepared:', { mimeType, fileName });
-
       const response = await api.post('/auth/upload-profile-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -449,7 +440,6 @@ export const authAPI = {
         timeout: 30000, // 30 second timeout for image uploads
       });
       
-      console.log('✅ Profile image upload successful:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('❌ Profile image upload failed:', {
