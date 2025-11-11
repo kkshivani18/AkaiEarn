@@ -611,7 +611,7 @@ const OfferScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Social Tasks Section */}
+        {/* Social Tasks */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Social Tasks</Text>
@@ -630,16 +630,14 @@ const OfferScreen: React.FC = () => {
               <TouchableOpacity 
                 key={offer._id}
                 style={[
-                  styles.socialTaskCard,
-                  offer.completed && styles.socialTaskCardCompleted
+                  styles.socialTaskCard
                 ]}
                 onPress={() => handleCompleteSocialOffer(offer)}
                 activeOpacity={offer.completed ? 0.9 : 0.7}
               >
                 <View style={styles.socialTaskLeft}>
                   <View style={[
-                    styles.socialIcon,
-                    offer.completed && styles.socialIconCompleted
+                    styles.socialIcon
                   ]}>
                     <Ionicons 
                       name={getSocialOfferIcon(offer.type)}
@@ -913,10 +911,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2a2b33',
   },
-  socialTaskCardCompleted: {
-    backgroundColor: 'rgba(76, 175, 80, 0.12)',
-    borderColor: 'rgba(76, 175, 80, 0.4)',
-  },
   socialTaskLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -930,9 +924,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-  },
-  socialIconCompleted: {
-    backgroundColor: 'rgba(76, 175, 80, 0.25)',
   },
   socialTaskInfo: {
     flex: 1,
@@ -972,7 +963,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(76, 175, 80, 0.25)',
-    paddingHorizontal: 12,
+    paddingHorizontal: 6,
     paddingVertical: 8,
     borderRadius: 8,
     gap: 6,
