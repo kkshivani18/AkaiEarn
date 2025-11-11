@@ -10,7 +10,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.akaispace.offerwall"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,6 +23,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.akaispace.offerwall",
+      "versionCode": 1,
       "config": {
         "googleSignIn": {
           "androidClientId": "${androidClientID}"
@@ -57,6 +59,12 @@
       "eas": {
         "projectId": "e1b85df2-75e3-4ca4-aa92-09b53b4a06e2"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e1b85df2-75e3-4ca4-aa92-09b53b4a06e2"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

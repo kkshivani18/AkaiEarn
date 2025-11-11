@@ -26,12 +26,13 @@ const CreativeTaskScreen: React.FC = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [parametersReady, setParametersReady] = useState(false);
 
-  // Extract task parameters - UPDATED PARAMETER NAME
+  // task parameters 
   const labelOfferId = params.labelOfferId as string;
   const taskTitle = params.taskTitle as string;
   const reward = parseInt(params.reward as string) || 0;
   const iqGain = parseInt(params.iqGain as string) || 0;
   const taskType = params.taskType as string || 'labelling-task';
+  const creativeLink = params.creativeLink as string; 
 
   // Fetch user info and prepare parameters
   React.useEffect(() => {
@@ -80,7 +81,6 @@ const CreativeTaskScreen: React.FC = () => {
     if (authState?.authenticated) {
       initializeTask();
     } else {
-      // Not authenticated, use anonymous user
       setUserInfo({
         _id: 'anonymous',
         firstName: 'User',
@@ -90,18 +90,21 @@ const CreativeTaskScreen: React.FC = () => {
     }
   }, [authState?.authenticated, labelOfferId, taskTitle]);
 
-  // Build creative URL with updated parameter name
+  // creative URL 
   const buildCreativeURL = () => {
     if (!userInfo || !parametersReady) {
       console.log('⏳ Parameters not ready yet', { userInfo: !!userInfo, parametersReady });
       return '';
     }
     
-    const baseUrl = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html';
+    // creative link from parameters
+    const baseUrl = creativeLink;
+    
+    console.log('🎯 Using creative link from params:', baseUrl);
     
     // Build comprehensive parameter set with validation
     const urlParams = {
-      // Core task parameters (required) - UPDATED PARAMETER NAME
+      // Core task parameters 
       labelOfferId: labelOfferId || 'fallback-task',
       taskType: taskType || 'brand-recognition-task',
       taskTitle: encodeURIComponent(taskTitle || 'Labeling Task'),
@@ -150,8 +153,9 @@ const CreativeTaskScreen: React.FC = () => {
     const queryString = new URLSearchParams(urlParams).toString();
     const fullUrl = `${baseUrl}?${queryString}`;
     
-    console.log('🔗 Built creative URL:', fullUrl);
+    console.log('🔗 Built creative URL with correct base:', fullUrl);
     console.log('📋 All parameters:', urlParams);
+    console.log('🎯 Base URL used:', baseUrl);
     
     return fullUrl;
   };

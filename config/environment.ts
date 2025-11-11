@@ -4,6 +4,7 @@ export type Environment = 'development' | 'staging' | 'production';
 // Environment configuration interface
 interface EnvironmentConfig {
   API_BASE_URL: string;
+  API_BASE_DOMAIN: string; 
   ENVIRONMENT: Environment;
   DEBUG: boolean;
   LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error';
@@ -26,6 +27,7 @@ const getCurrentEnvironment = (): Environment => {
 // Environment-specific configurations
 const environments: Record<Environment, EnvironmentConfig> = {
   development: {
+    API_BASE_DOMAIN: 'https://offer-wall-backend-ten.vercel.app',
     API_BASE_URL: 'https://offer-wall-backend-ten.vercel.app/api',
     ENVIRONMENT: 'development',
     DEBUG: true,
@@ -34,6 +36,7 @@ const environments: Record<Environment, EnvironmentConfig> = {
     APP_VERSION: '1.0.0',
   },
   staging: {
+    API_BASE_DOMAIN: 'https://staging.your-domain.com',
     API_BASE_URL: 'https://staging.your-domain.com/api',
     ENVIRONMENT: 'staging',
     DEBUG: true,
@@ -42,7 +45,8 @@ const environments: Record<Environment, EnvironmentConfig> = {
     APP_VERSION: '1.0.0',
   },
   production: {
-    API_BASE_URL: 'https://your-production-domain.com/api',
+    API_BASE_DOMAIN: 'https://offer-wall-backend-ten.vercel.app',
+    API_BASE_URL: 'https://offer-wall-backend-ten.vercel.app/api',
     ENVIRONMENT: 'production',
     DEBUG: false,
     LOG_LEVEL: 'error',
@@ -58,6 +62,7 @@ export const config: EnvironmentConfig = environments[currentEnvironment];
 // Export individual config values for convenience
 export const {
   API_BASE_URL,
+  API_BASE_DOMAIN,
   ENVIRONMENT,
   DEBUG,
   LOG_LEVEL,
@@ -69,6 +74,19 @@ export const {
 export const isDevelopment = (): boolean => ENVIRONMENT === 'development';
 export const isStaging = (): boolean => ENVIRONMENT === 'staging';
 export const isProduction = (): boolean => ENVIRONMENT === 'production';
+
+// API Helper functions
+export const getApiUrl = (endpoint: string): string => {
+  // Remove leading slash if present
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return `${API_BASE_URL}/${cleanEndpoint}`;
+};
+
+export const getBackendUrl = (endpoint: string = ''): string => {
+  // backend-only URLs 
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return endpoint ? `${API_BASE_DOMAIN}/${cleanEndpoint}` : API_BASE_DOMAIN;
+};
 
 // Logging utility
 export const log = {
@@ -97,6 +115,7 @@ if (DEBUG) {
   console.log('🔧 Environment Configuration:', {
     environment: ENVIRONMENT,
     apiBaseUrl: API_BASE_URL,
+    apiBaseDomain: API_BASE_DOMAIN,
     debug: DEBUG,
     logLevel: LOG_LEVEL,
   });

@@ -24,7 +24,7 @@ type OfferTask = {
   type?: string;
 };
 
-// Add types for social offers
+// social offers
 type SocialOffer = {
   _id: string;
   imageLink: string;
@@ -84,32 +84,52 @@ const OfferScreen: React.FC = () => {
   };
 
   const mapBackendTaskToFrontend = (backendTask: any): OfferTask => {
-    // determine creative link based on task type
-    let creativeLink = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html';
-    let taskType = backendTask.type || 'video-labelling';
+    // Use creative link from database - DO NOT fallback to default
+    const creativeLink = backendTask.creativeLink;
     
-    // map diff task types to their creative links
-    if (backendTask.type?.includes('audio')) {
-      creativeLink = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/audio-task.html';
-      taskType = 'audio-labelling';
-    } else if (backendTask.type?.includes('image')) {
-      creativeLink = 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/image-task.html';
-      taskType = 'image-labelling';
+    // Debug logging to see what we're getting from backend
+    console.log('🔍 Mapping backend task:', {
+      id: backendTask._id,
+      type: backendTask.type,
+      creativeLink: backendTask.creativeLink,
+      originalBackendTask: backendTask
+    });
+    
+    // Store the original backend type for filtering, but create display type
+    const originalType = (backendTask.type || '').toLowerCase();
+    let displayType = 'video-labelling'; 
+    
+    // Flexible type categorization - check if type contains keywords
+    if (originalType.includes('audio')) {
+      displayType = 'audio-labelling';
+    } else if (originalType.includes('image')) {
+      displayType = 'image-labelling';
+    } else if (originalType.includes('video')) {
+      displayType = 'video-labelling';
     }
     
-    return {
+    const mappedTask = {
       id: backendTask._id || `task-${Date.now()}`,
-      title: cleanTaskTitle(taskType),
+      title: cleanTaskTitle(displayType),
       description: backendTask.description || 'Complete this task to earn rewards',
       reward: backendTask.rewards?.coinsOnCorrect || 0,
       iqGain: backendTask.rewards?.iqDeltaOnCorrect || 0,
       image: backendTask.imageLink || 'https://via.placeholder.com/300x140/2a2b33/fff?text=Task',
       difficulty: getDifficultyFromIQ(backendTask.minimumIq || 0),
       minimumIq: backendTask.minimumIq || 0,
-      creativeLink: creativeLink,
+      creativeLink: creativeLink, // Use exactly what comes from backend
       penaltyTime: backendTask.penaltyTime || 1,
-      type: taskType
+      type: backendTask.type // Store original backend type for filtering
     };
+    
+    console.log('✅ Mapped task result:', {
+      id: mappedTask.id,
+      type: mappedTask.type,
+      creativeLink: mappedTask.creativeLink,
+      title: mappedTask.title
+    });
+    
+    return mappedTask;
   };
 
   // check if task is locked based on user IQ
@@ -120,7 +140,12 @@ const OfferScreen: React.FC = () => {
 
   // Handle task selection with IQ check
   const handleTaskSelect = (task: OfferTask) => {
-    console.log('🎯 Task selected:', task);
+    console.log('🎯 Task selected:', {
+      id: task.id,
+      type: task.type,
+      creativeLink: task.creativeLink,
+      title: task.title
+    });
     
     // Check if task is locked due to insufficient IQ
     if (isTaskLocked(task)) {
@@ -132,12 +157,26 @@ const OfferScreen: React.FC = () => {
       return;
     }
     
+    // Validate creative link before navigation
+    if (!task.creativeLink) {
+      console.error('❌ No creative link found for task:', task);
+      Alert.alert('Error', 'This task is not properly configured. Please try another task.');
+      return;
+    }
+    
+    console.log('🚀 Navigating to creative task with:', {
+      labelOfferId: task.id,
+      creativeLink: task.creativeLink,
+      taskTitle: task.title,
+      taskType: task.type
+    });
+    
     // navigate to creative screen with task data
     router.push({
       pathname: '/creative-task',
       params: {
         labelOfferId: task.id,
-        creativeLink: task.creativeLink || 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
+        creativeLink: task.creativeLink, 
         taskTitle: task.title,
         reward: task.reward.toString(),
         iqGain: task.iqGain.toString(),
@@ -158,8 +197,15 @@ const OfferScreen: React.FC = () => {
         console.log('✅ Backend response:', response);
         
         if (response.success && response.data) {
+          console.log('📋 Raw backend tasks:', response.data);
+          
           const mappedTasks = response.data.map(mapBackendTaskToFrontend);
-          console.log('🔄 Mapped tasks:', mappedTasks);
+          console.log('🔄 Final mapped tasks:', mappedTasks.map((t: OfferTask) => ({ 
+            id: t.id, 
+            type: t.type, 
+            title: t.title,
+            creativeLink: t.creativeLink 
+          })));
           setAllTasks(mappedTasks);
         } else {
           throw new Error('Invalid response format from backend');
@@ -168,6 +214,7 @@ const OfferScreen: React.FC = () => {
         console.error('❌ Failed to fetch tasks:', error);
         setError(error.message || 'Failed to load tasks');
         
+        // Fallback tasks with default creative links
         setAllTasks([{
           id: 'fallback-1',
           title: 'Label Recognition Task',
@@ -388,15 +435,17 @@ const OfferScreen: React.FC = () => {
     );
   }
 
-  // Filter tasks based on active tab
+  // Filter tasks based on active tab with flexible type matching
   const getFilteredTasks = (): OfferTask[] => {
     return allTasks.filter(task => {
+      const taskType = (task.type || '').toLowerCase();
+      
       if (activeTaskTab === 'audio') {
-        return task.type?.includes('audio');
+        return taskType.includes('audio');
       } else if (activeTaskTab === 'image') {
-        return task.type?.includes('image');
-      } else {
-        return task.type?.includes('video') || !task.type?.includes('audio') && !task.type?.includes('image');
+        return taskType.includes('image');
+      } else { // video tab
+        return taskType.includes('video') || (!taskType.includes('audio') && !taskType.includes('image'));
       }
     });
   };
@@ -419,7 +468,7 @@ const OfferScreen: React.FC = () => {
             </View>
           </View>
           
-          {/* Updated balance card - removed INR */}
+          {/* Updated balance card*/}
           <View style={styles.balanceCard}>
             <View style={{flexDirection: 'row'}}>
               <Text style={styles.balanceTokens}>{userProfile?.coins?.toLocaleString() || 0}</Text>
@@ -899,7 +948,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
 
-  // Social Task Cards - Enhanced completed state
+  // Social Task Cards 
   socialTaskCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
