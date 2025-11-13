@@ -201,9 +201,8 @@ export default function ProfileScreen() {
         const response = await authAPI.getUser();
         console.log('🔍 Profile - Raw API response:', response);
         
-        // response structures - backend returns user data 
+        // Handle different response structures - backend returns user data 
         const userData = response.user || response.data || response;
-        console.log('🔍 Profile - Extracted user data:', userData);
         
         if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
           // Map backend fields to frontend fields
@@ -212,24 +211,17 @@ export default function ProfileScreen() {
             email: userData.email,
             _id: userData._id,
             iq: userData.iq,
-            coins: userData.coins || 0,
+            coins: userData.coins || 0,  // Keep for reference
             inrBalance: userData.inrBalance || 0,
             streakCount: userData.streakCount,
             longestStreak: userData.longestStreak,
             lastStreakAt: userData.lastStreakAt
           };
-          
-          console.log('✅ Profile - User data loaded:', {
-            name: mappedUserData.name,
-            email: mappedUserData.email,
-            iq: mappedUserData.iq,
-            coins: mappedUserData.coins,
-            inrBalance: mappedUserData.inrBalance
-          });
+
           setUserProfile(mappedUserData);
           setUserIQ(mappedUserData.iq || 0);
           
-          // Load streak data from user profile
+          // streak data from user profile
           if (mappedUserData.streakCount !== undefined) {
             const isActive = calculateStreakStatus(mappedUserData.lastStreakAt || new Date().toISOString());
             setStreakData({
@@ -258,8 +250,10 @@ export default function ProfileScreen() {
   
     if (authState?.authenticated) {
       fetchUserProfile();
+      // Force refresh balance when profile loads
+      refreshBalance?.();
     }
-  }, [authState?.authenticated]);
+  }, [authState?.authenticated, refreshBalance]);
 
   // Add this useEffect to load IQ ranges
   useEffect(() => {
@@ -317,7 +311,10 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.statInfo}>
                   <Text style={styles.statLabel}>Points Balance</Text>
-                  <Text style={styles.statValue}>{balance.toLocaleString()}</Text>
+                  {/* Change this line to show proper balance */}
+                  <Text style={styles.statValue}>
+                    {balance > 0 ? balance.toLocaleString() : (userProfile?.coins || 0).toLocaleString()}
+                  </Text>
                 </View>
               </View>
             </View>

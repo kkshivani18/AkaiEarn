@@ -47,15 +47,14 @@ const LootBoxesScreen: React.FC = () => {
     try {
       const response = await lootBoxAPI.getAvailableCryptos();
       if (response.success) {
-        // Add "All Coins" option at the beginning
-        const allOption = { id: 'all', name: 'All Coins', symbol: '🪙', color: '#FFD700' };
+        const allOption = { id: 'all', name: 'All Crypto', symbol: '🪙', color: '#FFD700' };
         setAvailableCryptos([allOption, ...response.data]);
       }
     } catch (error) {
       console.error('Failed to fetch cryptocurrencies:', error);
       // Fallback to static data
       setAvailableCryptos([
-        { id: 'all', name: 'All Coins', symbol: '🪙', color: '#FFD700' },
+        { id: 'all', name: 'All Crypto', symbol: '🪙', color: '#FFD700' },
         { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', color: '#627EEA' },
         { id: 'bnb', name: 'BNB', symbol: 'BNB', color: '#F3BA2F' },
         { id: 'solana', name: 'Solana', symbol: 'SOL', color: '#9945FF' },
@@ -297,7 +296,7 @@ const LootBoxesScreen: React.FC = () => {
   const CryptocurrencyDropdown = () => {
     return (
       <View style={styles.dropdownContainer}>
-        <Text style={styles.sectionTitle}>Choose Coins</Text>
+        <Text style={styles.sectionTitle}>Choose Crypto</Text>
         
         {/* Dropdown Button */}
         <TouchableOpacity
@@ -335,7 +334,7 @@ const LootBoxesScreen: React.FC = () => {
           >
             <View style={styles.dropdownModal}>
               <View style={styles.dropdownHeader}>
-                <Text style={styles.dropdownTitle}>Select Coins</Text>
+                <Text style={styles.dropdownTitle}>Select Crypto</Text>
                 <TouchableOpacity 
                   onPress={() => setShowCryptoDropdown(false)}
                   style={styles.dropdownCloseButton}
@@ -513,7 +512,7 @@ const LootBoxesScreen: React.FC = () => {
       </View>
 
       {/* Recent Activity */}
-      <View style={styles.recentActivityPreview}>
+      {/* <View style={styles.recentActivityPreview}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         {recentTransactions.slice(0, 3).map((transaction, index) => (
           <View key={transaction._id || index} style={styles.transactionItem}>
@@ -534,7 +533,7 @@ const LootBoxesScreen: React.FC = () => {
             </View>
           </View>
         ))}
-      </View>
+      </View> */}
     </View>
   );
 
