@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL, log } from '../config/environment'
+import { API_BASE_URL, log } from '../config/environment';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -354,6 +354,8 @@ export const authAPI = {
   },
 
   updateProfile: async (profileData: {
+    name?: string;
+    firstName?: string;
     occupation: string;
     // Date or a backend-friendly string
     dob: string | Date;
@@ -498,10 +500,13 @@ export const authAPI = {
   // Logout - clear secure storage
   logout: async () => {
     try {
+      console.log('🧹 Clearing auth tokens...');
       await SecureStore.deleteItemAsync('authToken');
       await SecureStore.deleteItemAsync('userData');
+      console.log('✅ Auth tokens cleared successfully');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
+      // Don't throw error, just log it
     }
   },
 

@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-  Alert,
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -20,7 +21,6 @@ import RNPickerSelect from 'react-native-picker-select';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI, referralAPI } from '../services/api';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const ProfileCompletionScreen: React.FC = () => {
   const [fullName, setFullName] = React.useState<string>('');
@@ -210,7 +210,11 @@ const ProfileCompletionScreen: React.FC = () => {
       }
       
       // Format the data to match with backend
+      // Extract first name from fullName (first word)
+      const firstName = fullName.trim().split(/\s+/)[0];
       const profileData = {
+        name: fullName.trim(), // Send full name
+        firstName: firstName, // Also send first name for compatibility
         occupation: occupation || '',
         dob: dobDate ? dobDate.toISOString().split('T')[0] : '',
         gender: gender.toLowerCase(),
@@ -235,7 +239,10 @@ const ProfileCompletionScreen: React.FC = () => {
           [
             {
               text: 'Get Started',
-              onPress: () => router.replace('/(tabs)/offer')
+              onPress: () => {
+                // Navigate to offer page - it will fetch fresh user data
+                router.replace('/(tabs)/offer');
+              }
             }
           ]
         );

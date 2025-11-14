@@ -1,4 +1,5 @@
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, {
@@ -14,17 +15,15 @@ import Svg, {
   Image as SvgImage,
   Text as SvgText,
 } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 import { couponsAPI } from '../services/api';
 
-// --- Types ---
 interface Segment {
   color: string;
   text: string;
   reward: string;
   type?: 'tokens' | 'coupon';
-  value?: number; // For tokens
-  couponData?: any; // For coupon information
+  value?: number; 
+  couponData?: any; 
   coupon?: any;
   brandLogo?: string;
 }
@@ -38,6 +37,7 @@ interface SpinWheelProps {
   onSpinPress?: () => void;
   wheelSize?: number;
   cooldownTime?: number;
+  visible?: boolean; // Add visible prop to refresh when modal opens
 }
 
 // --- Constants ---
@@ -113,7 +113,8 @@ const StatusDisplay: React.FC<{
   timeLeft: number;
 }> = React.memo(({ isUnlocked, timeLeft }) => (
   <View style={styles.statusDisplay}>
-    {!isUnlocked ? (
+    {timeLeft > 0 ? (
+      // Always show timer when timeLeft > 0, regardless of isUnlocked state
       <>
         <Text style={styles.statusLabel}>Next spin in:</Text>
         <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
@@ -286,7 +287,8 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   spinValue,
   onSpinPress,
   wheelSize = DEFAULT_WHEEL_SIZE,
-  cooldownTime = COOLDOWN_TIME
+  cooldownTime = COOLDOWN_TIME,
+  visible = true
 }) => {
   // State
   const [timeLeft, setTimeLeft] = useState(0);
@@ -313,33 +315,42 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     [spinValue]
   );
 
-  // On mount, fetch spin status from backend
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const status = await couponsAPI.getSpinWheelStatus();
-        if (!mounted || !status?.success) return;
-        setIsUnlockedState(Boolean(status.canSpin));
-        setTimeLeft(Number(status.secondsLeft || 0));
-      } catch {
-        // If status fails, fall back to prop or default
+  // Fetch spin status 
+  const fetchSpinStatus = useCallback(async () => {
+    try {
+      const status = await couponsAPI.getSpinWheelStatus();
+      if (status?.success !== false) {
+        const canSpin = Boolean(status?.canSpin);
+        const secondsLeft = Number(status?.secondsLeft || 0);
+        setIsUnlockedState(canSpin);
+        setTimeLeft(secondsLeft);
+      } else {
         setIsUnlockedState(Boolean(isUnlocked ?? true));
+        setTimeLeft(0);
       }
-    })();
-    return () => { mounted = false; };
+    } catch (error) {
+      console.error('Failed to fetch spin wheel status:', error);
+      setIsUnlockedState(Boolean(isUnlocked ?? true));
+      setTimeLeft(0);
+    }
   }, [isUnlocked]);
 
-  const canSpin = isUnlocked ?? isUnlockedState;
+  // Fetch status whenever modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      fetchSpinStatus();
+    }
+  }, [visible]); 
 
-  // Only coupons and no token placeholders
+  const canSpin = (isUnlocked ?? isUnlockedState) && timeLeft === 0;
+
+  // coupons
   const normalizedSegments = useMemo(() => {
     const input = Array.isArray(segments) ? segments.filter(Boolean) : [];
     const couponsOnly = input.filter(s => s && s.type !== 'tokens');
-    // Force new palette colors (ignore existing segment.color)
     const colored = couponsOnly.map((s, i) => ({
       ...s,
-      color: PALETTE[i % PALETTE.length], // Always use PALETTE
+      color: PALETTE[i % PALETTE.length], 
     }));
     let result = colored.slice(0, MAX_SEGMENTS);
     while (result.length > 0 && result.length < MAX_SEGMENTS) {
@@ -386,28 +397,42 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
       }
       
       setResult(resultMessage);
-      setTimeLeft(cooldownTime);       // lock for 24h locally
-      setIsUnlockedState(false);       // lock immediately after spin
+      setIsUnlockedState(false);     
       onSpinComplete(winningSegment);
+      
+      setTimeout(() => {
+        fetchSpinStatus();
+      }, 1000);
     });
-  }, [isSpinning, canSpin, onSpinPress, normalizedSegments, spinValue, cooldownTime, onSpinComplete]);
+  }, [isSpinning, canSpin, onSpinPress, normalizedSegments, spinValue, cooldownTime, onSpinComplete, fetchSpinStatus]);
 
-  // Countdown while locked; auto-unlock when reaches zero
   useEffect(() => {
-    if (canSpin || timeLeft <= 0) return;
+    if (timeLeft <= 0) {
+      if (visible) {
+        fetchSpinStatus();
+      }
+      setIsUnlockedState(true);
+      return;
+    }
+    
+    // Start countdown timer
     const id = setInterval(() => {
       setTimeLeft(prev => {
         const next = prev - 1;
         if (next <= 0) {
           clearInterval(id);
           setIsUnlockedState(true);
+          if (visible) {
+            fetchSpinStatus();
+          }
           return 0;
         }
         return next;
       });
     }, 1000);
+    
     return () => clearInterval(id);
-  }, [canSpin, timeLeft]);
+  }, [timeLeft, visible]); 
 
   // animation effect
   useEffect(() => {
@@ -433,28 +458,10 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     };
   }, [glowOpacity]);
 
-  // Timer for cooldown display
-  useEffect(() => {
-    if (!isUnlocked && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prevTime => {
-          if (prevTime <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            return 0;
-          }
-          return prevTime - 1;
-        });
-      }, 1000);
-    }
-    
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isUnlocked, timeLeft]);
 
   // Pulse the center button when ready
   useEffect(() => {
-    if (isUnlocked && !isSpinning) {
+    if (canSpin && !isSpinning) {
       const loop = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseScale, { toValue: 1.06, duration: 900, useNativeDriver: true }),
@@ -466,9 +473,8 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     } else {
       pulseScale.setValue(1);
     }
-  }, [isUnlocked, isSpinning, pulseScale]);
+  }, [canSpin, isSpinning, pulseScale]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -524,7 +530,6 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   );
 };
 
-// --- Styles ---
 const styles = StyleSheet.create({
   modalContentWrapper: {
     borderRadius: 32,
@@ -567,7 +572,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
   },
-  // Container for the wheel SVG/animated view
+  // for the wheel animated view
   wheelContainer: {
     alignItems: 'center',
     justifyContent: 'center',

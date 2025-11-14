@@ -445,24 +445,9 @@ const LootBoxesScreen: React.FC = () => {
                 {/* Content */}
                 <View style={styles.lootBoxCardContent}>
                   <Text style={styles.lootBoxCardName}>{item.name}</Text>
-                  {/* <Text style={styles.lootBoxCardDescription}>{item.description}</Text> */}
                   <Text style={styles.estimatedValue}>${item.estimatedValue}</Text>
-                  
-                  {/* Rewards Preview */}
-                  {/* <View style={styles.rewardsPreview}>
-                    {item.rewards.slice(0, 2).map((reward: string, index: number) => (
-                      <View key={index} style={styles.rewardPreviewItem}>
-                        <Ionicons name="gift-outline" size={12} color="#A1A1AA" />
-                        <Text style={styles.rewardPreviewText}>{reward}</Text>
-                      </View>
-                    ))}
-                    {item.rewards.length > 2 && (
-                      <Text style={styles.moreRewards}>+{item.rewards.length - 2} more</Text>
-                    )}
-                  </View> */}
-                </View>
-
-                {/* Footer with enhanced exchange rate display */}
+                </View> 
+                
                 <View style={styles.lootBoxCardFooter}>
                   <View style={styles.exchangeRateInfo}>
                     <Text style={styles.exchangeRateText}>

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, ViewToken, Dimensions, Linking, Share, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewToken } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI, offersAPI, socialAPI } from '../../services/api';
-import { router } from 'expo-router';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -240,47 +241,54 @@ const OfferScreen: React.FC = () => {
   }, [authState?.authenticated]);
 
   // fetch user profile data
-  React.useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await authAPI.getUser();
-        const userData = response.user || response.data || response;
-        
-        if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
-          setUserProfile({
-            name: userData.firstName || userData.username || userData.name || 'User',
-            email: userData.email,
-            iq: userData.iq || 0,
-            coins: userData.coins || 0,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+  const fetchUserProfile = React.useCallback(async () => {
+    try {
+      const response = await authAPI.getUser();
+      const userData = response.user || response.data || response;
+      
+      if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
         setUserProfile({
-          name: 'User',
-          email: 'user@example.com',
-          iq: 0,
-          coins: 0,
+          name: userData.firstName || userData.username || userData.name || 'User',
+          email: userData.email,
+          iq: userData.iq || 0,
+          coins: userData.coins || 0,
         });
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      setUserProfile({
+        name: 'User',
+        email: 'user@example.com',
+        iq: 0,
+        coins: 0,
+      });
+    }
+  }, []);
 
+  // Fetch profile when authenticated
+  React.useEffect(() => {
     if (authState?.authenticated) {
       fetchUserProfile();
     }
-  }, [authState?.authenticated]);
+  }, [authState?.authenticated, fetchUserProfile]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (authState?.authenticated) {
+        fetchUserProfile();
+      }
+    }, [authState?.authenticated, fetchUserProfile])
+  );
 
   // Fetch social offers from backend
   const fetchSocialOffers = async () => {
     setLoadingSocial(true);
     try {
-      console.log('📡 Fetching social offers from backend...');
       const response = await socialAPI.getAllSocialOffers();
       console.log('✅ Social offers response:', response);
       
       if (response.success && response.data) {
         // Log each offer's completion status
-        console.log('📦 Social offers with completion status:');
         response.data.forEach((offer: any) => {
           console.log(`  - ${offer.description}: completed=${offer.completed}, id=${offer._id}`);
         });
@@ -309,7 +317,6 @@ const OfferScreen: React.FC = () => {
       description: offer.description 
     });
 
-    // ✅ CRITICAL: Check if already completed BEFORE any action
     if (offer.completed) {
       console.log('⚠️ Offer already completed, showing info');
       Alert.alert(
@@ -317,10 +324,9 @@ const OfferScreen: React.FC = () => {
         `You've already completed this task and earned ${offer.reward.coinsOnCorrect} points!`,
         [{ text: 'OK' }]
       );
-      return; // EXIT EARLY - don't proceed
+      return; 
     }
 
-    // Prevent multiple simultaneous completions of the same offer
     if (completingSocialOffer === offer._id) {
       console.log('⚠️ Already processing this offer');
       return;
@@ -345,14 +351,11 @@ const OfferScreen: React.FC = () => {
     setCompletingSocialOffer(offer._id);
     
     try {
-      console.log('📤 Calling completeSocialOffer API for:', offer._id);
       const response = await socialAPI.completeSocialOffer(offer._id);
       console.log('✅ Social offer API response:', response);
       
       if (response.success) {
         console.log('✅ Social offer completed successfully');
-        
-        // Refresh social offers from backend to get updated completion status
         await fetchSocialOffers();
         
         // Update user coins locally
@@ -380,10 +383,9 @@ const OfferScreen: React.FC = () => {
         data: error.response?.data
       });
       
-      // If task was already completed (409), refresh to get correct status
       if (error.response?.status === 409) {
         console.log('⚠️ Task already completed (409), refreshing list...');
-        await fetchSocialOffers(); // This will update the UI with completed=true
+        await fetchSocialOffers(); 
         Alert.alert(
           '✅ Already Completed', 
           'You have already completed this task.',
@@ -435,7 +437,6 @@ const OfferScreen: React.FC = () => {
     );
   }
 
-  // Filter tasks based on active tab with flexible type matching
   const getFilteredTasks = (): OfferTask[] => {
     return allTasks.filter(task => {
       const taskType = (task.type || '').toLowerCase();

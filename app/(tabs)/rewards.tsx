@@ -1,28 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-  Animated,
-  Alert,
-  Share,
-  Dimensions,
   ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  Modal,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
+import SpinWheel from '../../components/SpinWheel';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI, couponsAPI, referralAPI } from '../../services/api';
-import CouponModal from '../../components/CouponModal';
-import SpinWheel from '../../components/SpinWheel';
 import { Coupon } from '../../types/Offer';
-import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
 
 interface Segment {
   color: string;
@@ -92,13 +91,13 @@ const RewardsScreen: React.FC = () => {
         console.log('✅ Coupons refreshed:', response.data?.length || 0);
       }
     } catch (error) {
-      console.error('Failed to fetch coupons:', error);
+      // console.error('Failed to fetch coupons:', error);
     } finally {
       if (showLoading) setRefreshingCoupons(false);
     }
   };
 
-  // load available coupons for spin wheel from backend
+  // load available coupons for spin wheel 
   const loadSpinWheelCoupons = async () => {
     try {
       const response = await couponsAPI.getSpinWheelCoupons();
@@ -142,7 +141,7 @@ const RewardsScreen: React.FC = () => {
         createFallbackSegments();
       }
     } catch (error) {
-      console.error('Failed to load spin wheel coupons:', error);
+      // console.error('Failed to load spin wheel coupons:', error);
       createFallbackSegments();
     }
   };
@@ -182,12 +181,6 @@ const RewardsScreen: React.FC = () => {
   };
 
   const handleSpinWheel = () => {
-    // 24-hour restriction for testing
-    // if (hasSpun) {
-    //   Alert.alert('Already Spun', 'You can only spin once per day!');
-    //   return;
-    // }
-    
     if (wheelSegments.length === 0) {
       Alert.alert('Loading', 'Spin wheel is still loading. Please try again.');
       return;
@@ -227,8 +220,6 @@ const RewardsScreen: React.FC = () => {
                 text: 'OK',
                 onPress: () => {
                   setShowSpinWheel(false);
-                  // 24-hour spin-wheel reset
-                  setTimeout(() => setHasSpun(false), 24 * 60 * 60 * 1000);
                 }
               }
             ]
@@ -239,6 +230,13 @@ const RewardsScreen: React.FC = () => {
           let errorMessage = 'Failed to add coupon to your account.';
           if (couponError.response?.status === 409) {
             errorMessage = 'You can only spin the wheel once a day!';
+            // Don't close the modal - let the timer show
+            Alert.alert(
+              'Oops!',
+              errorMessage,
+              [{ text: 'OK' }]
+            );
+            return; 
           } else if (couponError.response?.status === 404) {
             errorMessage = 'Coupon not available. Please try again.';
           }
@@ -310,7 +308,7 @@ const RewardsScreen: React.FC = () => {
     return 0;
   };
 
-  // Enhanced coupon descriptions based on company
+  // enhanced coupon descriptions based on company
   const getImprovedCouponDescription = (coupon: any): string => {
     const company = coupon.company?.toLowerCase() || '';
     const description = coupon.description || '';
@@ -319,7 +317,6 @@ const RewardsScreen: React.FC = () => {
     const discountMatch = description.match(/(\d+)%/);
     const discount = discountMatch ? discountMatch[1] : '20';
     
-    // Company-specific descriptions
     const companyDescriptions: { [key: string]: string } = {
       'amazon': `${discount}% off on electronics, books & more`,
       'netflix': `Get ${discount}% off your next subscription`,
@@ -336,7 +333,6 @@ const RewardsScreen: React.FC = () => {
     return companyDescriptions[company] || `${discount}% discount on your purchase`;
   };
 
-  // Copy coupon code to clipboard
   const handleCopyCouponCode = async (coupon: any) => {
     try {
       const code = coupon.couponCode || `SAVE${extractDiscountFromDescription(coupon.description)}`;
@@ -367,8 +363,6 @@ const RewardsScreen: React.FC = () => {
       if (response.success && response.data) {
         const referredUsers = response.data.map((user: any, index: number) => {
           const userId = userProfile.referredUsers[index] || `temp-${index}`;
-          
-          // extracted timestamp from ObjectId for join date
           const timestamp = typeof userId === 'string' && userId.length >= 8 
             ? parseInt(userId.substring(0, 8), 16) * 1000 
             : Date.now();
@@ -388,7 +382,6 @@ const RewardsScreen: React.FC = () => {
         
         setReferredUsersDetails(referredUsers);
       } else {
-        // Fallback to the old method if the new endpoint fails
         const validUserIds = userProfile.referredUsers.filter((userId: string) => userId !== userProfile._id);
         
         const referredUsers = validUserIds.map((userId: string, index: number) => {
@@ -461,6 +454,7 @@ const RewardsScreen: React.FC = () => {
           isUnlocked={!hasSpun}
           spinValue={spinValue}
           onSpinPress={handleSpinPress}
+          visible={showSpinWheel}
         />
       </View>
     </Modal>
@@ -748,7 +742,6 @@ const RewardsScreen: React.FC = () => {
   );
 };
 
-// Helper function to extract discount percentage from description
 const extractDiscountFromDescription = (description: string): string => {
   const match = description.match(/(\d+)%/);
   return match ? match[1] : '20';

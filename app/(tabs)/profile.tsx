@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import IQMeter from '../../components/IQMeter'
+import IQMeter from '../../components/IQMeter';
 import { calculateStreakStatus } from '../../components/Streak';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBalance } from '../../contexts/BalanceContext';
@@ -21,7 +21,6 @@ import { authAPI, configAPI } from '../../services/api';
 
 const { width, height } = Dimensions.get('window');
 
-// Entrance Animation 
 const AnimatedSection = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(20)).current;
@@ -48,7 +47,6 @@ const AnimatedSection = ({ children, delay = 0 }: { children: React.ReactNode; d
     );
 };
 
-// --- Icon Components ---
 const BackIcon = () => <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.icon}><Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></Svg>;
 const ChevronRightIcon = () => <Svg fill="none" viewBox="0 0 24 24" stroke="#A1A1AA" style={styles.icon}><Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></Svg>;
 const LogoutIcon = () => <Svg fill="none" viewBox="0 0 24 24" stroke="#EF4444" style={styles.icon}><Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></Svg>;
@@ -75,31 +73,6 @@ const ProfileHeader = ({ userProfile }: { userProfile: any }) => (
         <Text style={styles.profileEmail}>{userProfile?.email || 'Loading...'}</Text>
     </View>
 );
-
-const StatsGrid = ({ userProfile, balance }: { userProfile: any, balance: number }) => {
-  // Safe referral count resolver (same as rewards screen)
-  const resolveReferralCount = (user: any) => {
-    if (!user) return 0;
-    
-    if (typeof user.referredCount === 'number') return user.referredCount;
-
-    const arr: string[] = Array.isArray(user.referredUsers) ? user.referredUsers : [];
-    if (arr.length > 0) {
-      // array contains self-reference, treat as 0
-      if (arr.length === 1 && arr[0] === user._id) {
-        return 0;
-      }
-      
-      // Filter out any self-references but keep the rest
-      const validReferrals = arr.filter(referredUserId => referredUserId !== user._id);
-      return validReferrals.length;
-    }
-
-    return 0;
-  };
-
-  return null; // Remove the old stats grid since we're moving points to separate section
-};
 
 const AccountMenu = ({ onLogout }: { onLogout: () => void }) => (
     <View style={styles.accountSectionContainer}>
@@ -142,7 +115,7 @@ export default function ProfileScreen() {
   const { authState, onLogout } = useAuth();
   const { balance, userData, refreshBalance } = useBalance();
   
-  // Additional profile data not in balance context
+  // profile data not in balance context
   const [userProfile, setUserProfile] = useState<{
     name: string, 
     email: string, 
@@ -178,13 +151,17 @@ export default function ProfileScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Logout', style: 'destructive',
+          text: 'Logout', 
+          style: 'destructive',
           onPress: async () => {
             try {
+              // clear auth tokens 
               await onLogout?.();
-              router.replace('/Login');
+              console.log('✅ Logout completed, tokens cleared');
+              router.replace('/');
+
             } catch (error) {
-              console.error('Logout failed:', error);
+              console.error('❌ Logout failed:', error);
               Alert.alert('Error', 'Failed to logout. Please try again.');
             }
           },
@@ -199,19 +176,16 @@ export default function ProfileScreen() {
       try {
         setLoading(true);
         const response = await authAPI.getUser();
-        console.log('🔍 Profile - Raw API response:', response);
-        
-        // Handle different response structures - backend returns user data 
         const userData = response.user || response.data || response;
         
         if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
-          // Map backend fields to frontend fields
+          // map backend fields to frontend fields
           const mappedUserData = {
             name: userData.firstName || userData.username || userData.name || 'User',
             email: userData.email,
             _id: userData._id,
             iq: userData.iq,
-            coins: userData.coins || 0,  // Keep for reference
+            coins: userData.coins || 0,  
             inrBalance: userData.inrBalance || 0,
             streakCount: userData.streakCount,
             longestStreak: userData.longestStreak,
@@ -234,7 +208,6 @@ export default function ProfileScreen() {
         }
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
-        // Set fallback data so user doesn't see "Loading..." forever
         setUserProfile({
           name: 'User',
           email: 'user@example.com',
@@ -255,12 +228,11 @@ export default function ProfileScreen() {
     }
   }, [authState?.authenticated, refreshBalance]);
 
-  // Add this useEffect to load IQ ranges
+  // load IQ ranges
   useEffect(() => {
     const loadIqRanges = async () => {
       try {
         const response = await configAPI.getIqRanges();
-        console.log('✅ IQ ranges loaded:', response);
         
         // Handle different response structures
         if (response && response.data) {
@@ -268,7 +240,6 @@ export default function ProfileScreen() {
         } else if (response && Array.isArray(response)) {
           setIqRanges(response);
         } else {
-          console.log('⚠️ No IQ ranges data found, using empty array');
           setIqRanges([]);
         }
       } catch (error) {
@@ -331,7 +302,7 @@ export default function ProfileScreen() {
           </View>
         </AnimatedSection>
 
-        {/* Streak Card - Full width individual card */}
+        {/* Streak Card */}
         <AnimatedSection delay={350}>
           <View style={styles.iqSectionContainer}>
             <Text style={styles.sectionTitle}>Streak</Text>
@@ -392,7 +363,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 25,
     elevation: 15,
-    borderRadius: 999, // For shadow to be round
+    borderRadius: 999, 
   },
   avatar: {
     width: 105,
@@ -411,8 +382,8 @@ const styles = StyleSheet.create({
   },
   editButton: {
     position: 'absolute',
-    top: 80, // Position at the bottom right of the avatar
-    right: 0, // Align to the right edge
+    top: 80, 
+    right: 0, 
     backgroundColor: '#EF4444',
     width: 30,
     height: 30,
@@ -470,7 +441,7 @@ const styles = StyleSheet.create({
   },
   // Stats Grid
   statsGrid: {
-    display: 'none', // Hide since we're not using it anymore
+    display: 'none', 
   },
   statCard: {
     flexDirection: 'row',

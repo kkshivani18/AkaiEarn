@@ -42,8 +42,6 @@ export const Login: React.FC<SignInModalProps> = ({
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
-  
-  // Add reset password states
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -53,7 +51,7 @@ export const Login: React.FC<SignInModalProps> = ({
   const { onLogin, onGoogleLogin } = useAuth();
   const params = useLocalSearchParams();
 
-  // Check for reset token on component mount
+  // check for reset token on component mount
   React.useEffect(() => {
     const token = params.token as string;
     if (token && visible) {
@@ -125,14 +123,14 @@ export const Login: React.FC<SignInModalProps> = ({
       const result = await onLogin(email, password); 
       if (result?.success) {
         onClose();
-        // Check if profile is completed
+        // check if profile is completed
         const profileCompleted = result?.user?.profileCompleted || result?.profileCompleted;
         
         if (!profileCompleted) {
-          // Profile not completed, redirect to profile completion
+          // profile not completed, redirect to profile completion
           router.replace('/profile-completion');
         } else {
-          // Profile completed, redirect to main app
+          // profile completed, redirect to main app
           router.replace('/(tabs)/offer');
         }
       } else {
@@ -227,7 +225,6 @@ export const Login: React.FC<SignInModalProps> = ({
                 setNewPassword('');
                 setConfirmPassword('');
                 setResetToken('');
-                // Clear the token from URL if present
                 router.replace('/Login');
               }
             }

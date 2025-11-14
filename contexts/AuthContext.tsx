@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { authAPI } from '../services/api'
 
 interface AuthProps{
-  authState?: { token: string | null, authenticated: boolean | null, user?: {name: string, email: string}, profileCompleted?: boolean };
+  authState?: { token: string | null, authenticated: boolean | null, user?: {name: string, email: string, coins?: number}, profileCompleted?: boolean };
   onRegister?: (name: string, email: string, password: string) => Promise<any>;
   onLogin?: (email: string, password: string) => Promise<any>;
   onLogout?: () => Promise<any>;
@@ -12,7 +12,7 @@ interface AuthProps{
 }
 
 interface AuthContextType {
-  authState?: { token: string | null, authenticated: boolean | null, user?: {name: string, email: string}, profileCompleted?: boolean };
+  authState?: { token: string | null, authenticated: boolean | null, user?: {name: string, email: string, coins?: number}, profileCompleted?: boolean };
   onRegister?: (name: string, email: string, password: string) => Promise<any>;
   onLogin?: (email: string, password: string) => Promise<any>;
   onLogout?: () => Promise<any>;
@@ -37,7 +37,7 @@ export const AuthProvider = ({children}: any) => {
   const [authState, setAuthState] = useState<{
     token: string | null;
     authenticated: boolean | null;
-    user?: {name: string, email: string};
+    user?: {name: string, email: string, coins?: number};
     profileCompleted?: boolean;
   }>({
     token: null,
@@ -50,12 +50,10 @@ export const AuthProvider = ({children}: any) => {
     const loadToken = async () => {
       try {
         const token = await SecureStore.getItemAsync(TOKEN_KEY);
-        console.log('🔑 Stored token:', token ? 'Found' : 'Not found');
 
         if(token) {
-          // Try to get user data to verify token is still valid
           try {
-            // Add timeout to prevent hanging
+            // timeout to prevent hanging
             const userDataPromise = authAPI.getUser();
             const timeoutPromise = new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Token validation timeout')), 5000)
@@ -106,8 +104,6 @@ export const AuthProvider = ({children}: any) => {
 
   const register = async (name: string, email: string, password: string) => {
     try{
-      console.log('🚀 Attempting registration with:', { name, email, password: '***' });
-      
       const result = await authAPI.register(name, email, password);
       
       console.log('✅ Registration response:', result);
@@ -158,8 +154,6 @@ export const AuthProvider = ({children}: any) => {
     try{
       const result = await authAPI.login(email, password);
 
-      console.log("Login result:", result);
-
       if (result.success) {
         // store token
         await SecureStore.setItemAsync(TOKEN_KEY, result.authToken);
@@ -204,19 +198,33 @@ export const AuthProvider = ({children}: any) => {
   };
 
   const logout = async () => {
-    // Delete token from storage
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    try {
+      // Delete token from storage
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await SecureStore.deleteItemAsync('userData');
+      console.log('✅ AuthContext: Tokens cleared from storage');
 
-    // Reset auth state
-    setAuthState({
-      token: null, 
-      authenticated: false,
-      user: undefined,
-      profileCompleted: false
-    });
+      // Reset auth state
+      setAuthState({
+        token: null, 
+        authenticated: false,
+        user: undefined,
+        profileCompleted: false
+      });
+    } catch (error) {
+      console.error('❌ AuthContext logout error:', error);
+      
+      // Even if there's an error, reset the state
+      setAuthState({
+        token: null, 
+        authenticated: false,
+        user: undefined,
+        profileCompleted: false
+      });
+    }
   };
 
-  // Mark profile completed and refresh user from backend
+  // profile completed and refresh user from backend
   const onProfileCompleted = async () => {
     try {
       const userData = await authAPI.getUser();
@@ -237,8 +245,8 @@ export const AuthProvider = ({children}: any) => {
       setAuthState(prev => ({
         ...prev!,
         user: {
-          ...prev!.user,
-          coins: (prev!.user.coins || 0) + tokens
+          ...prev!.user!,
+          coins: (prev!.user!.coins || 0) + tokens
         }
       }));
     }
