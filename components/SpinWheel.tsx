@@ -32,7 +32,7 @@ interface SpinWheelProps {
   segments: Segment[];
   onSpinComplete: (segment: Segment) => void;
   isSpinning: boolean;
-  isUnlocked?: boolean; // make optional
+  isUnlocked?: boolean; 
   spinValue: Animated.Value;
   onSpinPress?: () => void;
   wheelSize?: number;
@@ -300,6 +300,9 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   const glowOpacity = useRef(new Animated.Value(0.7)).current;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pulseScale = useRef(new Animated.Value(1)).current;
+  const isSpinningRef = useRef(isSpinning);
+  const hasCompletedRef = useRef(false);
+  const isProcessingSpinRef = useRef(false); 
 
   // Memoized calculations
   const { outerRadius, innerRadius, logoRadius } = useMemo(
@@ -315,8 +318,15 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     [spinValue]
   );
 
-  // Fetch spin status 
+  // Update spinning ref when prop changes
+  useEffect(() => {
+    isSpinningRef.current = isSpinning;
+  }, [isSpinning]);
+
+  // spin status (prevent during spinning and processing)
   const fetchSpinStatus = useCallback(async () => {
+    if (isSpinningRef.current || isProcessingSpinRef.current) return;
+    
     try {
       const status = await couponsAPI.getSpinWheelStatus();
       if (status?.success !== false) {
@@ -335,12 +345,12 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     }
   }, [isUnlocked]);
 
-  // Fetch status whenever modal becomes visible
+  // fetch status whenever modal becomes visible (but not while spinning or processing)
   useEffect(() => {
-    if (visible) {
+    if (visible && !isSpinningRef.current && !isProcessingSpinRef.current) {
       fetchSpinStatus();
     }
-  }, [visible]); 
+  }, [visible, fetchSpinStatus]); 
 
   const canSpin = (isUnlocked ?? isUnlockedState) && timeLeft === 0;
 
@@ -363,6 +373,10 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   const startSpinning = useCallback(() => {
     if (isSpinning || !canSpin) return;
     if (!normalizedSegments.length) return;
+    
+    // Reset completion flag for new spin
+    hasCompletedRef.current = false;
+    isProcessingSpinRef.current = false;
     onSpinPress?.();
 
     const anglePerSegment = 360 / normalizedSegments.length;
@@ -386,9 +400,15 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
       easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       useNativeDriver: true,
     }).start(() => {
+      if (hasCompletedRef.current) {
+        console.warn('⚠️ Spin completion callback already called, skipping duplicate call');
+        return;
+      }
+      hasCompletedRef.current = true;
+      isProcessingSpinRef.current = true; 
+      
       const winningSegment = normalizedSegments[winningSegmentIndex];
       
-      // Enhanced result message based on reward type
       let resultMessage = `You won: ${winningSegment.reward}!`;
       if (winningSegment.type === 'coupon' && winningSegment.couponData) {
         resultMessage = `You won a ${winningSegment.couponData.company} coupon!`;
@@ -397,18 +417,27 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
       }
       
       setResult(resultMessage);
-      setIsUnlockedState(false);     
+      
       onSpinComplete(winningSegment);
       
       setTimeout(() => {
-        fetchSpinStatus();
-      }, 1000);
+        setIsUnlockedState(false);
+        isProcessingSpinRef.current = false;
+        
+        if (!isSpinningRef.current) {
+          setTimeout(() => {
+            fetchSpinStatus();
+          }, 500);
+        }
+      }, 2000); 
     });
-  }, [isSpinning, canSpin, onSpinPress, normalizedSegments, spinValue, cooldownTime, onSpinComplete, fetchSpinStatus]);
+  }, [isSpinning, canSpin, onSpinPress, normalizedSegments, spinValue, onSpinComplete, fetchSpinStatus]);
 
   useEffect(() => {
+    if (isSpinningRef.current || isProcessingSpinRef.current) return;
+    
     if (timeLeft <= 0) {
-      if (visible) {
+      if (visible && !isSpinningRef.current && !isProcessingSpinRef.current) {
         fetchSpinStatus();
       }
       setIsUnlockedState(true);
@@ -422,7 +451,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
         if (next <= 0) {
           clearInterval(id);
           setIsUnlockedState(true);
-          if (visible) {
+          if (visible && !isSpinningRef.current && !isProcessingSpinRef.current) {
             fetchSpinStatus();
           }
           return 0;
@@ -432,7 +461,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     }, 1000);
     
     return () => clearInterval(id);
-  }, [timeLeft, visible]); 
+  }, [timeLeft, visible, fetchSpinStatus]); 
 
   // animation effect
   useEffect(() => {
@@ -458,8 +487,6 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     };
   }, [glowOpacity]);
 
-
-  // Pulse the center button when ready
   useEffect(() => {
     if (canSpin && !isSpinning) {
       const loop = Animated.loop(

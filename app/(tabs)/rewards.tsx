@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -53,10 +53,7 @@ const RewardsScreen: React.FC = () => {
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [showCouponModal, setShowCouponModal] = useState(false);
-  
-  // Add refresh state for coupons
   const [refreshingCoupons, setRefreshingCoupons] = useState(false);
-  // Updated wheel segments to include real coupon data
   const [availableSpinCoupons, setAvailableSpinCoupons] = useState<any[]>([]);
   const [wheelSegments, setWheelSegments] = useState<Segment[]>([]);
   const [lastSpinDate, setLastSpinDate] = useState<string | null>(null);
@@ -81,7 +78,7 @@ const RewardsScreen: React.FC = () => {
   };
 
   // fetchCoupons to refresh after spin
-  const fetchCoupons = async (showLoading = false) => {
+  const fetchCoupons = useCallback(async (showLoading = false) => {
     try {
       if (showLoading) setRefreshingCoupons(true);
       
@@ -95,7 +92,7 @@ const RewardsScreen: React.FC = () => {
     } finally {
       if (showLoading) setRefreshingCoupons(false);
     }
-  };
+  }, []);
 
   // load available coupons for spin wheel 
   const loadSpinWheelCoupons = async () => {
@@ -189,82 +186,81 @@ const RewardsScreen: React.FC = () => {
     setShowSpinWheel(true);
   };
 
-  // Enhanced spin completion handler - remove token handling
-  const handleSpinComplete = async (segment: Segment) => {
+  const handleSpinComplete = useCallback(async (segment: Segment) => {
     console.log('🎉 Spin completed! Won:', segment);
     setHasSpun(true);
     
+    const showSuccessAlert = (message: string) => {
+      Alert.alert(
+        'Congratulations! 🎉',
+        message,
+        [
+          {
+            text: 'View Coupons',
+            onPress: () => {
+              setShowSpinWheel(false);
+              setTimeout(() => fetchCoupons(true), 300);
+            }
+          },
+          {
+            text: 'OK',
+            onPress: () => {
+              setShowSpinWheel(false);
+              setTimeout(() => fetchCoupons(true), 300);
+            }
+          }
+        ]
+      );
+    };
+
+    const showErrorAlert = (message: string, closeModal: boolean = true) => {
+      Alert.alert(
+        'Oops!',
+        message,
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            if (closeModal) {
+              setShowSpinWheel(false);
+            }
+          }
+        }]
+      );
+    };
+
     try {
-      // Only handle coupon type since we removed tokens
       if (segment.type === 'coupon' && segment.couponData) {
-        console.log('🎟️ Selecting coupon via backend:', segment.couponData._id);
+        const successMessage = `You won a ${segment.couponData.company} coupon: ${segment.couponData.description}!`;
         
         try {
           const response = await couponsAPI.selectSpinWheelCoupon(segment.couponData._id);
           console.log('✅ Coupon selected successfully:', response);
+          showSuccessAlert(successMessage);
           
-          // Refresh coupons list to show new coupon with full details
-          await fetchCoupons(true);
-          
-          Alert.alert(
-            'Congratulations! 🎉',
-            `You won a ${segment.couponData.company} coupon: ${segment.couponData.description}!`,
-            [
-              {
-                text: 'View Coupons',
-                onPress: () => {
-                  setShowSpinWheel(false);
-                }
-              },
-              {
-                text: 'OK',
-                onPress: () => {
-                  setShowSpinWheel(false);
-                }
-              }
-            ]
-          );
         } catch (couponError: any) {
           console.error('❌ Failed to select coupon:', couponError);
           
           let errorMessage = 'Failed to add coupon to your account.';
+          let shouldCloseModal = true;
+          
           if (couponError.response?.status === 409) {
             errorMessage = 'You can only spin the wheel once a day!';
-            // Don't close the modal - let the timer show
-            Alert.alert(
-              'Oops!',
-              errorMessage,
-              [{ text: 'OK' }]
-            );
-            return; 
+            shouldCloseModal = false; 
           } else if (couponError.response?.status === 404) {
             errorMessage = 'Coupon not available. Please try again.';
           }
           
-          Alert.alert(
-            'Oops!',
-            errorMessage,
-            [{ text: 'OK', onPress: () => setShowSpinWheel(false) }]
-          );
+          showErrorAlert(errorMessage, shouldCloseModal);
         }
       } else {
-        // This shouldn't happen since we only have coupons now
         console.warn('⚠️ Unexpected segment type:', segment.type);
-        Alert.alert(
-          'Error',
-          'Something went wrong with your spin. Please try again.',
-          [{ text: 'OK', onPress: () => setShowSpinWheel(false) }]
-        );
+        showErrorAlert('Something went wrong with your spin. Please try again.');
       }
     } catch (error) {
       console.error('❌ Error processing spin reward:', error);
-      Alert.alert(
-        'Error',
-        'There was an error processing your reward. Please try again.',
-        [{ text: 'OK', onPress: () => setShowSpinWheel(false) }]
-      );
+      showErrorAlert('There was an error processing your reward. Please try again.');
     }
-  };
+  }, []); 
 
   const handleSpinPress = () => {
     setIsSpinning(true);
@@ -507,12 +503,6 @@ const RewardsScreen: React.FC = () => {
                 <Text style={styles.lootboxCtaText}>Open LootBoxes</Text>
               </LinearGradient>
             </TouchableOpacity>
-
-            {/* Meta row */}
-            {/* <View style={styles.cardMetaRow}>
-              <Ionicons name="star-outline" size={15} color="#A1A1AA" />
-              <Text style={styles.metaText}>Earn keys through tasks & achievements</Text>
-            </View> */}
           </BlurView>
 
           {/* Spin the Wheel Daily Section */}
@@ -949,17 +939,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#A1A1AA',
   },
-  // userBadge: {
-  //   backgroundColor: 'rgba(0, 122, 255, 0.2)',
-  //   paddingHorizontal: 8,
-  //   paddingVertical: 4,
-  //   borderRadius: 12,
-  // },
-  // userBadgeText: {
-  //   fontSize: 12,
-  //   color: '#007AFF',
-  //   fontWeight: '600',
-  // },
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1013,11 +992,11 @@ const styles = StyleSheet.create({
   },
   couponImageSection: {
     flexDirection: 'row',
-    height: 140, // Increased height for copy button
+    height: 140, 
   },
   couponPattern: {
     width: 140,
-    backgroundColor: '#E8F5E8', // Light green background
+    backgroundColor: '#E8F5E8', 
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -1081,7 +1060,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   
-  // New copy button styles
   copyCodeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1135,8 +1113,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#AAA',
   },
-  
-  // No Coupons State
   noCouponsContainer: {
     alignItems: 'center',
     paddingVertical: 40,
@@ -1172,14 +1148,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     zIndex: 1000,
   },
-
-  // Add refresh button styles
   refreshButton: {
     marginLeft: 'auto',
     padding: 8,
   },
-
-
   spinCta: {
     borderRadius: 28,
     overflow: 'hidden',
