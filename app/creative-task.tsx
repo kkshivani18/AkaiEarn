@@ -500,13 +500,6 @@ const CreativeTaskScreen: React.FC = () => {
 
         {/* WebView Container */}
         <View style={styles.webViewContainer}>
-          {loading && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#007AFF" />
-              <Text style={styles.loadingText}>Loading your task...</Text>
-            </View>
-          )}
-          
           <WebView
             ref={webViewRef}
             source={{ uri: creativeURL }}

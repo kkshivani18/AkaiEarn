@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  Image,
   Modal,
   ScrollView,
   Share,
@@ -331,7 +332,7 @@ const RewardsScreen: React.FC = () => {
 
   const handleCopyCouponCode = async (coupon: any) => {
     try {
-      const code = coupon.couponCode || `SAVE${extractDiscountFromDescription(coupon.description)}`;
+      const code = coupon.couponCode || `SAVE ${extractDiscountFromDescription(coupon.description)}`;
       await Clipboard.setStringAsync(code);
       
       Alert.alert(
@@ -644,7 +645,7 @@ const RewardsScreen: React.FC = () => {
             )}
           </BlurView>
 
-          {/* Your Coupons Section - Updated without modal opening */}
+          {/* Your Coupons Section */}
           <BlurView intensity={40} tint="dark" style={styles.sectionCard}>
             <View style={styles.sectionHeaderWithTitle}>
               <Text style={styles.largeSectionTitle}>Your Coupons</Text>
@@ -667,11 +668,24 @@ const RewardsScreen: React.FC = () => {
                 >
                   <View style={styles.couponImageSection}>
                     <View style={styles.couponPattern}>
-                      <View style={styles.patternDots} />
-                      <Text style={styles.couponBigText}>
-                        {extractDiscountFromDescription(coupon.description)}%
-                      </Text>
-                      <Text style={styles.couponSmallText}>OFF</Text>
+                      {coupon.imageLink ? (
+                        <View style={styles.logoContainer}>
+                          <Image 
+                            source={{ uri: coupon.imageLink }}
+                            style={styles.companyLogo}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      ) : (
+                        <View style={styles.fallbackLogo}>
+                          <Text style={styles.companyInitial}>
+                            {coupon.company?.charAt(0)?.toUpperCase() || 'C'}
+                          </Text>
+                          <Text style={styles.discountText}>
+                            {extractDiscountFromDescription(coupon.description)}% OFF
+                          </Text>
+                        </View>
+                      )}
                     </View>
                     
                     <View style={styles.perforatedLine}>
@@ -682,9 +696,6 @@ const RewardsScreen: React.FC = () => {
                     
                     <View style={styles.couponInfoSection}>
                       <Text style={styles.couponCompanyName}>{coupon.company}</Text>
-                      <Text style={styles.couponDescription}>
-                        {getImprovedCouponDescription(coupon)}
-                      </Text>
                       
                       {/* Copy Code Button */}
                       <TouchableOpacity
@@ -693,19 +704,18 @@ const RewardsScreen: React.FC = () => {
                         activeOpacity={0.8}
                       >
                         <Ionicons name="copy-outline" size={16} color="#007AFF" />
-                        <Text style={styles.copyCodeText}>Copy Code</Text>
+                        <Text style={styles.copyCodeText}> {coupon.couponCode}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
                   
                   <View style={styles.couponBottomSection}>
                     <View style={styles.couponBottomLeft}>
-                      <Text style={styles.couponBottomCompany}>{coupon.company}</Text>
+                      <Text style={styles.couponSaveTag}>
+                        SAVE {extractDiscountFromDescription(coupon.description)}%
+                      </Text>
                     </View>
                     <View style={styles.couponBottomRight}>
-                      <Text style={styles.couponSaveTag}>
-                        SAVE{extractDiscountFromDescription(coupon.description)}%
-                      </Text>
                       <Text style={styles.couponExpiry}>
                         Valid until {new Date(coupon.expiryDate).toLocaleDateString('en-US', { 
                           month: 'short', 
@@ -980,7 +990,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   modernCouponCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
     backgroundColor: '#F5F3F0',
@@ -992,35 +1002,68 @@ const styles = StyleSheet.create({
   },
   couponImageSection: {
     flexDirection: 'row',
-    height: 140, 
+    height: 120, 
   },
   couponPattern: {
     width: 140,
-    backgroundColor: '#E8F5E8', 
+    backgroundColor: '#bad0e8ff', 
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
-  patternDots: {
+  
+  // New logo container styles
+  logoContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  companyLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: 8,
+  },
+  logoOverlay: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 40,
-    height: 40,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderRadius: 20,
+    bottom: 8,
+    backgroundColor: 'rgba(46, 125, 50, 0.9)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  couponBigText: {
-    fontSize: 36,
+  discountBadge: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  
+  // Fallback logo styles (when no image)
+  fallbackLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  companyInitial: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    marginBottom: 4,
+  },
+  discountText: {
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#2E7D32',
-    lineHeight: 40,
-  },
-  couponSmallText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2E7D32',
-    marginTop: -5,
+    textAlign: 'center',
   },
   perforatedLine: {
     width: 1,
@@ -1045,7 +1088,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2D2D2D',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   couponDescription: {
     fontSize: 14,
@@ -1070,13 +1113,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     alignSelf: 'flex-start',
-    // marginTop: 40
+    marginTop: 10
   },
   copyCodeText: {
     color: '#007AFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    marginLeft: 6,
+    // marginLeft: 6,
   },
 
   couponBottomSection: {
@@ -1106,7 +1149,7 @@ const styles = StyleSheet.create({
   couponSaveTag: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#AAA',
     marginBottom: 2,
   },
   couponExpiry: {
