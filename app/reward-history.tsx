@@ -26,6 +26,7 @@ interface LogItem {
   createdAt: string;
   labelOffer: {
     _id: string;
+    title: string; 
     description: string;
     type: string;
     rewards: {
@@ -187,7 +188,9 @@ const RewardHistoryItem: React.FC<{ log: LogItem }> = ({ log }) => {
     <BlurView intensity={40} tint="dark" style={styles.historyItem}>
       <View style={styles.historyItemHeader}>
         <View style={styles.taskInfo}>
-          <Text style={styles.taskName}>{log.labelOffer?.description || log.labelOfferType}</Text>
+          <Text style={styles.taskName}>
+            {log.labelOffer?.title || log.labelOffer?.description || log.labelOfferType || 'Unknown Task'}
+          </Text>
           <Text style={styles.taskType}>{log.labelOfferType}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
@@ -515,9 +518,7 @@ export default function RewardHistoryScreen() {
       setLoading(true);
       setError(null);
       
-      console.log('🔄 Fetching user logs...');
       const response = await logsAPI.getMyLogs();
-      console.log('✅ Logs response:', response);
       
       if (response.success && response.data) {
         const sortedLogs = (response.data as LogItem[]).sort((a: LogItem, b: LogItem) => 
@@ -840,6 +841,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 120,
     paddingHorizontal: 20,
+    color: '#EF4444',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
   },
   errorText: {
     color: '#EF4444',

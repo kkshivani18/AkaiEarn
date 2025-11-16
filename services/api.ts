@@ -489,8 +489,6 @@ export const authAPI = {
     newPassword: string;
   }) => {
     try {
-      // For now, we'll use a generic endpoint or return an error
-      // You may need to implement this endpoint on the backend
       throw new Error('Password update functionality not yet implemented on the backend');
     } catch (error: any) {
       throw error;

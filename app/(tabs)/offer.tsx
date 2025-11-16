@@ -85,50 +85,38 @@ const OfferScreen: React.FC = () => {
   };
 
   const mapBackendTaskToFrontend = (backendTask: any): OfferTask => {
-    // Use creative link from database - DO NOT fallback to default
     const creativeLink = backendTask.creativeLink;
     
-    // Debug logging to see what we're getting from backend
-    console.log('🔍 Mapping backend task:', {
-      id: backendTask._id,
-      type: backendTask.type,
-      creativeLink: backendTask.creativeLink,
-      originalBackendTask: backendTask
-    });
+    // Use title if available, otherwise create one from description or type
+    let actualTitle = backendTask.title;
     
-    // Store the original backend type for filtering, but create display type
-    const originalType = (backendTask.type || '').toLowerCase();
-    let displayType = 'video-labelling'; 
-    
-    // Flexible type categorization - check if type contains keywords
-    if (originalType.includes('audio')) {
-      displayType = 'audio-labelling';
-    } else if (originalType.includes('image')) {
-      displayType = 'image-labelling';
-    } else if (originalType.includes('video')) {
-      displayType = 'video-labelling';
+    if (!actualTitle) {
+      console.warn('⚠️ No title in backend, generating from description/type');
+      
+      // Generate title from description (first few words) or type
+      if (backendTask.description) {
+        const words = backendTask.description.split(' ').slice(0, 4).join(' ');
+        actualTitle = words.length > 20 ? `${words.substring(0, 20)}...` : words;
+      } else if (backendTask.type) {
+        actualTitle = backendTask.type.charAt(0).toUpperCase() + backendTask.type.slice(1) + ' Task';
+      } else {
+        actualTitle = 'Labeling Task';
+      }
     }
     
     const mappedTask = {
       id: backendTask._id || `task-${Date.now()}`,
-      title: cleanTaskTitle(displayType),
+      title: actualTitle,
       description: backendTask.description || 'Complete this task to earn rewards',
       reward: backendTask.rewards?.coinsOnCorrect || 0,
       iqGain: backendTask.rewards?.iqDeltaOnCorrect || 0,
       image: backendTask.imageLink || 'https://via.placeholder.com/300x140/2a2b33/fff?text=Task',
       difficulty: getDifficultyFromIQ(backendTask.minimumIq || 0),
       minimumIq: backendTask.minimumIq || 0,
-      creativeLink: creativeLink, // Use exactly what comes from backend
+      creativeLink: creativeLink,
       penaltyTime: backendTask.penaltyTime || 1,
-      type: backendTask.type // Store original backend type for filtering
+      type: backendTask.type
     };
-    
-    console.log('✅ Mapped task result:', {
-      id: mappedTask.id,
-      type: mappedTask.type,
-      creativeLink: mappedTask.creativeLink,
-      title: mappedTask.title
-    });
     
     return mappedTask;
   };
@@ -141,12 +129,6 @@ const OfferScreen: React.FC = () => {
 
   // Handle task selection with IQ check
   const handleTaskSelect = (task: OfferTask) => {
-    console.log('🎯 Task selected:', {
-      id: task.id,
-      type: task.type,
-      creativeLink: task.creativeLink,
-      title: task.title
-    });
     
     // Check if task is locked due to insufficient IQ
     if (isTaskLocked(task)) {
@@ -164,13 +146,6 @@ const OfferScreen: React.FC = () => {
       Alert.alert('Error', 'This task is not properly configured. Please try another task.');
       return;
     }
-    
-    console.log('🚀 Navigating to creative task with:', {
-      labelOfferId: task.id,
-      creativeLink: task.creativeLink,
-      taskTitle: task.title,
-      taskType: task.type
-    });
     
     // navigate to creative screen with task data
     router.push({
@@ -192,43 +167,36 @@ const OfferScreen: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        console.log('📡 Fetching tasks from backend...');
         const response = await offersAPI.getAllOffers();
-        console.log('✅ Backend response:', response);
         
         if (response.success && response.data) {
-          console.log('📋 Raw backend tasks:', response.data);
+          
+          // Log each task's title specifically
+          response.data.forEach((task: any, index: number) => {
+            console.log(`📝 Task ${index}:`, {
+              id: task._id,
+              title: task.title,
+              hasTitle: !!task.title,
+              allKeys: Object.keys(task)
+            });
+          });
           
           const mappedTasks = response.data.map(mapBackendTaskToFrontend);
-          console.log('🔄 Final mapped tasks:', mappedTasks.map((t: OfferTask) => ({ 
-            id: t.id, 
-            type: t.type, 
-            title: t.title,
-            creativeLink: t.creativeLink 
-          })));
           setAllTasks(mappedTasks);
         } else {
           throw new Error('Invalid response format from backend');
         }
       } catch (error: any) {
         console.error('❌ Failed to fetch tasks:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
         setError(error.message || 'Failed to load tasks');
         
-        // Fallback tasks with default creative links
-        setAllTasks([{
-          id: 'fallback-1',
-          title: 'Label Recognition Task',
-          description: 'Label images to earn rewards',
-          reward: 100,
-          iqGain: 10,
-          image: 'https://via.placeholder.com/300x140/2a2b33/fff?text=Offline',
-          difficulty: 'Beginner',
-          minimumIq: 0,
-          creativeLink: 'https://label-offers-creatives.s3.us-east-1.amazonaws.com/full-video.html',
-          penaltyTime: 1,
-          type: 'labelling-task',
-        }]);
+        // Remove fallback to force debugging
+        setAllTasks([]);
       } finally {
         setLoading(false);
       }
@@ -311,11 +279,6 @@ const OfferScreen: React.FC = () => {
 
   // Handle completing a social offer
   const handleCompleteSocialOffer = async (offer: SocialOffer) => {
-    console.log('🎯 Attempting to complete social offer:', { 
-      offerId: offer._id, 
-      completed: offer.completed,
-      description: offer.description 
-    });
 
     if (offer.completed) {
       console.log('⚠️ Offer already completed, showing info');
@@ -334,7 +297,6 @@ const OfferScreen: React.FC = () => {
 
     // First, try to open the redirect link
     try {
-      console.log('🔗 Opening redirect link:', offer.redirectLink);
       const canOpen = await Linking.canOpenURL(offer.redirectLink);
       if (canOpen) {
         await Linking.openURL(offer.redirectLink);
@@ -361,7 +323,6 @@ const OfferScreen: React.FC = () => {
         // Update user coins locally
         if (userProfile) {
           const newCoins = response.coins || ((userProfile.coins || 0) + offer.reward.coinsOnCorrect);
-          console.log('💰 Updating user coins:', { old: userProfile.coins, new: newCoins });
           setUserProfile({
             ...userProfile,
             coins: newCoins
@@ -440,13 +401,20 @@ const OfferScreen: React.FC = () => {
   const getFilteredTasks = (): OfferTask[] => {
     return allTasks.filter(task => {
       const taskType = (task.type || '').toLowerCase();
+      const taskTitle = (task.title || '').toLowerCase();
       
       if (activeTaskTab === 'audio') {
-        return taskType.includes('audio');
+        // Check both type and title for audio-related keywords
+        return taskType.includes('audio') || taskTitle.includes('audio') || taskTitle.includes('sound');
       } else if (activeTaskTab === 'image') {
-        return taskType.includes('image');
+        // Check both type and title for image-related keywords
+        return taskType.includes('image') || taskTitle.includes('image') || taskTitle.includes('photo') || taskTitle.includes('picture');
       } else { // video tab
-        return taskType.includes('video') || (!taskType.includes('audio') && !taskType.includes('image'));
+        // Check both type and title for video-related keywords, or default fallback
+        return taskType.includes('video') || taskTitle.includes('video') || 
+               (!taskType.includes('audio') && !taskType.includes('image') && 
+                !taskTitle.includes('audio') && !taskTitle.includes('image') && 
+                !taskTitle.includes('sound') && !taskTitle.includes('photo') && !taskTitle.includes('picture'));
       }
     });
   };
@@ -602,7 +570,7 @@ const OfferScreen: React.FC = () => {
                   
                   <View style={styles.taskCardInfo}>
                     <Text style={[styles.taskCardTitle, locked && styles.lockedText]}>
-                      {item.title}
+                      {item.title || 'NO TITLE RECEIVED'}
                     </Text>
                     <Text style={[styles.taskCardDescription, locked && styles.lockedText]}>
                       {item.description}
