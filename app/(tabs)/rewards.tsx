@@ -1021,8 +1021,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   companyLogo: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 8,

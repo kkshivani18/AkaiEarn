@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Dimensions, FlatList, Image, Linking, ScrollV
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI, offersAPI, socialAPI } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -53,8 +54,10 @@ const OfferScreen: React.FC = () => {
     coins?: number;
   } | null>(null);
   
-  // tab state for task types
+  // tab state for task types with persistence
   const [activeTaskTab, setActiveTaskTab] = useState<'audio' | 'image' | 'video'>('video');
+  // Add this new state to track if we're currently fetching tasks
+  const [fetchingTasks, setFetchingTasks] = useState(false);
 
   const flatListRef = useRef<FlatList<any> | null>(null);
   const onViewableItemsChangedRef = useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
@@ -166,43 +169,29 @@ const OfferScreen: React.FC = () => {
     const fetchTasks = async () => {
       try {
         setLoading(true);
+        setFetchingTasks(true); // Set fetching state
         setError(null);
         const response = await offersAPI.getAllOffers();
         
         if (response.success && response.data) {
           
-          // Log each task's title specifically
-          response.data.forEach((task: any, index: number) => {
-            console.log(`📝 Task ${index}:`, {
-              id: task._id,
-              title: task.title,
-              hasTitle: !!task.title,
-              allKeys: Object.keys(task)
-            });
-          });
-          
           const mappedTasks = response.data.map(mapBackendTaskToFrontend);
+          
           setAllTasks(mappedTasks);
+          
         } else {
           throw new Error('Invalid response format from backend');
         }
       } catch (error: any) {
         console.error('❌ Failed to fetch tasks:', error);
-        console.error('❌ Error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status
-        });
         setError(error.message || 'Failed to load tasks');
-        
-        // Remove fallback to force debugging
         setAllTasks([]);
       } finally {
         setLoading(false);
+        setFetchingTasks(false); // Clear fetching state
       }
     };
 
-    // fetch if user is authenticated
     if (authState?.authenticated) {
       fetchTasks();
     }
@@ -245,8 +234,35 @@ const OfferScreen: React.FC = () => {
       if (authState?.authenticated) {
         fetchUserProfile();
       }
-    }, [authState?.authenticated, fetchUserProfile])
+    }, [authState?.authenticated, fetchUserProfile, allTasks.length, activeTaskTab])
   );
+
+  // Load persisted tab selection on component mount
+  useEffect(() => {
+    const loadPersistedTab = async () => {
+      try {
+        const savedTab = await AsyncStorage.getItem('activeTaskTab');
+        if (savedTab && ['audio', 'image', 'video'].includes(savedTab)) {
+          setActiveTaskTab(savedTab as 'audio' | 'image' | 'video');
+        }
+      } catch (error) {
+        console.error('Failed to load persisted tab:', error);
+      }
+    };
+    
+    loadPersistedTab();
+  }, []);
+
+  // Save tab selection when it changes
+  const handleTabChange = async (tab: 'audio' | 'image' | 'video') => {
+    try {
+      setActiveTaskTab(tab);
+      setActiveIndex(0);
+      await AsyncStorage.setItem('activeTaskTab', tab);
+    } catch (error) {
+      console.error('Failed to save tab to storage:', error);
+    }
+  };
 
   // Fetch social offers from backend
   const fetchSocialOffers = async () => {
@@ -399,24 +415,50 @@ const OfferScreen: React.FC = () => {
   }
 
   const getFilteredTasks = (): OfferTask[] => {
-    return allTasks.filter(task => {
+    if (fetchingTasks || (allTasks.length === 0 && loading)) {
+      console.log('⏳ Still loading tasks, returning empty array');
+      return [];
+    }
+    
+    if (allTasks.length === 0) {
+      console.warn('⚠️ No tasks available to filter');
+      return [];
+    }
+    
+    const filtered = allTasks.filter(task => {
       const taskType = (task.type || '').toLowerCase();
       const taskTitle = (task.title || '').toLowerCase();
       
       if (activeTaskTab === 'audio') {
-        // Check both type and title for audio-related keywords
-        return taskType.includes('audio') || taskTitle.includes('audio') || taskTitle.includes('sound');
+        // More comprehensive audio detection
+        const isAudio = taskType.includes('audio') || 
+                       taskTitle.includes('audio') || 
+                       taskType === 'audio';
+        
+        return isAudio;
       } else if (activeTaskTab === 'image') {
-        // Check both type and title for image-related keywords
-        return taskType.includes('image') || taskTitle.includes('image') || taskTitle.includes('photo') || taskTitle.includes('picture');
-      } else { // video tab
-        // Check both type and title for video-related keywords, or default fallback
-        return taskType.includes('video') || taskTitle.includes('video') || 
-               (!taskType.includes('audio') && !taskType.includes('image') && 
-                !taskTitle.includes('audio') && !taskTitle.includes('image') && 
-                !taskTitle.includes('sound') && !taskTitle.includes('photo') && !taskTitle.includes('picture'));
+        // More comprehensive image detection
+        const isImage = taskType.includes('image') || 
+                       taskTitle.includes('image') || 
+                       taskTitle.includes('photo') || 
+                       taskTitle.includes('picture') ||
+                       taskTitle.includes('visual') ||
+                       taskType === 'image';
+        return isImage;
+      } else { 
+        const isVideo = taskType.includes('video') || 
+                       taskTitle.includes('video') ||
+                       taskType === 'video' ||
+                       (!taskType.includes('audio') && 
+                        !taskType.includes('image') && 
+                        !taskTitle.includes('audio') && 
+                        !taskTitle.includes('image'));
+        
+        return isVideo;
       }
     });
+    
+    return filtered;
   };
 
   return (
@@ -468,10 +510,7 @@ const OfferScreen: React.FC = () => {
                 styles.taskTab,
                 activeTaskTab === 'audio' && styles.taskTabActive
               ]}
-              onPress={() => {
-                setActiveTaskTab('audio');
-                setActiveIndex(0);
-              }}
+              onPress={() => handleTabChange('audio')}
             >
               <Ionicons 
                 name="musical-notes" 
@@ -491,10 +530,7 @@ const OfferScreen: React.FC = () => {
                 styles.taskTab,
                 activeTaskTab === 'image' && styles.taskTabActive
               ]}
-              onPress={() => {
-                setActiveTaskTab('image');
-                setActiveIndex(0);
-              }}
+              onPress={() => handleTabChange('image')}
             >
               <Ionicons 
                 name="image" 
@@ -514,10 +550,7 @@ const OfferScreen: React.FC = () => {
                 styles.taskTab,
                 activeTaskTab === 'video' && styles.taskTabActive
               ]}
-              onPress={() => {
-                setActiveTaskTab('video');
-                setActiveIndex(0);
-              }}
+              onPress={() => handleTabChange('video')}
             >
               <Ionicons 
                 name="videocam" 
@@ -600,17 +633,31 @@ const OfferScreen: React.FC = () => {
             }}
             onViewableItemsChanged={onViewableItemsChangedRef.current}
             viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyTasksContainer}>
-                <Ionicons name="folder-open-outline" size={48} color="#666" />
-                <Text style={styles.emptyTasksText}>
-                  No {activeTaskTab} tasks available
-                </Text>
-                <Text style={styles.emptyTasksSubtext}>
-                  Check back later or try another task type
-                </Text>
-              </View>
-            )}
+            ListEmptyComponent={() => {
+              // Show loading state if we're fetching or initial loading
+              if (fetchingTasks || loading) {
+                return (
+                  <View style={styles.emptyTasksContainer}>
+                    <ActivityIndicator size="large" color="#007AFF" />
+                    <Text style={styles.emptyTasksText}>Loading tasks...</Text>
+                    <Text style={styles.emptyTasksSubtext}>Please wait</Text>
+                  </View>
+                );
+              }
+              
+              // Show empty state only when we're sure there are no tasks
+              return (
+                <View style={styles.emptyTasksContainer}>
+                  <Ionicons name="folder-open-outline" size={48} color="#666" />
+                  <Text style={styles.emptyTasksText}>
+                    No {activeTaskTab} tasks available
+                  </Text>
+                  <Text style={styles.emptyTasksSubtext}>
+                    Check back later or try another task type
+                  </Text>
+                </View>
+              );
+            }}
           />
 
           {/* dots indicator - show when there are tasks */}
