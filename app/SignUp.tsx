@@ -144,15 +144,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
 
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#888"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-
-            <TextInput
-              style={styles.input}
               placeholder="Email"
               placeholderTextColor="#888"
               value={email}

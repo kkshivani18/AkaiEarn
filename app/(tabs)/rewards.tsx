@@ -61,11 +61,15 @@ const RewardsScreen: React.FC = () => {
   const [showReferredUsers, setShowReferredUsers] = useState(false);
   const [referredUsersDetails, setReferredUsersDetails] = useState<any[]>([]);
   const [loadingReferredUsers, setLoadingReferredUsers] = useState(false);
+  const [canSpin, setCanSpin] = useState(true);
+  const [spinTimeLeft, setSpinTimeLeft] = useState(0);
+  const [loadingSpinStatus, setLoadingSpinStatus] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
     fetchCoupons();
     loadSpinWheelCoupons();
+    fetchSpinStatus(); 
   }, []);
 
   const fetchUserProfile = async () => {
@@ -131,11 +135,8 @@ const RewardsScreen: React.FC = () => {
         });
 
         setWheelSegments(couponSegments);
-        console.log('✅ Spin wheel segments loaded:', couponSegments.length);
-        console.log('📋 Segments:', couponSegments.map(s => s.text));
       } else {
         console.warn('⚠️ No coupons available for spin wheel');
-        // Create fallback segments with sample data
         createFallbackSegments();
       }
     } catch (error) {
@@ -144,7 +145,6 @@ const RewardsScreen: React.FC = () => {
     }
   };
 
-  // Helper function to create fallback segments
   const createFallbackSegments = () => {
     const fallbackCoupons = [
       { company: 'Amazon', description: '20% off electronics' },
@@ -187,9 +187,61 @@ const RewardsScreen: React.FC = () => {
     setShowSpinWheel(true);
   };
 
+  const fetchSpinStatus = async () => {
+    try {
+      setLoadingSpinStatus(true);
+      const response = await couponsAPI.getSpinWheelStatus();
+      
+      if (response.success) {
+        setCanSpin(response.canSpin);
+        setSpinTimeLeft(response.secondsLeft || 0);
+      } else {
+        setCanSpin(true);
+        setSpinTimeLeft(0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch spin status:', error);
+      setCanSpin(true);
+      setSpinTimeLeft(0);
+    } finally {
+      setLoadingSpinStatus(false);
+    }
+  };
+
+  // Add countdown timer effect
+  useEffect(() => {
+    if (spinTimeLeft > 0) {
+      const timer = setInterval(() => {
+        setSpinTimeLeft(prev => {
+          if (prev <= 1) {
+            setCanSpin(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [spinTimeLeft]);
+
+  const formatSpinTimer = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleSpinComplete = useCallback(async (segment: Segment) => {
-    console.log('🎉 Spin completed! Won:', segment);
     setHasSpun(true);
+    
+    setTimeout(() => {
+      fetchSpinStatus();
+    }, 1000);
     
     const showSuccessAlert = (message: string) => {
       Alert.alert(
@@ -247,6 +299,9 @@ const RewardsScreen: React.FC = () => {
           if (couponError.response?.status === 409) {
             errorMessage = 'You can only spin the wheel once a day!';
             shouldCloseModal = false; 
+            // Update spin status immediately when rate limited
+            setCanSpin(false);
+            setSpinTimeLeft(24 * 60 * 60);
           } else if (couponError.response?.status === 404) {
             errorMessage = 'Coupon not available. Please try again.';
           }
@@ -272,7 +327,7 @@ const RewardsScreen: React.FC = () => {
 
   const handleReferFriend = async () => {
     try {
-      const referralCode = userProfile?.referralCode || 'USER123';
+      const referralCode = userProfile?.referralCode;
       const shareMessage = `🎯 Join me on OfferWall and earn tokens! Use my referral code: ${referralCode}\n\nDownload: https://play.google.com/store/apps/details?id=com.offerwall.app`;
       
       await Share.share({
@@ -305,30 +360,28 @@ const RewardsScreen: React.FC = () => {
     return 0;
   };
 
-  // enhanced coupon descriptions based on company
-  const getImprovedCouponDescription = (coupon: any): string => {
-    const company = coupon.company?.toLowerCase() || '';
-    const description = coupon.description || '';
+  // const getImprovedCouponDescription = (coupon: any): string => {
+  //   const company = coupon.company?.toLowerCase() || '';
+  //   const description = coupon.description || '';
     
-    // Extract discount percentage
-    const discountMatch = description.match(/(\d+)%/);
-    const discount = discountMatch ? discountMatch[1] : '20';
+  //   const discountMatch = description.match(/(\d+)%/);
+  //   const discount = discountMatch ? discountMatch[1] : '20';
     
-    const companyDescriptions: { [key: string]: string } = {
-      'amazon': `${discount}% off on electronics, books & more`,
-      'netflix': `Get ${discount}% off your next subscription`,
-      'spotify': `Save ${discount}% on Premium membership`,
-      'uber': `${discount}% discount on your next 3 rides`,
-      'airbnb': `${discount}% off accommodation bookings`,
-      'dominos': `${discount}% off on pizza orders above $15`,
-      'starbucks': `${discount}% off beverages and snacks`,
-      'nike': `${discount}% off athletic wear and footwear`,
-      'mcdonalds': `${discount}% off meals and combos`,
-      'target': `${discount}% off home essentials & groceries`,
-    };
+  //   const companyDescriptions: { [key: string]: string } = {
+  //     'amazon': `${discount}% off on electronics, books & more`,
+  //     'netflix': `Get ${discount}% off your next subscription`,
+  //     'spotify': `Save ${discount}% on Premium membership`,
+  //     'uber': `${discount}% discount on your next 3 rides`,
+  //     'airbnb': `${discount}% off accommodation bookings`,
+  //     'dominos': `${discount}% off on pizza orders above $15`,
+  //     'starbucks': `${discount}% off beverages and snacks`,
+  //     'nike': `${discount}% off athletic wear and footwear`,
+  //     'mcdonalds': `${discount}% off meals and combos`,
+  //     'target': `${discount}% off home essentials & groceries`,
+  //   };
     
-    return companyDescriptions[company] || `${discount}% discount on your purchase`;
-  };
+  //   return companyDescriptions[company] || `${discount}% discount on your purchase`;
+  // };
 
   const handleCopyCouponCode = async (coupon: any) => {
     try {
@@ -343,6 +396,27 @@ const RewardsScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to copy coupon code:', error);
       Alert.alert('Error', 'Failed to copy coupon code. Please try again.');
+    }
+  };
+
+  const handleCopyReferralCode = async () => {
+    try {
+      const referralCode = userProfile?.referralCode || 'LOADING...';
+      if (referralCode === 'LOADING...') {
+        Alert.alert('Error', 'Referral code is still loading. Please try again.');
+        return;
+      }
+      
+      await Clipboard.setStringAsync(referralCode);
+      
+      Alert.alert(
+        'Code Copied! 📋',
+        `Your referral code "${referralCode}" has been copied to your clipboard.`,
+        [{ text: 'OK', style: 'default' }]
+      );
+    } catch (error) {
+      console.error('Failed to copy referral code:', error);
+      Alert.alert('Error', 'Failed to copy referral code. Please try again.');
     }
   };
 
@@ -421,7 +495,6 @@ const RewardsScreen: React.FC = () => {
     }
   };
 
-  // Toggle referred users dropdown
   const handleToggleReferredUsers = () => {
     if (!showReferredUsers && referredUsersDetails.length === 0) {
       fetchReferredUsersDetails();
@@ -483,7 +556,7 @@ const RewardsScreen: React.FC = () => {
               <View style={styles.sectionInfo}>
                 <Text style={styles.sectionTitle}>LootBoxes</Text>
                 <Text style={styles.sectionSubtitle}>
-                  Open loot boxes containing rare rewards, bonus points and surprise items!
+                  Open loot boxes containing rewards!
                 </Text>
               </View>
             </View>
@@ -525,30 +598,49 @@ const RewardsScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.spinCta,
-                (wheelSegments.length === 0) && styles.spinCtaDisabled
+                (!canSpin || wheelSegments.length === 0 || loadingSpinStatus) && styles.spinCtaDisabled
               ]}
               onPress={handleSpinWheel}
-              disabled={wheelSegments.length === 0}
+              disabled={!canSpin || wheelSegments.length === 0 || loadingSpinStatus}
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={['#0EA5E9', '#2563EB']}
+                colors={!canSpin ? ["#999", '#444444ad'] : ['#0EA5E9', '#2563EB']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.spinCtaGradient}
               >
-                <Ionicons name="game-controller-outline" size={18} color="#ffffff" />
-                <Text style={styles.spinCtaText}>
-                  {wheelSegments.length === 0 ? 'Loading...' : 'Spin now'}
+                <Ionicons 
+                  name="game-controller-outline" 
+                  size={18} 
+                  color={!canSpin ? "#999" : "#ffffff"} 
+                />
+                <Text style={[
+                  styles.spinCtaText,
+                  !canSpin && { color: '#999' }
+                ]}>
+                  {loadingSpinStatus 
+                    ? 'Loading...' 
+                    : wheelSegments.length === 0 
+                      ? 'Loading...' 
+                      : canSpin 
+                        ? 'Spin Now'
+                        : 'Spin Done'
+                  }
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* Meta row */}
-            <View style={styles.cardMetaRow}>
-              <Ionicons name="time-outline" size={15} color="#A1A1AA" />
-              <Text style={styles.metaText}>One spin every 24 hours</Text>
-            </View>
+            {/* Timer Display */}
+            {!canSpin && spinTimeLeft > 0 && (
+              <View style={styles.spinTimerContainer}>
+                <View style={styles.spinTimerRow}>
+                  <Ionicons name="time-outline" size={16} color="#A1A1AA" />
+                  <Text style={styles.spinTimerLabel}>Next Spin :</Text>
+                  <Text style={styles.spinTimerText}>{formatSpinTimer(spinTimeLeft)}</Text>
+                </View>
+              </View>
+            )}
           </BlurView>
 
           {/* Referrals Section */}
@@ -559,7 +651,7 @@ const RewardsScreen: React.FC = () => {
               </View>
               <View style={styles.sectionInfo}>
                 <Text style={styles.sectionTitle}>Referrals</Text>
-                <Text style={styles.sectionSubtitle}>Share the wealth, earn together! Invite friends and unlock exclusive rewards.</Text>
+                <Text style={styles.sectionSubtitle}>Earn 100 points for each of your first 5 referrals</Text>
               </View>
             </View>
             
@@ -569,7 +661,11 @@ const RewardsScreen: React.FC = () => {
                 <Text style={styles.referralCode}>{userProfile?.referralCode || 'LOADING...'}</Text>
                 <Text style={styles.referralStats}>Total referrals: {referralCount(userProfile)}</Text>
               </View>
-              <TouchableOpacity style={styles.copyButton}>
+              <TouchableOpacity 
+                style={styles.copyButton}
+                onPress={handleCopyReferralCode}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="copy-outline" size={16} color="#007AFF" />
               </TouchableOpacity>
             </View>
@@ -593,17 +689,14 @@ const RewardsScreen: React.FC = () => {
                 </View>
                 <View style={styles.sectionInfo}>
                   <Text style={styles.sectionTitle}>Referred Users</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    Earn 100 points for each of your first 5 referrals 
-                  </Text>
                 </View>
-              </View>
-              <View style={styles.dropdownIcon}>
-                <Ionicons 
-                  name={showReferredUsers ? "chevron-up" : "chevron-down"} 
-                  size={22} 
-                  color="#A1A1AA" 
-                />
+                <View style={styles.dropdownIcon}>
+                  <Ionicons 
+                    name={showReferredUsers ? "chevron-up" : "chevron-down"} 
+                    size={22} 
+                    color="#A1A1AA" 
+                  />
+                </View>
               </View>
             </TouchableOpacity>
 
@@ -900,8 +993,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dropdownIcon: {
-    padding: 8,
-    marginHorizontal: -18
+    padding: 4,
+    marginLeft: -35,
   },
   referredUsersDropdown: {
     marginTop: 10,
@@ -1021,8 +1114,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   companyLogo: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 8,
@@ -1041,8 +1134,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  
-  // Fallback logo styles (when no image)
   fallbackLogo: {
     width: 80,
     height: 80,
@@ -1214,7 +1305,38 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  spinCtaDisabled: { opacity: 0.6 },
+  spinCtaDisabled: { 
+    opacity: 0.6 
+  },
+  spinTimerContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+  },
+  spinTimerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: -50,
+  },
+  spinTimerLabel: {
+    color: '#A1A1AA',
+    fontSize: 16,
+    fontWeight: '500',
+    // fontFamily: 'monospace',
+  },
+  spinTimerText: {
+    color: '#3B82F6',
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
 
   cardMetaRow: {
     flexDirection: 'row',

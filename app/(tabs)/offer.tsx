@@ -467,7 +467,6 @@ const OfferScreen: React.FC = () => {
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.profileInfo}>
-            {/* Avatar with first letter */}
             <View style={styles.avatarContainer}>
               <Text style={styles.avatarText}>
                 {userProfile?.name ? userProfile.name.charAt(0).toUpperCase() : 'U'}
