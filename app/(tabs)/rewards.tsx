@@ -4,20 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  Image,
-  Modal,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Animated, Dimensions, Image, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpinWheel from '../../components/SpinWheel';
 import { useAuth } from '../../contexts/AuthContext';
