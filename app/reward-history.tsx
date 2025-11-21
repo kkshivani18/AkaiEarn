@@ -15,6 +15,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '../contexts/AuthContext';
 import { logsAPI } from '../services/api';
+import { HistorySkeletonLoader } from '../components/SkeletonLoader';
 
 // Types
 interface LogItem {
@@ -625,8 +626,7 @@ export default function RewardHistoryScreen() {
           </BlurView>
           
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#EF4444" />
-            <Text style={styles.loadingText}>Loading your reward history...</Text>
+            <HistorySkeletonLoader count={5} />
           </View>
         </View>
       </>

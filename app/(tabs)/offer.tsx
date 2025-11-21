@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI, offersAPI, socialAPI } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { OfferSkeletonLoader, SocialSkeletonLoader } from '../../components/SkeletonLoader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -53,10 +54,7 @@ const OfferScreen: React.FC = () => {
     iq?: number;
     coins?: number;
   } | null>(null);
-  
-  // tab state for task types with persistence
   const [activeTaskTab, setActiveTaskTab] = useState<'audio' | 'image' | 'video'>('video');
-  // Add this new state to track if we're currently fetching tasks
   const [fetchingTasks, setFetchingTasks] = useState(false);
 
   const flatListRef = useRef<FlatList<any> | null>(null);
@@ -71,7 +69,6 @@ const OfferScreen: React.FC = () => {
   const [loadingSocial, setLoadingSocial] = useState(false);
   const [completingSocialOffer, setCompletingSocialOffer] = useState<string | null>(null);
 
-  // helper functions
   const getDifficultyFromIQ = (minimumIq: number): string => {
     if (minimumIq <= 20) return 'Beginner';
     if (minimumIq <= 40) return 'Easy';
@@ -89,14 +86,10 @@ const OfferScreen: React.FC = () => {
 
   const mapBackendTaskToFrontend = (backendTask: any): OfferTask => {
     const creativeLink = backendTask.creativeLink;
-    
-    // Use title if available, otherwise create one from description or type
     let actualTitle = backendTask.title;
     
     if (!actualTitle) {
       console.warn('⚠️ No title in backend, generating from description/type');
-      
-      // Generate title from description (first few words) or type
       if (backendTask.description) {
         const words = backendTask.description.split(' ').slice(0, 4).join(' ');
         actualTitle = words.length > 20 ? `${words.substring(0, 20)}...` : words;
@@ -130,10 +123,7 @@ const OfferScreen: React.FC = () => {
     return userIQ < task.minimumIq;
   };
 
-  // Handle task selection with IQ check
   const handleTaskSelect = (task: OfferTask) => {
-    
-    // Check if task is locked due to insufficient IQ
     if (isTaskLocked(task)) {
       Alert.alert(
         '🔒 Task Locked',
@@ -142,15 +132,12 @@ const OfferScreen: React.FC = () => {
       );
       return;
     }
-    
-    // Validate creative link before navigation
     if (!task.creativeLink) {
       console.error('❌ No creative link found for task:', task);
       Alert.alert('Error', 'This task is not properly configured. Please try another task.');
       return;
     }
     
-    // navigate to creative screen with task data
     router.push({
       pathname: '/creative-task',
       params: {
@@ -169,7 +156,7 @@ const OfferScreen: React.FC = () => {
     const fetchTasks = async () => {
       try {
         setLoading(true);
-        setFetchingTasks(true); // Set fetching state
+        setFetchingTasks(true);
         setError(null);
         const response = await offersAPI.getAllOffers();
         
@@ -188,7 +175,7 @@ const OfferScreen: React.FC = () => {
         setAllTasks([]);
       } finally {
         setLoading(false);
-        setFetchingTasks(false); // Clear fetching state
+        setFetchingTasks(false); 
       }
     };
 
@@ -222,7 +209,6 @@ const OfferScreen: React.FC = () => {
     }
   }, []);
 
-  // Fetch profile when authenticated
   React.useEffect(() => {
     if (authState?.authenticated) {
       fetchUserProfile();
@@ -237,7 +223,6 @@ const OfferScreen: React.FC = () => {
     }, [authState?.authenticated, fetchUserProfile, allTasks.length, activeTaskTab])
   );
 
-  // Load persisted tab selection on component mount
   useEffect(() => {
     const loadPersistedTab = async () => {
       try {
@@ -253,7 +238,6 @@ const OfferScreen: React.FC = () => {
     loadPersistedTab();
   }, []);
 
-  // Save tab selection when it changes
   const handleTabChange = async (tab: 'audio' | 'image' | 'video') => {
     try {
       setActiveTaskTab(tab);
@@ -264,7 +248,7 @@ const OfferScreen: React.FC = () => {
     }
   };
 
-  // Fetch social offers from backend
+  // social offers from backend
   const fetchSocialOffers = async () => {
     setLoadingSocial(true);
     try {
@@ -272,7 +256,6 @@ const OfferScreen: React.FC = () => {
       console.log('✅ Social offers response:', response);
       
       if (response.success && response.data) {
-        // Log each offer's completion status
         response.data.forEach((offer: any) => {
           console.log(`  - ${offer.description}: completed=${offer.completed}, id=${offer._id}`);
         });
@@ -286,14 +269,12 @@ const OfferScreen: React.FC = () => {
     }
   };
 
-  // fetch social offers when component mounts
   useEffect(() => {
     if (authState?.authenticated) {
       fetchSocialOffers();
     }
   }, [authState?.authenticated]);
 
-  // Handle completing a social offer
   const handleCompleteSocialOffer = async (offer: SocialOffer) => {
 
     if (offer.completed) {
@@ -311,7 +292,6 @@ const OfferScreen: React.FC = () => {
       return;
     }
 
-    // First, try to open the redirect link
     try {
       const canOpen = await Linking.canOpenURL(offer.redirectLink);
       if (canOpen) {
@@ -325,7 +305,6 @@ const OfferScreen: React.FC = () => {
       return;
     }
 
-    // Then mark as completed in backend
     setCompletingSocialOffer(offer._id);
     
     try {
@@ -336,7 +315,6 @@ const OfferScreen: React.FC = () => {
         console.log('✅ Social offer completed successfully');
         await fetchSocialOffers();
         
-        // Update user coins locally
         if (userProfile) {
           const newCoins = response.coins || ((userProfile.coins || 0) + offer.reward.coinsOnCorrect);
           setUserProfile({
@@ -345,7 +323,6 @@ const OfferScreen: React.FC = () => {
           });
         }
         
-        // Show success message
         Alert.alert(
           '🎉 Task Completed!',
           `You earned ${offer.reward.coinsOnCorrect} points!`,
@@ -369,7 +346,6 @@ const OfferScreen: React.FC = () => {
           [{ text: 'OK' }]
         );
       } else {
-        // Other errors
         let errorMessage = 'Failed to complete task. Please try again.';
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
@@ -381,7 +357,6 @@ const OfferScreen: React.FC = () => {
     }
   };
 
-  // get social offer icon based on type
   const getSocialOfferIcon = (type: string): keyof typeof Ionicons.glyphMap => {
     const lowerType = type.toLowerCase();
     if (lowerType.includes('twitter') || lowerType.includes('x')) return 'logo-twitter';
@@ -394,7 +369,6 @@ const OfferScreen: React.FC = () => {
     return 'gift-outline';
   };
 
-  // Get social offer color based on type
   const getSocialOfferColor = (type: string): string => {
     const lowerType = type.toLowerCase();
     if (lowerType.includes('twitter') || lowerType.includes('x')) return '#1DA1F2';
@@ -403,13 +377,10 @@ const OfferScreen: React.FC = () => {
     return '#ffffff';
   };
 
-  // Loading state
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading tasks...</Text>
-        </View>
+        <OfferSkeletonLoader />
       </SafeAreaView>
     );
   }
@@ -430,14 +401,12 @@ const OfferScreen: React.FC = () => {
       const taskTitle = (task.title || '').toLowerCase();
       
       if (activeTaskTab === 'audio') {
-        // More comprehensive audio detection
         const isAudio = taskType.includes('audio') || 
                        taskTitle.includes('audio') || 
                        taskType === 'audio';
         
         return isAudio;
       } else if (activeTaskTab === 'image') {
-        // More comprehensive image detection
         const isImage = taskType.includes('image') || 
                        taskTitle.includes('image') || 
                        taskTitle.includes('photo') || 
@@ -633,7 +602,6 @@ const OfferScreen: React.FC = () => {
             onViewableItemsChanged={onViewableItemsChangedRef.current}
             viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
             ListEmptyComponent={() => {
-              // Show loading state if we're fetching or initial loading
               if (fetchingTasks || loading) {
                 return (
                   <View style={styles.emptyTasksContainer}>
@@ -644,7 +612,6 @@ const OfferScreen: React.FC = () => {
                 );
               }
               
-              // Show empty state only when we're sure there are no tasks
               return (
                 <View style={styles.emptyTasksContainer}>
                   <Ionicons name="folder-open-outline" size={48} color="#666" />
@@ -685,10 +652,7 @@ const OfferScreen: React.FC = () => {
           </View>
           
           {loadingSocial ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#007AFF" />
-              <Text style={styles.loadingText}>Loading social tasks...</Text>
-            </View>
+            <SocialSkeletonLoader count={3} />
           ) : socialOffers.length > 0 ? (
             socialOffers.map((offer) => (
               <TouchableOpacity 
@@ -814,8 +778,6 @@ const styles = StyleSheet.create({
      color: '#888',
      fontSize: 15,
    },
-  
-  // Updated balance card styles
   balanceCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 35,
@@ -1041,8 +1003,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-
-  // Loading state
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1069,8 +1029,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-
-  // Task Tab Navigation Styles
   taskTabContainer: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -1103,8 +1061,6 @@ const styles = StyleSheet.create({
   taskTabTextActive: {
     color: '#007AFF',
   },
-
-  // empty container for filtered tasks
   emptyTasksContainer: {
     width: CARD_WIDTH,
     height: 250,

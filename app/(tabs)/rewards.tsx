@@ -5,11 +5,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Dimensions, Image, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import { Dialog, Portal, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpinWheel from '../../components/SpinWheel';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI, couponsAPI, referralAPI } from '../../services/api';
 import { Coupon } from '../../types/Offer';
+import { RewardsSkeletonLoader, CouponsSkeletonLoader, ReferredUsersSkeletonLoader } from '../../components/SkeletonLoader';
 
 interface Segment {
   color: string;
@@ -51,6 +53,14 @@ const RewardsScreen: React.FC = () => {
   const [canSpin, setCanSpin] = useState(true);
   const [spinTimeLeft, setSpinTimeLeft] = useState(0);
   const [loadingSpinStatus, setLoadingSpinStatus] = useState(false);
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successDialogConfig, setSuccessDialogConfig] = useState({
+    title: '',
+    message: '',
+    showViewCouponsButton: false
+  });
 
   useEffect(() => {
     fetchUserProfile();
@@ -69,7 +79,6 @@ const RewardsScreen: React.FC = () => {
     }
   };
 
-  // fetchCoupons to refresh after spin
   const fetchCoupons = useCallback(async (showLoading = false) => {
     try {
       if (showLoading) setRefreshingCoupons(true);
@@ -162,12 +171,11 @@ const RewardsScreen: React.FC = () => {
     }));
     
     setWheelSegments(fallbackSegments);
-    console.log('✅ Fallback segments created');
   };
 
   const handleSpinWheel = () => {
     if (wheelSegments.length === 0) {
-      Alert.alert('Loading', 'Spin wheel is still loading. Please try again.');
+      showSnackbarMessage('Spin wheel is loading');
       return;
     }
     
@@ -195,7 +203,6 @@ const RewardsScreen: React.FC = () => {
     }
   };
 
-  // Add countdown timer effect
   useEffect(() => {
     if (spinTimeLeft > 0) {
       const timer = setInterval(() => {
@@ -230,27 +237,13 @@ const RewardsScreen: React.FC = () => {
       fetchSpinStatus();
     }, 1000);
     
-    const showSuccessAlert = (message: string) => {
-      Alert.alert(
-        'Congratulations! 🎉',
-        message,
-        [
-          {
-            text: 'View Coupons',
-            onPress: () => {
-              setShowSpinWheel(false);
-              setTimeout(() => fetchCoupons(true), 300);
-            }
-          },
-          {
-            text: 'OK',
-            onPress: () => {
-              setShowSpinWheel(false);
-              setTimeout(() => fetchCoupons(true), 300);
-            }
-          }
-        ]
-      );
+    const showSuccessDialog = (message: string) => {
+      setSuccessDialogConfig({
+        title: 'Great!',
+        message: message,
+        showViewCouponsButton: true
+      });
+      setShowSuccessDialog(true);
     };
 
     const showErrorAlert = (message: string, closeModal: boolean = true) => {
@@ -275,7 +268,7 @@ const RewardsScreen: React.FC = () => {
         try {
           const response = await couponsAPI.selectSpinWheelCoupon(segment.couponData._id);
           console.log('✅ Coupon selected successfully:', response);
-          showSuccessAlert(successMessage);
+          showSuccessDialog(successMessage);
           
         } catch (couponError: any) {
           console.error('❌ Failed to select coupon:', couponError);
@@ -286,7 +279,6 @@ const RewardsScreen: React.FC = () => {
           if (couponError.response?.status === 409) {
             errorMessage = 'You can only spin the wheel once a day!';
             shouldCloseModal = false; 
-            // Update spin status immediately when rate limited
             setCanSpin(false);
             setSpinTimeLeft(24 * 60 * 60);
           } else if (couponError.response?.status === 404) {
@@ -347,39 +339,20 @@ const RewardsScreen: React.FC = () => {
     return 0;
   };
 
-  // const getImprovedCouponDescription = (coupon: any): string => {
-  //   const company = coupon.company?.toLowerCase() || '';
-  //   const description = coupon.description || '';
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
     
-  //   const discountMatch = description.match(/(\d+)%/);
-  //   const discount = discountMatch ? discountMatch[1] : '20';
-    
-  //   const companyDescriptions: { [key: string]: string } = {
-  //     'amazon': `${discount}% off on electronics, books & more`,
-  //     'netflix': `Get ${discount}% off your next subscription`,
-  //     'spotify': `Save ${discount}% on Premium membership`,
-  //     'uber': `${discount}% discount on your next 3 rides`,
-  //     'airbnb': `${discount}% off accommodation bookings`,
-  //     'dominos': `${discount}% off on pizza orders above $15`,
-  //     'starbucks': `${discount}% off beverages and snacks`,
-  //     'nike': `${discount}% off athletic wear and footwear`,
-  //     'mcdonalds': `${discount}% off meals and combos`,
-  //     'target': `${discount}% off home essentials & groceries`,
-  //   };
-    
-  //   return companyDescriptions[company] || `${discount}% discount on your purchase`;
-  // };
+    setTimeout(() => {
+      setShowSnackbar(false);
+    }, 2000);
+  };
 
   const handleCopyCouponCode = async (coupon: any) => {
     try {
       const code = coupon.couponCode || `SAVE ${extractDiscountFromDescription(coupon.description)}`;
       await Clipboard.setStringAsync(code);
-      
-      Alert.alert(
-        'Code Copied! 📋',
-        `Coupon code "${code}" has been copied to your clipboard.`,
-        [{ text: 'OK', style: 'default' }]
-      );
+      showSnackbarMessage('Coupon code copied');
     } catch (error) {
       console.error('Failed to copy coupon code:', error);
       Alert.alert('Error', 'Failed to copy coupon code. Please try again.');
@@ -390,24 +363,19 @@ const RewardsScreen: React.FC = () => {
     try {
       const referralCode = userProfile?.referralCode || 'LOADING...';
       if (referralCode === 'LOADING...') {
-        Alert.alert('Error', 'Referral code is still loading. Please try again.');
+        showSnackbarMessage('Referral code loading');
         return;
       }
       
       await Clipboard.setStringAsync(referralCode);
-      
-      Alert.alert(
-        'Code Copied! 📋',
-        `Your referral code "${referralCode}" has been copied to your clipboard.`,
-        [{ text: 'OK', style: 'default' }]
-      );
+      showSnackbarMessage('Referral code copied');
     } catch (error) {
       console.error('Failed to copy referral code:', error);
       Alert.alert('Error', 'Failed to copy referral code. Please try again.');
     }
   };
 
-  // Fetch details of referred users
+  // fetch details of referred users
   const fetchReferredUsersDetails = async () => {
     if (!userProfile?.referredUsers || userProfile.referredUsers.length === 0) {
       return;
@@ -459,8 +427,6 @@ const RewardsScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch referred users details:', error);
-      
-      // use ObjectId extraction method
       const validUserIds = userProfile.referredUsers.filter((userId: string) => userId !== userProfile._id);
       
       const referredUsers = validUserIds.map((userId: string, index: number) => {
@@ -520,6 +486,28 @@ const RewardsScreen: React.FC = () => {
   const handleNavigateToLootBoxes = () => {
     router.push('/lootboxes');
   };
+
+  const handleSuccessDialogAction = (action: 'view-coupons' | 'ok') => {
+    setShowSuccessDialog(false);
+    setShowSpinWheel(false);
+    
+    if (action === 'view-coupons') {
+      setTimeout(() => fetchCoupons(true), 300);
+    } else {
+      setTimeout(() => fetchCoupons(true), 300);
+    }
+  };
+
+  if (false) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={['#0a101bff', '#060910ff', '#071014ff']} style={StyleSheet.absoluteFill} />
+        <SafeAreaView style={styles.safeArea}>
+          <RewardsSkeletonLoader />
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -691,10 +679,7 @@ const RewardsScreen: React.FC = () => {
             {showReferredUsers && (
               <View style={styles.referredUsersDropdown}>
                 {loadingReferredUsers ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color="#007AFF" />
-                    <Text style={styles.loadingText}>Loading referred users...</Text>
-                  </View>
+                  <ReferredUsersSkeletonLoader count={3} />
                 ) : referredUsersDetails.length > 0 ? (
                   <>
                     <View style={styles.dividerLine} />
@@ -740,7 +725,9 @@ const RewardsScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
             
-            {coupons.length > 0 ? (
+            {refreshingCoupons ? (
+              <CouponsSkeletonLoader count={3} />
+            ) : coupons.length > 0 ? (
               coupons.map((coupon) => (
                 <View 
                   key={coupon._id} 
@@ -818,6 +805,50 @@ const RewardsScreen: React.FC = () => {
       </SafeAreaView>
       
       <SpinWheelModal />
+
+      {/* Snackbar */}
+      {showSnackbar && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        </View>
+      )}
+
+      {/* Success Dialog */}
+      <Portal>
+        <Dialog 
+          visible={showSuccessDialog} 
+          onDismiss={() => handleSuccessDialogAction('ok')}
+          style={styles.successDialog}
+        >
+          <Dialog.Title style={styles.successDialogTitle}>
+            {successDialogConfig.title}
+          </Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.successDialogMessage}>
+              {successDialogConfig.message}
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions style={styles.successDialogActions}>
+            {successDialogConfig.showViewCouponsButton && (
+              <Button 
+                onPress={() => handleSuccessDialogAction('view-coupons')}
+                textColor="#007AFF"
+                style={styles.successDialogButton}
+              >
+                View Coupons
+              </Button>
+            )}
+            <Button 
+              onPress={() => handleSuccessDialogAction('ok')}
+              textColor="#007AFF"
+              style={[styles.successDialogButton, styles.successDialogPrimaryButton]}
+              buttonColor="rgba(0, 122, 255, 0.1)"
+            >
+              OK
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };
@@ -1091,8 +1122,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  
-  // New logo container styles
   logoContainer: {
     width: '100%',
     height: '100%',
@@ -1352,6 +1381,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.2,
+  },
+
+  // snackbar
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  // Success Dialog styles
+  successDialog: {
+    backgroundColor: '#1a1b23',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  successDialogTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  successDialogMessage: {
+    color: '#A1A1AA',
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  successDialogActions: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    justifyContent: 'center',
+    gap: 8,
+  },
+  successDialogButton: {
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+  },
+  successDialogPrimaryButton: {
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.3)',
   },
 });
 
