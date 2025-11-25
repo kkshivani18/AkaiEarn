@@ -3,8 +3,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { authAPI } from '../services/api'
 
 interface AuthProps{
-  authState?: { token: string | null, authenticated: boolean | null, user?: {name: string, email: string, coins?: number}, profileCompleted?: boolean };
-  onRegister?: (name: string, email: string, password: string) => Promise<any>;
+  authState?: { token: string | null, authenticated: boolean | null, user?: {email: string, coins?: number}, profileCompleted?: boolean };
+  onRegister?: (email: string, password: string) => Promise<any>;
   onLogin?: (email: string, password: string) => Promise<any>;
   onLogout?: () => Promise<any>;
   onProfileCompleted?: () => void;
@@ -12,8 +12,8 @@ interface AuthProps{
 }
 
 interface AuthContextType {
-  authState?: { token: string | null, authenticated: boolean | null, user?: {name: string, email: string, coins?: number}, profileCompleted?: boolean };
-  onRegister?: (name: string, email: string, password: string) => Promise<any>;
+  authState?: { token: string | null, authenticated: boolean | null, user?: {email: string, coins?: number}, profileCompleted?: boolean };
+  onRegister?: (email: string, password: string) => Promise<any>;
   onLogin?: (email: string, password: string) => Promise<any>;
   onLogout?: () => Promise<any>;
   onProfileCompleted?: () => void;
@@ -37,7 +37,7 @@ export const AuthProvider = ({children}: any) => {
   const [authState, setAuthState] = useState<{
     token: string | null;
     authenticated: boolean | null;
-    user?: {name: string, email: string, coins?: number};
+    user?: {email: string, coins?: number};
     profileCompleted?: boolean;
   }>({
     token: null,
@@ -102,9 +102,9 @@ export const AuthProvider = ({children}: any) => {
     loadToken();
   }, []);
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (email: string, password: string) => {
     try{
-      const result = await authAPI.register(name, email, password);
+      const result = await authAPI.register(email, password);
       
       console.log('✅ Registration response:', result);
       

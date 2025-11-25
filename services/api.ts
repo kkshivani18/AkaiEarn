@@ -339,11 +339,9 @@ export const couponsAPI = {
 
 // API functions that match your backend exactly
 export const authAPI = {
-  // Register - matches your /api/auth/register endpoint
-  register: async (name: string, email: string, password: string) => {
+  register: async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/register', {
-        name,        
         email,      
         password,    
       });

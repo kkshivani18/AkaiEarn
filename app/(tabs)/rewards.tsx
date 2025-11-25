@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { ActivityIndicator, Alert, Animated, Dimensions, Image, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import { Dialog, Portal, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,14 +38,15 @@ const RewardsScreen: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showSpinWheel, setShowSpinWheel] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [spinValue] = useState(new Animated.Value(0));
+  const spinValueRef = useRef<Animated.Value>(new Animated.Value(0));
+  const spinValue = spinValueRef.current;
   const [coupons, setCoupons] = useState<any[]>([]);
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [refreshingCoupons, setRefreshingCoupons] = useState(false);
   const [availableSpinCoupons, setAvailableSpinCoupons] = useState<any[]>([]);
-  const [wheelSegments, setWheelSegments] = useState<Segment[]>([]);
+  const [rawWheelSegments, setRawWheelSegments] = useState<Segment[]>([]);
   const [lastSpinDate, setLastSpinDate] = useState<string | null>(null);
   const [showReferredUsers, setShowReferredUsers] = useState(false);
   const [referredUsersDetails, setReferredUsersDetails] = useState<any[]>([]);
@@ -95,18 +96,28 @@ const RewardsScreen: React.FC = () => {
     }
   }, []);
 
+  const handleNavigateToLootBoxes = () => {
+    router.push('/lootboxes')
+  }
+
   // load available coupons for spin wheel 
   const loadSpinWheelCoupons = async () => {
     try {
       const response = await couponsAPI.getSpinWheelCoupons();
       if (response.success && response.data && response.data.length > 0) {
         setAvailableSpinCoupons(response.data);
-        
-        // 4 segments from available coupons
-        const availableCoupons = response.data;
-        const segmentColors = ['#76b7ecff', '#93C5FD', '#60A5FA', '#3B82F6'];
 
-        const couponSegments = Array.from({ length: 4 }, (_, index) => {
+        const availableCoupons = response.data;
+        const segmentColors = [
+          '#76B7EC', 
+          '#60A5FA',
+          '#3B82F6',
+          '#2563EB',
+          '#1D4ED8',
+          '#0EA5E9',
+        ];
+
+        const couponSegments = Array.from({ length: 6 }, (_, index) => {
           const couponIndex = index % availableCoupons.length;
           const coupon = availableCoupons[couponIndex];
           
@@ -130,7 +141,7 @@ const RewardsScreen: React.FC = () => {
           };
         });
 
-        setWheelSegments(couponSegments);
+        setRawWheelSegments(couponSegments);
       } else {
         console.warn('⚠️ No coupons available for spin wheel');
         createFallbackSegments();
@@ -146,10 +157,19 @@ const RewardsScreen: React.FC = () => {
       { company: 'Amazon', description: '20% off electronics' },
       { company: 'Netflix', description: '15% off subscription' },
       { company: 'Starbucks', description: '10% off beverages' },
-      { company: 'Nike', description: '25% off footwear' }
+      { company: 'Nike', description: '25% off footwear' },
+      { company: 'Uber', description: '30% off rides' },
+      { company: 'Spotify', description: '50% off premium' }
     ];
     
-    const segmentColors = ['#76b7ecff', '#93C5FD', '#76b7ecff', '#76b7ecff'];
+    const segmentColors = [
+      '#76B7EC',
+      '#60A5FA',
+      '#3B82F6',
+      '#2563EB',
+      '#1D4ED8',
+      '#0EA5E9',
+    ];
     
     const fallbackSegments = fallbackCoupons.map((coupon, index) => ({
       color: segmentColors[index],
@@ -170,11 +190,11 @@ const RewardsScreen: React.FC = () => {
       }
     }));
     
-    setWheelSegments(fallbackSegments);
+    setRawWheelSegments(fallbackSegments);
   };
 
   const handleSpinWheel = () => {
-    if (wheelSegments.length === 0) {
+    if (rawWheelSegments.length === 0) {
       showSnackbarMessage('Spin wheel is loading');
       return;
     }
@@ -253,7 +273,7 @@ const RewardsScreen: React.FC = () => {
         [{ 
           text: 'OK', 
           onPress: () => {
-            if (closeModal) {
+            if (closeModal && !isSpinning) {
               setShowSpinWheel(false);
             }
           }
@@ -264,18 +284,18 @@ const RewardsScreen: React.FC = () => {
     try {
       if (segment.type === 'coupon' && segment.couponData) {
         const successMessage = `You won a ${segment.couponData.company} coupon: ${segment.couponData.description}!`;
-        
         try {
           const response = await couponsAPI.selectSpinWheelCoupon(segment.couponData._id);
           console.log('✅ Coupon selected successfully:', response);
-          showSuccessDialog(successMessage);
           
+          setShowSpinWheel(false);
+          showSnackbarMessage(successMessage);
+          
+          setTimeout(() => fetchCoupons(true), 500);
         } catch (couponError: any) {
           console.error('❌ Failed to select coupon:', couponError);
-          
           let errorMessage = 'Failed to add coupon to your account.';
           let shouldCloseModal = true;
-          
           if (couponError.response?.status === 409) {
             errorMessage = 'You can only spin the wheel once a day!';
             shouldCloseModal = false; 
@@ -284,7 +304,6 @@ const RewardsScreen: React.FC = () => {
           } else if (couponError.response?.status === 404) {
             errorMessage = 'Coupon not available. Please try again.';
           }
-          
           showErrorAlert(errorMessage, shouldCloseModal);
         }
       } else {
@@ -295,14 +314,14 @@ const RewardsScreen: React.FC = () => {
       console.error('❌ Error processing spin reward:', error);
       showErrorAlert('There was an error processing your reward. Please try again.');
     }
-  }, []); 
+  }, [fetchSpinStatus, isSpinning]); 
 
-  const handleSpinPress = () => {
+  const handleSpinPress = useCallback(() => {
     setIsSpinning(true);
     setTimeout(() => {
       setIsSpinning(false);
     }, 5000);
-  };
+  }, []);
 
   const handleReferFriend = async () => {
     try {
@@ -455,23 +474,22 @@ const RewardsScreen: React.FC = () => {
     setShowReferredUsers(!showReferredUsers);
   };
 
-  const SpinWheelModal = () => (
+  const SpinWheelModal = useMemo(() => (
     <Modal
       visible={showSpinWheel}
-      transparent
-      animationType="fade"
-      onRequestClose={() => !isSpinning && setShowSpinWheel(false)}
+      animationType="slide"
+      onRequestClose={() => setShowSpinWheel(false)}
     >
       <View style={styles.modalOverlay}>
         <TouchableOpacity
           style={styles.closeButton}
-          onPress={() => !isSpinning && setShowSpinWheel(false)}
+          onPress={() => setShowSpinWheel(false)}
         >
           <Ionicons name="close" size={24} color="white" />
         </TouchableOpacity>
         
         <SpinWheel
-          segments={wheelSegments}
+          segments={rawWheelSegments}
           onSpinComplete={handleSpinComplete}
           isSpinning={isSpinning}
           isUnlocked={!hasSpun}
@@ -481,21 +499,12 @@ const RewardsScreen: React.FC = () => {
         />
       </View>
     </Modal>
-  );
-
-  const handleNavigateToLootBoxes = () => {
-    router.push('/lootboxes');
-  };
+  ), [showSpinWheel, isSpinning, showSuccessDialog, rawWheelSegments, handleSpinComplete, handleSpinPress, hasSpun, spinValue]); 
 
   const handleSuccessDialogAction = (action: 'view-coupons' | 'ok') => {
     setShowSuccessDialog(false);
-    setShowSpinWheel(false);
     
-    if (action === 'view-coupons') {
-      setTimeout(() => fetchCoupons(true), 300);
-    } else {
-      setTimeout(() => fetchCoupons(true), 300);
-    }
+    setTimeout(() => fetchCoupons(true), 300);
   };
 
   if (false) {
@@ -573,10 +582,10 @@ const RewardsScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.spinCta,
-                (!canSpin || wheelSegments.length === 0 || loadingSpinStatus) && styles.spinCtaDisabled
+                (!canSpin || rawWheelSegments.length === 0 || loadingSpinStatus) && styles.spinCtaDisabled
               ]}
               onPress={handleSpinWheel}
-              disabled={!canSpin || wheelSegments.length === 0 || loadingSpinStatus}
+              disabled={!canSpin || rawWheelSegments.length === 0 || loadingSpinStatus}
               activeOpacity={0.9}
             >
               <LinearGradient
@@ -596,7 +605,7 @@ const RewardsScreen: React.FC = () => {
                 ]}>
                   {loadingSpinStatus 
                     ? 'Loading...' 
-                    : wheelSegments.length === 0 
+                    : rawWheelSegments.length === 0 
                       ? 'Loading...' 
                       : canSpin 
                         ? 'Spin Now'
@@ -804,7 +813,7 @@ const RewardsScreen: React.FC = () => {
         </ScrollView>
       </SafeAreaView>
       
-      <SpinWheelModal />
+      {SpinWheelModal}
 
       {/* Snackbar */}
       {showSnackbar && (

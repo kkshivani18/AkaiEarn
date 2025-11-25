@@ -32,7 +32,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -57,7 +56,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
     // });
 
   const handleSignUp = async () => {
-    if (!name || !email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -75,7 +74,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
     setLoading(true);
     
     try {
-      const result = await onRegister(name, email, password); 
+      const result = await onRegister(email, password); 
       console.log('SignUp result:', result);
       if (result?.success) { 
         onClose();

@@ -46,9 +46,15 @@ const STROKE_WIDTH = 4;
 const COOLDOWN_TIME = 24 * 60 * 60; 
 const SPIN_DURATION = 5000;
 const FULL_SPINS = 5;
-const MAX_SEGMENTS = 4; 
-// Optional palette (kept)
-const PALETTE = ['#76b7ecff', '#93C5FD', '#76b7ecff', '#93C5FD'];
+const MAX_SEGMENTS = 6; 
+const PALETTE = [
+  '#76B7EC', // Sky blue
+  '#60A5FA', // Light blue
+  '#3B82F6', // Blue
+  '#2563EB', // Deep blue
+  '#1D4ED8', // Indigo-blue
+  '#0EA5E9', // Cyan-blue
+];
 
 // --- Utility Functions ---
 const formatTime = (seconds: number): string => {
@@ -70,13 +76,7 @@ const GradientText: React.FC<{ children: React.ReactNode; style: any }> = ({ chi
   <Text style={[style, { color: '#1DA1F2' }]}>{children}</Text>
 );
 
-const WheelPointer: React.FC<{ wheelSize: number }> = React.memo(({ wheelSize }) => (
-  <View style={[styles.pointerContainer, { left: wheelSize / 2 - 10 }]}>
-    {/* base dot for pointer */}
-    <View style={styles.pointerBase} />
-    <View style={styles.pointer} />
-  </View>
-));
+// Remove WheelPointer component (do not render top pointer)
 
 const SpinButton: React.FC<{
   onPress: () => void;
@@ -85,11 +85,12 @@ const SpinButton: React.FC<{
   pulseScale?: Animated.Value;
 }> = React.memo(({ onPress, disabled, isSpinning, pulseScale }) => (
   <Animated.View style={[styles.spinButtonWrapper, pulseScale ? { transform: [{ scale: pulseScale }] } : null]}>
-    {/* glossy ring behind the button */}
-    <View style={styles.centerDecor}>
-      <View style={styles.centerRingLarge} />
-      <View style={styles.centerRingSmall} />
+    {/* Add small pointer attached to the top of the center button */}
+    <View style={styles.centerButtonPointerContainer}>
+      <View style={styles.centerButtonPointer} />
+      {/* <View style={styles.centerButtonPointerBase} /> */}
     </View>
+
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
@@ -108,24 +109,24 @@ const SpinButton: React.FC<{
   </Animated.View>
 ));
 
-const StatusDisplay: React.FC<{
-  isUnlocked: boolean;
-  timeLeft: number;
-}> = React.memo(({ isUnlocked, timeLeft }) => (
-  <View style={styles.statusDisplay}>
-    {timeLeft > 0 ? (
-      // Always show timer when timeLeft > 0, regardless of isUnlocked state
-      <>
-        <Text style={styles.statusLabel}>Next spin in:</Text>
-        <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-      </>
-    ) : (
-      <>
-        {/* <Text style={styles.readyText}>Ready to spin!</Text> */}
-      </>
-    )}
-  </View>
-));
+// const StatusDisplay: React.FC<{
+//   isUnlocked: boolean;
+//   timeLeft: number;
+// }> = React.memo(({ isUnlocked, timeLeft }) => (
+//   <View style={styles.statusDisplay}>
+//     {timeLeft > 0 ? (
+//       // Always show timer when timeLeft > 0, regardless of isUnlocked state
+//       <>
+//         <Text style={styles.statusLabel}>Next spin in:</Text>
+//         <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+//       </>
+//     ) : (
+//       <>
+//         {/* <Text style={styles.readyText}>Ready to spin!</Text> */}
+//       </>
+//     )}
+//   </View>
+// ));
 
 const WheelSVG: React.FC<{
   segments: Segment[];
@@ -167,11 +168,21 @@ const WheelSVG: React.FC<{
 
     return (
       <G key={`segment-${index}`}>
+        {/* Main segment fill */}
         <Path 
           d={segmentPath} 
           fill={segment.color || "rgba(255,255,255,0.05)"} 
-          stroke="rgba(249, 115, 22, 0.3)"
-          strokeWidth="0.5"
+          // subtle inner shadow line to give depth & crisp boundary
+          stroke="rgba(0,0,0,0.12)"
+          strokeWidth="1"
+        />
+        {/* thin bright separator on top of the inner shadow for crisp boundary */}
+        <Path
+          d={segmentPath}
+          fill="none"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth="1.1"
+          strokeLinecap="round"
         />
         {logoUrl ? (
           <G x={logoX} y={logoY} filter="url(#laserGlow)">
@@ -210,8 +221,10 @@ const WheelSVG: React.FC<{
         <Path 
           key={`line-${index}`} 
           d={`M${outerRadius},${outerRadius} L${x2},${y2}`} 
-          stroke="#007AFF" 
-          strokeWidth="1.5" 
+          stroke="#FFFFFF" 
+          strokeWidth="2"
+          strokeOpacity={0.07}
+          strokeLinecap="round"
           filter="url(#laserGlow)" 
         />
       );
@@ -224,7 +237,7 @@ const WheelSVG: React.FC<{
       const a = (index * anglePerSegment - 90) * (Math.PI / 180);
       const cx = outerRadius + r * Math.cos(a);
       const cy = outerRadius + r * Math.sin(a);
-      return <Circle key={`dot-${index}`} cx={cx} cy={cy} r="2" fill="#1DA1F2" opacity={0.65} />;
+      return <Circle key={`dot-${index}`} cx={cx} cy={cy} r="2.2" fill="#FFFFFF" opacity={0.15} />;
     });
   }, [segments, anglePerSegment, outerRadius, innerRadius]);
 
@@ -247,30 +260,28 @@ const WheelSVG: React.FC<{
         {/* Background glow */}
         <Circle cx={outerRadius} cy={outerRadius} r={innerRadius} fill="url(#orangeGlow)" />
         
-        {/* Segments */}
         {segments.map(renderSegment)}
         
-        {/* Separator lines */}
         {renderSeparatorLines()}
         
-        {/* Tick dots for detail */}
         {renderTickDots()}
-        
+
         {/* Outer rings */}
         <Circle 
           cx={outerRadius} 
           cy={outerRadius} 
           r={innerRadius} 
           fill="transparent" 
-          stroke="rgba(249, 115, 22, 0.5)" 
+          stroke="rgba(255,255,255,0.06)" 
           strokeWidth="1" 
         />
+        {/* remove orange center ring; keep minimal subtle ring if needed */}
         <Circle 
           cx={outerRadius} 
           cy={outerRadius} 
           r="45" 
-          fill="rgba(249, 115, 22, 0.1)" 
-          stroke="rgba(249, 115, 22, 0.5)" 
+          fill="transparent" 
+          stroke="rgba(255,255,255,0.04)" 
           strokeWidth="1" 
         />
       </G>
@@ -290,12 +301,9 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   cooldownTime = COOLDOWN_TIME,
   visible = true
 }) => {
-  // State
   const [timeLeft, setTimeLeft] = useState(0);
   const [result, setResult] = useState('');
   const [isUnlockedState, setIsUnlockedState] = useState<boolean>(true);
-  
-  // Refs
   const currentRotationRef = useRef(0);
   const glowOpacity = useRef(new Animated.Value(0.7)).current;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -304,7 +312,6 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
   const hasCompletedRef = useRef(false);
   const isProcessingSpinRef = useRef(false); 
 
-  // Memoized calculations
   const { outerRadius, innerRadius, logoRadius } = useMemo(
     () => calculateWheelDimensions(wheelSize), 
     [wheelSize]
@@ -318,12 +325,10 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     [spinValue]
   );
 
-  // Update spinning ref when prop changes
   useEffect(() => {
     isSpinningRef.current = isSpinning;
   }, [isSpinning]);
 
-  // spin status (prevent during spinning and processing)
   const fetchSpinStatus = useCallback(async () => {
     if (isSpinningRef.current || isProcessingSpinRef.current) return;
     
@@ -345,7 +350,6 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     }
   }, [isUnlocked]);
 
-  // fetch status whenever modal becomes visible (but not while spinning or processing)
   useEffect(() => {
     if (visible && !isSpinningRef.current && !isProcessingSpinRef.current) {
       fetchSpinStatus();
@@ -409,14 +413,15 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
       
       const winningSegment = normalizedSegments[winningSegmentIndex];
       
-      let resultMessage = `You won: ${winningSegment.reward}!`;
+      let newResult = `You won: ${winningSegment.reward}!`;
       if (winningSegment.type === 'coupon' && winningSegment.couponData) {
-        resultMessage = `You won a ${winningSegment.couponData.company} coupon!`;
+        newResult = `You won a ${winningSegment.couponData.company} coupon!`;
       } else if (winningSegment.type === 'tokens') {
-        resultMessage = `You won ${winningSegment.value} tokens!`;
+        newResult = `You won ${winningSegment.value} tokens!`;
       }
       
-      setResult(resultMessage);
+      // When updating result:
+      if (result !== newResult) setResult(newResult);
       
       onSpinComplete(winningSegment);
       
@@ -515,8 +520,7 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
         <Text style={styles.subtitle}>Get your daily reward</Text>
 
         <View style={[styles.wheelWrapper, { width: wheelSize, height: wheelSize }]}>
-          <WheelPointer wheelSize={wheelSize} />
-          
+
           <Animated.View 
             style={[
               styles.wheelContainer, 
@@ -550,8 +554,6 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
             <GradientText style={styles.resultText}>{result}</GradientText>
           ) : null}
         </View>
-
-        <StatusDisplay isUnlocked={canSpin} timeLeft={timeLeft} />
       </BlurView>
     </View>
   );
@@ -559,12 +561,12 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
 
 const styles = StyleSheet.create({
   modalContentWrapper: {
-    borderRadius: 32,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-    width: '90%',
-    maxWidth: 380,
+    width: '100%',
+    height: '70%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.37,
@@ -576,7 +578,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     marginBottom: 10,
     textAlign: 'center',
@@ -599,84 +601,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
   },
-  // for the wheel animated view
   wheelContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pointerContainer: {
-    position: 'absolute',
-    top: 6,
-    zIndex: 10,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 5,
-    elevation: 10,
-  },
-  pointerBase: {
-    alignSelf: 'center',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1DA1F2',
-    marginBottom: 2,
-    borderWidth: 1,
-    borderColor: '#1DA1F2',
-    marginTop: -27
-  },
-  pointer: {
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderTopWidth: 20,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#007AFF',
-  },
-
-  // Center button and decor
   spinButtonWrapper: {
     position: 'absolute',
     zIndex: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  centerDecor: {
+  centerButtonPointerContainer: {
     position: 'absolute',
-    width: 120,
-    height: 120,
+    top: -14, 
+    zIndex: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    width: 40,
+    height: 16,
   },
-  centerRingLarge: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 55,
-    borderWidth: 2,
-    borderColor: '#87bce0ff',
-    // backgroundColor: 'rgba(233, 225, 219, 0.06)',
+  centerButtonPointer: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 12,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#1DA1F2',
+    // borderBottomColor: 'white',  
+    // shadowColor: '#000',
+    // shadowOpacity: 0.15,
+    // shadowRadius: 4,
+    // elevation: 4,
   },
-  centerRingSmall: {
-    position: 'absolute',
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(206, 194, 194, 0.04)',
+  centerButtonPointerBase: {
+    marginTop: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    zIndex: 23,
   },
+
   spinButton: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 64,
+    height: 64,
+    borderRadius: 34,
     backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#1DA1F2',
     shadowColor: '#1DA1F2',
     shadowOffset: { width: 0, height: 0 },
@@ -697,7 +674,7 @@ const styles = StyleSheet.create({
   },
   spinButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '800',
     letterSpacing: 1,
   },
