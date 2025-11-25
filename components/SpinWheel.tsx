@@ -48,12 +48,12 @@ const SPIN_DURATION = 5000;
 const FULL_SPINS = 5;
 const MAX_SEGMENTS = 6; 
 const PALETTE = [
-  '#76B7EC', // Sky blue
-  '#60A5FA', // Light blue
-  '#3B82F6', // Blue
-  '#2563EB', // Deep blue
-  '#1D4ED8', // Indigo-blue
-  '#0EA5E9', // Cyan-blue
+  '#76B7EC',
+  '#60A5FA',
+  '#3B82F6',
+  '#2563EB', 
+  '#1D4ED8', 
+  '#0EA5E9', 
 ];
 
 // --- Utility Functions ---
@@ -85,10 +85,8 @@ const SpinButton: React.FC<{
   pulseScale?: Animated.Value;
 }> = React.memo(({ onPress, disabled, isSpinning, pulseScale }) => (
   <Animated.View style={[styles.spinButtonWrapper, pulseScale ? { transform: [{ scale: pulseScale }] } : null]}>
-    {/* Add small pointer attached to the top of the center button */}
     <View style={styles.centerButtonPointerContainer}>
       <View style={styles.centerButtonPointer} />
-      {/* <View style={styles.centerButtonPointerBase} /> */}
     </View>
 
     <TouchableOpacity
@@ -108,25 +106,6 @@ const SpinButton: React.FC<{
     </TouchableOpacity>
   </Animated.View>
 ));
-
-// const StatusDisplay: React.FC<{
-//   isUnlocked: boolean;
-//   timeLeft: number;
-// }> = React.memo(({ isUnlocked, timeLeft }) => (
-//   <View style={styles.statusDisplay}>
-//     {timeLeft > 0 ? (
-//       // Always show timer when timeLeft > 0, regardless of isUnlocked state
-//       <>
-//         <Text style={styles.statusLabel}>Next spin in:</Text>
-//         <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-//       </>
-//     ) : (
-//       <>
-//         {/* <Text style={styles.readyText}>Ready to spin!</Text> */}
-//       </>
-//     )}
-//   </View>
-// ));
 
 const WheelSVG: React.FC<{
   segments: Segment[];
@@ -150,17 +129,14 @@ const WheelSVG: React.FC<{
     const logoX = outerRadius + logoRadiusFromCenter * Math.cos(itemAngleRad);
     const logoY = outerRadius + logoRadiusFromCenter * Math.sin(itemAngleRad);
 
-    // Determine logo URL based on segment type
     let logoUrl = segment.brandLogo || segment.coupon?.imageLink;
     
     if (segment.type === 'coupon' && segment.couponData?.imageLink) {
       logoUrl = segment.couponData.imageLink;
     } else if (segment.type === 'tokens') {
-      // Tokens: prefer no external image – we’ll render text below
       logoUrl = undefined as any;
     }
 
-    // Fallback label (visible when logo is missing)
     const label =
       segment.type === 'tokens'
         ? `${segment.value ?? ''} Tokens`.trim()
@@ -168,15 +144,13 @@ const WheelSVG: React.FC<{
 
     return (
       <G key={`segment-${index}`}>
-        {/* Main segment fill */}
+        {/* Main segment */}
         <Path 
           d={segmentPath} 
           fill={segment.color || "rgba(255,255,255,0.05)"} 
-          // subtle inner shadow line to give depth & crisp boundary
           stroke="rgba(0,0,0,0.12)"
           strokeWidth="1"
         />
-        {/* thin bright separator on top of the inner shadow for crisp boundary */}
         <Path
           d={segmentPath}
           fill="none"
@@ -232,7 +206,7 @@ const WheelSVG: React.FC<{
   }, [segments, anglePerSegment, outerRadius, innerRadius]);
 
   const renderTickDots = useCallback(() => {
-    const r = innerRadius; // along the ring edge
+    const r = innerRadius; 
     return segments.map((_, index) => {
       const a = (index * anglePerSegment - 90) * (Math.PI / 180);
       const cx = outerRadius + r * Math.cos(a);
@@ -288,6 +262,29 @@ const WheelSVG: React.FC<{
     </Svg>
   );
 });
+
+const segmentsAreEqual = (a: Segment[] = [], b: Segment[] = []) => {
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		const sa = a[i];
+		const sb = b[i];
+		const idA = sa.couponData?._id ?? sa.coupon?._id ?? `${sa.text}|${sa.reward}|${sa.color}`;
+		const idB = sb.couponData?._id ?? sb.coupon?._id ?? `${sb.text}|${sb.reward}|${sb.color}`;
+		if (idA !== idB) return false;
+	}
+	return true;
+};
+
+const arePropsEqual = (prevProps: SpinWheelProps, nextProps: SpinWheelProps) => {
+	if (prevProps.wheelSize !== nextProps.wheelSize) return false;
+	if ((prevProps.visible ?? true) !== (nextProps.visible ?? true)) return false;
+
+	if (!segmentsAreEqual(prevProps.segments, nextProps.segments)) return false;
+
+	if (prevProps.onSpinComplete !== nextProps.onSpinComplete) return false;
+
+	return true;
+};
 
 // --- Main Component ---
 const SpinWheel: React.FC<SpinWheelProps> = ({ 
@@ -378,7 +375,6 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
     if (isSpinning || !canSpin) return;
     if (!normalizedSegments.length) return;
     
-    // Reset completion flag for new spin
     hasCompletedRef.current = false;
     isProcessingSpinRef.current = false;
     onSpinPress?.();
@@ -420,7 +416,6 @@ const SpinWheel: React.FC<SpinWheelProps> = ({
         newResult = `You won ${winningSegment.value} tokens!`;
       }
       
-      // When updating result:
       if (result !== newResult) setResult(newResult);
       
       onSpinComplete(winningSegment);
@@ -725,4 +720,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SpinWheel;
+export default React.memo(SpinWheel, arePropsEqual);
