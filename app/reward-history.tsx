@@ -445,6 +445,15 @@ export default function RewardHistoryScreen() {
     statuses: []
   });
 
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    setTimeout(() => setShowSnackbar(false), 2000);
+  };
+
   const calculateStats = (logs: LogItem[]): RewardStats => {
     const totalTasks = logs.length;
     const successfulTasks = logs.filter(log => 
@@ -534,7 +543,7 @@ export default function RewardHistoryScreen() {
       }
     } catch (error) {
       console.error('❌ Error fetching logs:', error);
-      setError('Failed to load reward history');
+      showSnackbarMessage('Failed to load reward history'); 
     } finally {
       setLoading(false);
     }
@@ -789,6 +798,13 @@ export default function RewardHistoryScreen() {
           </BlurView>
         </View>
       </Modal>
+
+      {/* Snackbar */}
+      {showSnackbar && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        </View>
+      )}
     </>
   );
 }
@@ -1240,5 +1256,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

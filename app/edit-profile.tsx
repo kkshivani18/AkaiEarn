@@ -96,43 +96,46 @@ export default function EditProfileScreen() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  // Profile data
+  // profile data
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(null); // For local storage
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  
-  // Password fields
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
-  // Password visibility
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // snackbar state
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    setTimeout(() => setShowSnackbar(false), 2000);
+  };
 
   // Load user data
   useEffect(() => {
     if (authState?.user) {
       setEmail(authState.user.email || '');
-      setName(authState.user.name || '');
-      // You can add profile picture loading here if you have it in user data
+      setName(`${authState.user.firstName || ''} ${authState.user.lastName || ''}`.trim() || '');
     }
   }, [authState]);
 
-  // Pick profile picture
   const pickImage = async () => {
     try {
-      // Ask for media library permission first
+      // Ask for media library permission 
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Media library permission is needed to pick images');
+        showSnackbarMessage('Media library permission is needed to pick images');
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // fixed enum
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, 
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -140,25 +143,24 @@ export default function EditProfileScreen() {
 
       if (!result.canceled && result.assets[0]) {
         setProfilePicture(result.assets[0].uri);
-        setLocalProfilePicture(result.assets[0].uri); // Store locally as backup
+        setLocalProfilePicture(result.assets[0].uri); 
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      showSnackbarMessage('Failed to pick image');
     }
   };
 
-  // Take photo
   const takePhoto = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Camera permission is needed to take photos');
+        showSnackbarMessage('Camera permission is needed to take photos');
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // fixed enum
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -169,7 +171,7 @@ export default function EditProfileScreen() {
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo');
+      showSnackbarMessage('Failed to take photo');
     }
   };
 
@@ -186,21 +188,20 @@ export default function EditProfileScreen() {
     );
   };
 
-  // Save profile changes
+  // save profile changes
   const saveProfile = async () => {
     if (!name.trim() || !email.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showSnackbarMessage('Please fill in all required fields');
       return;
     }
 
     if (email && !/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      showSnackbarMessage('Please enter a valid email address');
       return;
     }
 
     setSaving(true);
     try {
-      // First upload profile image if selected (with error handling)
       let imageUploadSuccess = false;
       if (profilePicture) {
         try {
@@ -230,7 +231,6 @@ export default function EditProfileScreen() {
         lastName,
       });
       
-      // Show appropriate success message based on image upload status
       if (profilePicture && !imageUploadSuccess) {
         Alert.alert(
           'Profile Updated', 
@@ -238,13 +238,13 @@ export default function EditProfileScreen() {
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
-        Alert.alert('Success', 'Profile updated successfully!');
+        showSnackbarMessage('Profile updated successfully!');
         router.back();
       }
     } catch (error: any) {
       console.error('Error updating profile:', error);
       const errorMessage = error.response?.data?.message || 'Failed to update profile. Please try again.';
-      Alert.alert('Error', errorMessage);
+      showSnackbarMessage(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -253,35 +253,34 @@ export default function EditProfileScreen() {
   // Update password
   const updatePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all password fields');
+      showSnackbarMessage('Please fill in all password fields');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      showSnackbarMessage('New passwords do not match');
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'New password must be at least 6 characters long');
+      showSnackbarMessage('New password must be at least 6 characters long');
       return;
     }
 
     setSaving(true);
     try {
-      // Use the new user-data endpoint for password updates
       await authAPI.updateUserData({ 
         password: newPassword 
       });
       
-      Alert.alert('Success', 'Password updated successfully!');
+      showSnackbarMessage('Password updated successfully!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
       console.error('Error updating password:', error);
       const errorMessage = error.response?.data?.message || 'Failed to update password. Please check your current password.';
-      Alert.alert('Error', errorMessage);
+      showSnackbarMessage(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -400,6 +399,11 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        {showSnackbar && (
+          <View style={styles.snackbar}>
+            <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+          </View>
+        )}
       </View>
     </>
   );
@@ -539,5 +543,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

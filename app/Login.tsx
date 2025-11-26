@@ -106,14 +106,24 @@ export const Login: React.FC<SignInModalProps> = ({
   //   handleGoogleResponse();
   // }, [response]);
 
+  // snackbar state
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    setTimeout(() => setShowSnackbar(false), 3000);
+  };
+
   const handleLogin = async (): Promise<void> => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showSnackbarMessage('Please fill in all fields');
       return;
     }
 
     if (!onLogin) {
-         Alert.alert('Login Failed', 'Login function not yet loaded. Try again in a moment.');
+         showSnackbarMessage('Login function not yet loaded. Try again in a moment.');
          return;
     }
     
@@ -134,10 +144,10 @@ export const Login: React.FC<SignInModalProps> = ({
           router.replace('/(tabs)/offer');
         }
       } else {
-        Alert.alert('Login Failed', result?.msg || result?.error || 'Invalid credentials');
+        showSnackbarMessage(result?.msg || result?.error || 'Invalid credentials');
       }
     } catch (error) {
-      Alert.alert('Login Failed', (error as Error).message || 'An unexpected error occurred');
+      showSnackbarMessage((error as Error).message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -145,12 +155,12 @@ export const Login: React.FC<SignInModalProps> = ({
 
   const handleForgotPassword = async () => {
     if (!forgotPasswordEmail) {
-      Alert.alert('Error', 'Please enter your email address');
+      showSnackbarMessage('Please enter your email address');
       return;
     }
 
     if (!forgotPasswordEmail.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      showSnackbarMessage('Please enter a valid email address');
       return;
     }
 
@@ -160,24 +170,14 @@ export const Login: React.FC<SignInModalProps> = ({
       const data = await authAPI.forgotPassword(forgotPasswordEmail);
 
       if (data.success) {
-        Alert.alert(
-          'Reset Link Sent! 📧',
-          'If an account with that email exists, a password reset link has been sent. Please check your email and click the link to reset your password.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                setShowForgotPassword(false);
-                setForgotPasswordEmail('');
-              }
-            }
-          ]
-        );
+        showSnackbarMessage('Reset link sent! Check your email.');
+        setShowForgotPassword(false);
+        setForgotPasswordEmail('');
       } else {
-        Alert.alert('Error', data.message || 'Failed to send reset email');
+        showSnackbarMessage(data.message || 'Failed to send reset email');
       }
     } catch (error: any) {
-      console.error('Forgot password error:', error);
+      // console.error('Forgot password error:', error);
       let errorMessage = 'Network error. Please try again.';
       
       if (error.response?.data?.message) {
@@ -186,7 +186,7 @@ export const Login: React.FC<SignInModalProps> = ({
         errorMessage = error.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      showSnackbarMessage(errorMessage);
     } finally {
       setForgotPasswordLoading(false);
     }
@@ -194,17 +194,17 @@ export const Login: React.FC<SignInModalProps> = ({
 
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showSnackbarMessage('Please fill in all fields');
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      showSnackbarMessage('Password must be at least 6 characters long');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showSnackbarMessage('Passwords do not match');
       return;
     }
 
@@ -214,27 +214,19 @@ export const Login: React.FC<SignInModalProps> = ({
       const data = await authAPI.resetPassword(resetToken, newPassword);
 
       if (data.success) {
-        Alert.alert(
-          'Password Reset Successful! ✅',
-          'Your password has been reset successfully. You can now log in with your new password.',
-          [
-            {
-              text: 'Login Now',
-              onPress: () => {
-                setShowResetPassword(false);
-                setNewPassword('');
-                setConfirmPassword('');
-                setResetToken('');
-                router.replace('/Login');
-              }
-            }
-          ]
-        );
+        showSnackbarMessage('Password reset successful! You can now log in.');
+        setTimeout(() => {
+          setShowResetPassword(false);
+          setNewPassword('');
+          setConfirmPassword('');
+          setResetToken('');
+          router.replace('/Login');
+        }, 2000);
       } else {
-        Alert.alert('Error', data.message || 'Failed to reset password');
+        showSnackbarMessage(data.message || 'Failed to reset password');
       }
     } catch (error: any) {
-      console.error('Reset password error:', error);
+      // console.error('Reset password error:', error);
       let errorMessage = 'Failed to reset password. Please try again.';
       
       if (error.response?.data?.message) {
@@ -243,7 +235,7 @@ export const Login: React.FC<SignInModalProps> = ({
         errorMessage = error.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      showSnackbarMessage(errorMessage);
     } finally {
       setResetPasswordLoading(false);
     }
@@ -356,7 +348,7 @@ export const Login: React.FC<SignInModalProps> = ({
         </View>
       </LinearGradient>
 
-      {/* Forgot Password Modal */}
+      {/* forgot password */}
       <Modal
         visible={showForgotPassword && !showResetPassword}
         transparent={true}
@@ -466,6 +458,11 @@ export const Login: React.FC<SignInModalProps> = ({
           </View>
         </View>
       </Modal>
+      {showSnackbar && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        </View>
+      )}
     </>
   );
 };
@@ -672,6 +669,25 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // snackbar styles
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

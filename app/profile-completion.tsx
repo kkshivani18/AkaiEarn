@@ -31,11 +31,11 @@ const ProfileCompletionScreen: React.FC = () => {
   const [referralCode, setReferralCode] = React.useState<string>('');
   const [loading, setLoading] = React.useState<boolean>(false);
   const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
-
-  // Add referral verification states
   const [referralVerificationStatus, setReferralVerificationStatus] = React.useState<'idle' | 'verifying' | 'valid' | 'invalid'>('idle');
   const [referralVerificationMessage, setReferralVerificationMessage] = React.useState<string>('');
   const [isReferralVerified, setIsReferralVerified] = React.useState<boolean>(false);
+  const [showSnackbar, setShowSnackbar] = React.useState(false);
+  const [snackbarMessage, setSnackbarMessage] = React.useState('');
 
   const genderItems = [
     { label: 'Male', value: 'male' },
@@ -112,11 +112,7 @@ const ProfileCompletionScreen: React.FC = () => {
       setIsReferralVerified(true);
       
       if (result.coinsAwarded) {
-        Alert.alert(
-          'Referral Success! 🎉',
-          `You and your referrer each earned 100 points!`,
-          [{ text: 'Awesome!', style: 'default' }]
-        );
+        showSnackbarMessage(`Referral Success! You and your referrer each earned 100 points!`);
       }
       
     } catch (error: any) {
@@ -139,7 +135,6 @@ const ProfileCompletionScreen: React.FC = () => {
     }
   };
 
-  // Reset verification when referral code changes
   const handleReferralCodeChange = (text: string) => {
     setReferralCode(text);
     if (referralVerificationStatus !== 'idle') {
@@ -147,6 +142,12 @@ const ProfileCompletionScreen: React.FC = () => {
       setReferralVerificationMessage('');
       setIsReferralVerified(false);
     }
+  };
+
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    setTimeout(() => setShowSnackbar(false), 3000);
   };
 
   const handleNext = async () => {
@@ -165,7 +166,6 @@ const ProfileCompletionScreen: React.FC = () => {
       return;
     }
     
-    // Validate full name (at least 2 words, 2-50 characters each)
     const nameWords = fullName.trim().split(/\s+/);
     if (nameWords.length < 2) {
       Alert.alert('Error', 'Please enter your full name (first and last name)');
@@ -177,14 +177,12 @@ const ProfileCompletionScreen: React.FC = () => {
       return;
     }
     
-    // Validate gender values
     const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
     if (!validGenders.includes(gender.toLowerCase())) {
       Alert.alert('Error', 'Please enter a valid gender: male, female, other, or prefer-not-to-say');
       return;
     }
     
-    // Validate date is not in the future
     const inputDate = dobDate!;
     const today = new Date();
     if (inputDate > today) {
@@ -202,19 +200,16 @@ const ProfileCompletionScreen: React.FC = () => {
     setLoading(true);
     
     try {
-      // Handle referral code if provided and verified
       if (referralCode.trim() && !isReferralVerified) {
         Alert.alert('Referral Code Not Verified', 'Please verify your referral code before proceeding, or leave it empty.');
         setLoading(false);
         return;
       }
       
-      // Format the data to match with backend
-      // Extract first name from fullName (first word)
       const firstName = fullName.trim().split(/\s+/)[0];
       const profileData = {
-        name: fullName.trim(), // Send full name
-        firstName: firstName, // Also send first name for compatibility
+        name: fullName.trim(), 
+        firstName: firstName, 
         occupation: occupation || '',
         dob: dobDate ? dobDate.toISOString().split('T')[0] : '',
         gender: gender.toLowerCase(),
@@ -222,41 +217,23 @@ const ProfileCompletionScreen: React.FC = () => {
       };
       
       console.log('Sending profile data to /api/auth/submit-form:', profileData);
-      
-      // using submit-form endpoint
       const result = await authAPI.updateProfile(profileData);
       console.log('✅ Profile update result:', result);
 
       if (result.success && result.profileCompleted) {
-        // mark profile completed in auth context
         if (onProfileCompleted) {
           onProfileCompleted();
         }
         
-        Alert.alert(
-          'Profile Completed! 🎉',
-          'Thank you for completing your profile! You can now access all features.',
-          [
-            {
-              text: 'Get Started',
-              onPress: () => {
-                // Navigate to offer page - it will fetch fresh user data
-                router.replace('/(tabs)/offer');
-              }
-            }
-          ]
-        );
+        showSnackbarMessage('Profile Completed! You can now access all features.');
+        setTimeout(() => {
+          router.replace('/(tabs)/offer');
+        }, 2000);
       } else {
-        Alert.alert(
-          'Profile Saved',
-          'Your profile has been saved, but some required information may be missing.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.replace('/(tabs)/offer')
-            }
-          ]
-        );
+        showSnackbarMessage('Profile Saved.');
+        setTimeout(() => {
+          router.replace('/(tabs)/offer');
+        }, 2000);
       }
       
     } catch (error: any) {
@@ -284,11 +261,9 @@ const ProfileCompletionScreen: React.FC = () => {
 
   const handleBackNavigation = async () => {
     try {
-      // Navigate to Login
       router.replace('/Login');
     } catch (error) {
       console.error('Error during back navigation:', error);
-      // Fallback: just navigate
       router.replace('/Login');
     }
   };
@@ -482,6 +457,11 @@ const ProfileCompletionScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
             </View>
+            {showSnackbar && (
+              <View style={styles.snackbar}>
+                <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+              </View>
+            )}
           </BlurView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -657,6 +637,25 @@ const styles = StyleSheet.create({
   },
   verificationMessageTextInvalid: {
     color: '#EF4444',
+  },
+  // snackbar 
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

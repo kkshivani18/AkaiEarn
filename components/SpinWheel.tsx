@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   resultText: {
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: '800',
     textAlign: 'center',
     color: 'white',

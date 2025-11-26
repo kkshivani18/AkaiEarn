@@ -55,19 +55,29 @@ export const SignUp: React.FC<SignUpModalProps> = ({
     //   scopes: ['openid', 'profile', 'email'],
     // });
 
+  // snackbar state
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    setTimeout(() => setShowSnackbar(false), 2000);
+  };
+
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showSnackbarMessage('Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showSnackbarMessage('Passwords do not match');
       return;
     }
     
     if (!onRegister) {
-      Alert.alert('Registration Failed', 'Registration function not yet loaded. Try again in a moment.');
+      showSnackbarMessage('Registration function not yet loaded. Try again in a moment.');
       return;
     }
     
@@ -80,10 +90,10 @@ export const SignUp: React.FC<SignUpModalProps> = ({
         onClose();
         router.replace('/profile-completion');
       } else {
-        Alert.alert('Registration Failed', result?.error || result?.msg || 'Failed to create account');
+        showSnackbarMessage(result?.error || result?.msg || 'Failed to create account');
       }
     } catch (error) {
-      Alert.alert('Registration Failed', (error as Error).message || 'Failed to create account');
+      showSnackbarMessage((error as Error).message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -239,6 +249,11 @@ export const SignUp: React.FC<SignUpModalProps> = ({
             </View>
           </KeyboardAvoidingView>
         </View>
+        {showSnackbar && (
+          <View style={styles.snackbar}>
+            <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+          </View>
+        )}
     </LinearGradient>
   );
 };
@@ -375,5 +390,24 @@ button: {
     color: isDark ? '#0a84ff' : '#007AFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // snackbar styles
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

@@ -69,6 +69,16 @@ const OfferScreen: React.FC = () => {
   const [loadingSocial, setLoadingSocial] = useState(false);
   const [completingSocialOffer, setCompletingSocialOffer] = useState<string | null>(null);
 
+  // snackbar 
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    setTimeout(() => setShowSnackbar(false), 2000);
+  };
+
   const getDifficultyFromIQ = (minimumIq: number): string => {
     if (minimumIq <= 20) return 'Beginner';
     if (minimumIq <= 40) return 'Easy';
@@ -125,11 +135,8 @@ const OfferScreen: React.FC = () => {
 
   const handleTaskSelect = (task: OfferTask) => {
     if (isTaskLocked(task)) {
-      Alert.alert(
-        '🔒 Task Locked',
-        `You need at least ${task.minimumIq} IQ to unlock this task. Current IQ: ${userProfile?.iq || 0}.`,
-        [{ text: 'OK' }]
-      );
+      
+      showSnackbarMessage(`You need at least ${task.minimumIq} IQ to unlock this task. Current IQ: ${userProfile?.iq || 0}.`);
       return;
     }
     if (!task.creativeLink) {
@@ -276,14 +283,10 @@ const OfferScreen: React.FC = () => {
   }, [authState?.authenticated]);
 
   const handleCompleteSocialOffer = async (offer: SocialOffer) => {
-
     if (offer.completed) {
       console.log('⚠️ Offer already completed, showing info');
-      Alert.alert(
-        '✅ Already Completed', 
-        `You've already completed this task and earned ${offer.reward.coinsOnCorrect} points!`,
-        [{ text: 'OK' }]
-      );
+
+      showSnackbarMessage(`You've already completed this task and earned ${offer.reward.coinsOnCorrect} points!`);
       return; 
     }
 
@@ -323,11 +326,8 @@ const OfferScreen: React.FC = () => {
           });
         }
         
-        Alert.alert(
-          '🎉 Task Completed!',
-          `You earned ${offer.reward.coinsOnCorrect} points!`,
-          [{ text: 'Great!', style: 'default' }]
-        );
+
+        showSnackbarMessage(`Task Completed! You earned ${offer.reward.coinsOnCorrect} points!`);
       }
     } catch (error: any) {
       console.error('❌ Failed to complete social offer:', error);
@@ -340,11 +340,7 @@ const OfferScreen: React.FC = () => {
       if (error.response?.status === 409) {
         console.log('⚠️ Task already completed (409), refreshing list...');
         await fetchSocialOffers(); 
-        Alert.alert(
-          '✅ Already Completed', 
-          'You have already completed this task.',
-          [{ text: 'OK' }]
-        );
+        showSnackbarMessage('Already completed this task');
       } else {
         let errorMessage = 'Failed to complete task. Please try again.';
         if (error.response?.data?.message) {
@@ -667,11 +663,19 @@ const OfferScreen: React.FC = () => {
                   <View style={[
                     styles.socialIcon
                   ]}>
-                    <Ionicons 
-                      name={getSocialOfferIcon(offer.type)}
-                      size={20} 
-                      color={getSocialOfferColor(offer.type)} 
-                    />
+                    {offer.imageLink ? (
+                      <Image 
+                        source={{ uri: offer.imageLink }} 
+                        style={styles.socialIconImage} 
+                        resizeMode="cover" 
+                      />
+                    ) : (
+                      <Ionicons 
+                        name={getSocialOfferIcon(offer.type)}
+                        size={20} 
+                        color={getSocialOfferColor(offer.type)} 
+                      />
+                    )}
                   </View>
                   <View style={styles.socialTaskInfo}>
                     <Text style={[
@@ -721,6 +725,12 @@ const OfferScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
+
+      {showSnackbar && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -951,6 +961,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  socialIconImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
   socialTaskInfo: {
     flex: 1,
   },
@@ -1084,6 +1099,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     paddingHorizontal: 20,
+  },
+  // Snackbar styles
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
