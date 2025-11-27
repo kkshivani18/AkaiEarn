@@ -20,6 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { authAPI } from '../services/api';
+import Constants from "expo-constants";
 
 interface SignInModalProps {
   visible: boolean;
@@ -47,7 +48,6 @@ export const Login: React.FC<SignInModalProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
-
   const { onLogin, onGoogleLogin } = useAuth();
   const params = useLocalSearchParams();
 
@@ -61,50 +61,55 @@ export const Login: React.FC<SignInModalProps> = ({
     }
   }, [params.token, visible]);
 
+  const extra = Constants.expoConfig?.extra as { androidClientID?: string; webClientID?: string; expoClientID?: string } | undefined;
+  const androidClientID = extra?.androidClientID;
+  const webClientID = extra?.webClientID;
+  const expoClientID = extra?.expoClientID;
+  
   // auth session for web
-  // WebBrowser.maybeCompleteAuthSession();
+  WebBrowser.maybeCompleteAuthSession();
 
-  // const ANDROID_ID = process.env.androidClientID || '';
-  // const WEB_ID = process.env.webClientID || '';
-  // const EXPO_ID = process.env.expoClientID || '';
+  const ANDROID_ID = androidClientID
+  const WEB_ID = webClientID
+  const EXPO_ID = expoClientID
 
-  // // Google OAuth request (avoid undefined by using non-empty strings)
-  // const [request, response, promptAsync] = Google.useAuthRequest({
-  //   androidClientId: ANDROID_ID || 'MISSING_ANDROID_CLIENT_ID',
-  //   webClientId: WEB_ID || 'MISSING_WEB_CLIENT_ID',
-  //   clientId: EXPO_ID || 'MISSING_EXPO_CLIENT_ID',
-  //   scopes: ['openid', 'profile', 'email'],
-  // });
+  // Google OAuth request
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: ANDROID_ID,
+    webClientId: WEB_ID,
+    clientId: EXPO_ID,
+    scopes: ['openid', 'profile', 'email'],
+  });
 
-  // useEffect(() => {
-  //   const handleGoogleResponse = async () => {
-  //     if (response?.type !== 'success') return;
-  //     // Prefer idToken for backend verification if available
-  //     const idToken = response.authentication?.idToken;
-  //     if (!idToken) {
-  //       Alert.alert('Google Sign-In', 'No idToken returned. Check your Google OAuth configuration (add openid scope).');
-  //       return;
-  //     }
-  //     try {
-  //       const result = await onGoogleLogin?.(idToken);
-  //       if (result?.success) {
-  //         onClose();
-  //         // Navigate based on profile completion if backend returns it
-  //         const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
-  //         if (needsProfile) {
-  //           router.replace('/profile-completion');
-  //         } else {
-  //           router.replace('/');
-  //         }
-  //       } else {
-  //         Alert.alert('Google Sign-In Failed', result?.msg || result?.error || 'Could not sign in with Google');
-  //       }
-  //     } catch (e: any) {
-  //       Alert.alert('Google Sign-In Failed', e?.message || 'Unexpected error during Google Sign-In');
-  //     }
-  //   };
-  //   handleGoogleResponse();
-  // }, [response]);
+  useEffect(() => {
+    const handleGoogleResponse = async () => {
+      if (response?.type !== 'success') return;
+      // Prefer idToken for backend verification if available
+      const idToken = response.authentication?.idToken;
+      if (!idToken) {
+        showSnackbarMessage('Google Sign-In failed: No idToken returned. Check your Google OAuth configuration (add openid scope).');
+        return;
+      }
+      try {
+        const result = await onGoogleLogin?.(idToken);
+        if (result?.success) {
+          onClose();
+          // Navigate based on profile completion if backend returns it
+          const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
+          if (needsProfile) {
+            router.replace('/profile-completion');
+          } else {
+            router.replace('/(tabs)/offer');
+          }
+        } else {
+          showSnackbarMessage(result?.msg || result?.error || 'Could not sign in with Google');
+        }
+      } catch (e: any) {
+        showSnackbarMessage(e?.message || 'Unexpected error during Google Sign-In');
+      }
+    };
+    handleGoogleResponse();
+  }, [response]);
 
   // snackbar state
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -314,18 +319,18 @@ export const Login: React.FC<SignInModalProps> = ({
             <View style={styles.socialButtonsContainer}>
               <TouchableOpacity
                 style={styles.socialButton}
-                // onPress={() => {
-                //   if (Platform.OS === 'android' && !ANDROID_ID && !EXPO_ID) {
-                //     Alert.alert('Google Sign-In not configured', 'Set androidClientID (and optionally expoClientID) in .env');
-                //     return;
-                //   }
-                //   if (Platform.OS === 'web' && !WEB_ID) {
-                //     Alert.alert('Google Sign-In not configured', 'Set webClientID in .env');
-                //     return;
-                //   }
-                //   promptAsync();
-                // }}
-                // disabled={!request || (Platform.OS === 'android' && !ANDROID_ID && !EXPO_ID) || (Platform.OS === 'web' && !WEB_ID)}
+                onPress={() => {
+                  if (Platform.OS === 'android' && !ANDROID_ID) {
+                    showSnackbarMessage('Google Sign-In not configured: Set androidClientID');
+                    return;
+                  }
+                  if (Platform.OS === 'web' && !WEB_ID) {
+                    showSnackbarMessage('Google Sign-In not configured: Set webClientID');
+                    return;
+                  }
+                  promptAsync();
+                }}
+                disabled={!request || (Platform.OS === 'android' && !ANDROID_ID) || (Platform.OS === 'web' && !WEB_ID)}
               >
                 <AntDesign 
                   name="google" 
