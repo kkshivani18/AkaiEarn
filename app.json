@@ -3,16 +3,13 @@
     "name": "Offer-Wall",
     "displayName": "Offer Wall",
     "slug": "Offer-Wall",
+    "owner": "shivanikk",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "offerwall",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.akaispace.offerwall"
-    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -26,13 +23,27 @@
       "versionCode": 1,
       "config": {
         "googleSignIn": {
-          "androidClientId": "${androidClientID}"
+          "androidClientId": "767073531304-iv7vrcp5ejhkftv1jn9qcatmv6bvsdqk.apps.googleusercontent.com"
         }
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "offerwall",
+              "host": "*"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",
@@ -48,6 +59,12 @@
           }
         }
       ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1029313992772-gvuj4g3mobngs5vl8iofhp1esasjhejo"
+        }
+      ],
       "expo-web-browser"
     ],
     "experiments": {
@@ -56,8 +73,10 @@
     },
     "extra": {
       "router": {},
+      "androidClientID": "767073531304-iv7vrcp5ejhkftv1jn9qcatmv6bvsdqk.apps.googleusercontent.com",
+      "webClientID": "767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com",
       "eas": {
-        "projectId": "e1b85df2-75e3-4ca4-aa92-09b53b4a06e2"
+        "projectId": "9e00e81a-6ca8-4d6a-9fae-fdbbd94ab7ab"
       }
     },
     "updates": {

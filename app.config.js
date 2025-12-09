@@ -1,8 +1,8 @@
 export default ({ config }) => ({
   ...config,
   extra: {
+    ...config.extra,
     androidClientID: process.env.ANDROID_ID,
-    webClientID: process.env.WEB_ID,
-    expoClientID: process.env.EXPO_ID
+    webClientID: process.env.WEB_ID
   }
 });

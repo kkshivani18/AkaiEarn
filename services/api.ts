@@ -355,7 +355,6 @@ export const authAPI = {
     name?: string;
     firstName?: string;
     occupation: string;
-    // Date or a backend-friendly string
     dob: string | Date;
     gender?: string;
     tags?: string[];
@@ -392,14 +391,10 @@ export const authAPI = {
     }
   },
 
-  // Login with Google ID token (server should verify token and return app authToken)
+  // Login with Google ID token 
   loginWithGoogle: async (idToken: string) => {
-    try {
-      const response = await api.post('/auth/google-login', { idToken });
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
+    const response = await api.post('/auth/google-login', { idToken });
+    return response.data;
   },
 
   // Get User Profile - matches your /api/auth/user endpoint
@@ -433,11 +428,10 @@ export const authAPI = {
           'Content-Type': 'multipart/form-data',
         },
         transformRequest: (data, headers) => {
-          // Remove Content-Type header to let axios set it with boundary
           delete headers['Content-Type'];
           return data;
         },
-        timeout: 30000, // 30 second timeout for image uploads
+        timeout: 30000,
       });
       
       return response.data;

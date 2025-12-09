@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewToken } from 'react-native';
+import { ActivityIndicator, Alert, AppState, AppStateStatus, Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewToken } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { OfferSkeletonLoader, SocialSkeletonLoader } from '../../components/SkeletonLoader';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI, offersAPI, socialAPI } from '../../services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OfferSkeletonLoader, SocialSkeletonLoader } from '../../components/SkeletonLoader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -56,7 +57,6 @@ const OfferScreen: React.FC = () => {
   } | null>(null);
   const [activeTaskTab, setActiveTaskTab] = useState<'audio' | 'image' | 'video'>('video');
   const [fetchingTasks, setFetchingTasks] = useState(false);
-
   const flatListRef = useRef<FlatList<any> | null>(null);
   const onViewableItemsChangedRef = useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
     if (viewableItems && viewableItems[0]) {
@@ -72,6 +72,8 @@ const OfferScreen: React.FC = () => {
   // snackbar 
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [pendingSocialTask, setPendingSocialTask] = useState<string | null>(null);
+  const [appStateTimestamp, setAppStateTimestamp] = useState<number>(0);
 
   const showSnackbarMessage = (message: string) => {
     setSnackbarMessage(message);
@@ -282,10 +284,130 @@ const OfferScreen: React.FC = () => {
     }
   }, [authState?.authenticated]);
 
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  // App State Listener for Social Tasks
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      console.log('🔄 App state changed:', appState.current, '->', nextAppState);
+      
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('✅ App came to foreground');
+        
+        if (pendingSocialTask) {
+          const timeSpentAway = Date.now() - appStateTimestamp;
+          console.log(`⏱️ Time spent away: ${timeSpentAway}ms`);
+          
+          if (timeSpentAway > 3000) {
+            console.log('🎯 Completing social task:', pendingSocialTask);
+            await completeSocialTask(pendingSocialTask);
+          } else {
+            console.log('⚠️ Not enough time away, not completing');
+          }
+          
+          setPendingSocialTask(null);
+        }
+      } else if (nextAppState.match(/inactive|background/)) {
+        console.log('📱 App went to background');
+        setAppStateTimestamp(Date.now());
+      }
+
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => subscription?.remove();
+  }, [pendingSocialTask, appStateTimestamp]);
+
+  useEffect(() => {
+    // Handle deep links when returning from web view
+    const handleDeepLink = (event: { url: string }) => {
+      const { path, queryParams } = Linking.parse(event.url);
+      
+      console.log('🔗 Deep link received:', event.url);
+      console.log('📍 Path:', path);
+      console.log('🔍 Query params:', queryParams);
+      
+      // Check if coming from task completion
+      if (path === 'offer-vault/complete' || path === 'complete') {
+        console.log('✅ Task completed, refreshing data...');
+        
+        // Refresh user profile to get updated coins and IQ
+        fetchUserProfile();
+        
+        // Refresh social offers to update completion status
+        fetchSocialOffers();
+        
+        // Show success message
+        showSnackbarMessage('Task completed! Your rewards have been updated.');
+    }
+  };
+
+  // Get initial URL (for when app is opened via deep link)
+  Linking.getInitialURL().then((url) => {
+    if (url) {
+      console.log('🔗 Initial URL:', url);
+      handleDeepLink({ url });
+    }
+  });
+
+  // Listen for deep link events (when app is already open)
+  const subscription = Linking.addEventListener('url', handleDeepLink);
+
+  return () => {
+    subscription.remove();
+  };
+}, []);
+
+  // complete social task function
+  const completeSocialTask = async (offerId: string) => {
+    if (completingSocialOffer === offerId) {
+      console.log('⚠️ Already processing this offer');
+      return;
+    }
+
+    setCompletingSocialOffer(offerId);
+    
+    try {
+      const response = await socialAPI.completeSocialOffer(offerId);
+      console.log('✅ Completed social offer:', response);
+      
+      if (response.success) {
+        console.log('✅ Social offer completed successfully');
+        await fetchSocialOffers();
+        
+        if (userProfile) {
+          const newCoins = response.coins || ((userProfile.coins || 0) + (socialOffers.find(o => o._id === offerId)?.reward.coinsOnCorrect || 0));
+          setUserProfile({
+            ...userProfile,
+            coins: newCoins
+          });
+        }
+        
+        const offer = socialOffers.find(o => o._id === offerId);
+        showSnackbarMessage(`Task completed. You earned ${offer?.reward.coinsOnCorrect || 0} points!`);
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to complete social offer:', error);
+      
+      if (error.response?.status === 409) {
+        console.log('⚠️ Task already completed (409), refreshing list...');
+        await fetchSocialOffers(); 
+        showSnackbarMessage('Task was already completed');
+      } else {
+        console.error('Completion failed:', error.response?.data?.message);
+        // Don't show error alert for completion failures
+      }
+    } finally {
+      setCompletingSocialOffer(null);
+    }
+  };
+
+  // social offer handler - just open link and track
   const handleCompleteSocialOffer = async (offer: SocialOffer) => {
     if (offer.completed) {
-      console.log('⚠️ Offer already completed, showing info');
-
+      console.log('⚠️ Offer already completed');
       showSnackbarMessage(`You've already completed this task and earned ${offer.reward.coinsOnCorrect} points!`);
       return; 
     }
@@ -296,60 +418,23 @@ const OfferScreen: React.FC = () => {
     }
 
     try {
+      // Set pending task before opening external link
+      setPendingSocialTask(offer._id);
+      console.log('🎯 Setting pending social task:', offer._id);
+      
       const canOpen = await Linking.canOpenURL(offer.redirectLink);
       if (canOpen) {
         await Linking.openURL(offer.redirectLink);
+        console.log('🔗 Opened external link:', offer.redirectLink);
       } else {
         console.warn('⚠️ Cannot open URL:', offer.redirectLink);
+        setPendingSocialTask(null);
+        Alert.alert('Error', 'Cannot open this link. Please check your internet connection.');
       }
     } catch (error) {
       console.error('Failed to open link:', error);
+      setPendingSocialTask(null);
       Alert.alert('Error', 'Failed to open link. Please try again.');
-      return;
-    }
-
-    setCompletingSocialOffer(offer._id);
-    
-    try {
-      const response = await socialAPI.completeSocialOffer(offer._id);
-      console.log('✅ Social offer API response:', response);
-      
-      if (response.success) {
-        console.log('✅ Social offer completed successfully');
-        await fetchSocialOffers();
-        
-        if (userProfile) {
-          const newCoins = response.coins || ((userProfile.coins || 0) + offer.reward.coinsOnCorrect);
-          setUserProfile({
-            ...userProfile,
-            coins: newCoins
-          });
-        }
-        
-
-        showSnackbarMessage(`Task Completed! You earned ${offer.reward.coinsOnCorrect} points!`);
-      }
-    } catch (error: any) {
-      console.error('❌ Failed to complete social offer:', error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        message: error.response?.data?.message,
-        data: error.response?.data
-      });
-      
-      if (error.response?.status === 409) {
-        console.log('⚠️ Task already completed (409), refreshing list...');
-        await fetchSocialOffers(); 
-        showSnackbarMessage('Already completed this task');
-      } else {
-        let errorMessage = 'Failed to complete task. Please try again.';
-        if (error.response?.data?.message) {
-          errorMessage = error.response.data.message;
-        }
-        Alert.alert('Error', errorMessage);
-      }
-    } finally {
-      setCompletingSocialOffer(null);
     }
   };
 
@@ -658,6 +743,7 @@ const OfferScreen: React.FC = () => {
                 ]}
                 onPress={() => handleCompleteSocialOffer(offer)}
                 activeOpacity={offer.completed ? 0.9 : 0.7}
+                disabled={completingSocialOffer === offer._id}
               >
                 <View style={styles.socialTaskLeft}>
                   <View style={[
@@ -702,17 +788,16 @@ const OfferScreen: React.FC = () => {
                   <View style={styles.processingBadge}>
                     <ActivityIndicator size="small" color="#007AFF" />
                   </View>
+                ) : pendingSocialTask === offer._id ? (
+                  <View style={styles.pendingBadge}>
+                    <Ionicons name="time-outline" size={16} color="#FF9500" />
+                    <Text style={styles.pendingText}>Pending</Text>
+                  </View>
                 ) : (
-                  <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={() => handleCompleteSocialOffer(offer)}
-                  >
-                    <Text style={styles.actionButtonText}>
-                      {offer.type.toLowerCase().includes('follow') ? 'Follow' :
-                       offer.type.toLowerCase().includes('refer') ? 'Refer' :
-                       offer.type.toLowerCase().includes('share') ? 'Share' : 'Complete'}
-                    </Text>
-                  </TouchableOpacity>
+                  <View style={styles.tapToOpenBadge}>
+                    <Ionicons name="open-outline" size={16} color="#007AFF" />
+                    <Text style={styles.tapToOpenText}>Complete</Text>
+                  </View>
                 )}
               </TouchableOpacity>
             ))
@@ -1118,6 +1203,34 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '500',
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 149, 0, 0.25)',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  pendingText: {
+    color: '#FF9500',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tapToOpenBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 122, 255, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  tapToOpenText: {
+    color: '#007AFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

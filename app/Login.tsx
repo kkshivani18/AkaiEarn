@@ -18,9 +18,17 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
+// import * as Google from 'expo-auth-session/providers/google';
+// import * as AuthSession from "expo-auth-session";
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { authAPI } from '../services/api';
 import Constants from "expo-constants";
+
+GoogleSignin.configure({
+  webClientId: '767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com',
+  offlineAccess: true,
+  scopes: ['profile', 'email'],
+});
 
 interface SignInModalProps {
   visible: boolean;
@@ -61,55 +69,110 @@ export const Login: React.FC<SignInModalProps> = ({
     }
   }, [params.token, visible]);
 
-  const extra = Constants.expoConfig?.extra as { androidClientID?: string; webClientID?: string; expoClientID?: string } | undefined;
-  const androidClientID = extra?.androidClientID;
-  const webClientID = extra?.webClientID;
-  const expoClientID = extra?.expoClientID;
+  const extra = Constants.expoConfig?.extra;
   
   // auth session for web
   WebBrowser.maybeCompleteAuthSession();
 
-  const ANDROID_ID = androidClientID
-  const WEB_ID = webClientID
-  const EXPO_ID = expoClientID
+  const ANDROID_ID = extra?.androidClientID;
+  const WEB_ID = extra?.webClientID;
 
   // Google OAuth request
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: ANDROID_ID,
-    webClientId: WEB_ID,
-    clientId: EXPO_ID,
-    scopes: ['openid', 'profile', 'email'],
-  });
+  // const [request, response, promptAsync] = Google.useAuthRequest({
+  //   androidClientId: "767073531304-iv7vrcp5ejhkftv1jn9qcatmv6bvsdqk.apps.googleusercontent.com",
+  //   webClientId: "767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com",
+  //   scopes: ['openid', 'profile', 'email'],
+  // });
 
-  useEffect(() => {
-    const handleGoogleResponse = async () => {
-      if (response?.type !== 'success') return;
-      // Prefer idToken for backend verification if available
-      const idToken = response.authentication?.idToken;
-      if (!idToken) {
-        showSnackbarMessage('Google Sign-In failed: No idToken returned. Check your Google OAuth configuration (add openid scope).');
-        return;
-      }
-      try {
-        const result = await onGoogleLogin?.(idToken);
-        if (result?.success) {
-          onClose();
-          // Navigate based on profile completion if backend returns it
-          const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
-          if (needsProfile) {
-            router.replace('/profile-completion');
-          } else {
-            router.replace('/(tabs)/offer');
-          }
-        } else {
-          showSnackbarMessage(result?.msg || result?.error || 'Could not sign in with Google');
-        }
-      } catch (e: any) {
-        showSnackbarMessage(e?.message || 'Unexpected error during Google Sign-In');
-      }
-    };
-    handleGoogleResponse();
-  }, [response]);
+  // GoogleSignin.configure({
+  //   webClientId: '767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com',
+  //   offlineAccess: true,
+  // });
+
+  // useEffect(() => {
+  //   const handleGoogleResponse = async () => {
+  //     if (response?.type !== 'success') return;
+  //     // Prefer idToken for backend verification if available
+  //     const idToken = response.params?.id_token || response.authentication?.idToken;
+  //     if (!idToken) {
+  //       showSnackbarMessage('No idToken received from Google');
+  //       return;
+  //     }
+  //     console.log('Google Sign-In successful, authenticating');
+  //     try {
+  //       const result = await onGoogleLogin?.(idToken);
+  //       if (result?.success) {
+  //         onClose();
+  //         // Navigate based on profile completion if backend returns it
+  //         const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
+  //         if (needsProfile) {
+  //           router.replace('/profile-completion');
+  //         } else {
+  //           router.replace('/(tabs)/offer');
+  //         }
+  //       } else {
+  //         showSnackbarMessage(result?.msg || result?.error || 'Could not sign in with Google');
+  //       }
+  //     } catch (e: any) {
+  //       showSnackbarMessage(e?.message || 'Unexpected error during Google Sign-In');
+  //     }
+  //   };
+  //     if (response) {
+  //       handleGoogleResponse();
+  //   }
+  // }, [response]);
+
+  const handleGoogleSignIn = async () => {
+  try {
+    console.log('Checking Play Services...');
+    await GoogleSignin.hasPlayServices();
+    
+    console.log('Starting Google Sign-In...');
+    const result = await GoogleSignin.signIn();
+    
+    console.log('Sign-In Result:', JSON.stringify(result, null, 2));
+    
+    const idToken = result.data?.idToken;
+    
+    console.log('ID Token:', idToken ? 'Received' : 'NOT RECEIVED');
+    console.log('ID Token length:', idToken?.length);
+
+    if (!idToken) {
+      console.error('No ID token in result:', result);
+      showSnackbarMessage('No ID token received from Google');
+      return;
+    }
+
+    console.log('Google Sign-In successful, authenticating with backend...');
+
+    // Send to your backend
+    const authResult = await onGoogleLogin?.(idToken);
+
+    if (authResult?.success) {
+      console.log('Backend authentication successful');
+      onClose();
+      const needsProfile = authResult?.user?.profileCompleted === false;
+      router.replace(needsProfile ? '/profile-completion' : '/(tabs)/offer');
+    } else {
+      console.error('Backend authentication failed:', authResult);
+      showSnackbarMessage(authResult?.msg || 'Authentication failed');
+    }
+  } catch (error: any) {
+    console.error('Google Sign-In Error:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+
+    if (error.code === 'SIGN_IN_CANCELLED') {
+      showSnackbarMessage('Sign-In cancelled');
+    } else if (error.code === 'IN_PROGRESS') {
+      showSnackbarMessage('Sign-In already in progress');
+    } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
+      showSnackbarMessage('Play Services not available');
+    } else {
+      showSnackbarMessage('Google Sign-In failed: ' + (error.message || 'Unknown error'));
+    }
+  }
+};
 
   // snackbar state
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -319,18 +382,19 @@ export const Login: React.FC<SignInModalProps> = ({
             <View style={styles.socialButtonsContainer}>
               <TouchableOpacity
                 style={styles.socialButton}
-                onPress={() => {
-                  if (Platform.OS === 'android' && !ANDROID_ID) {
-                    showSnackbarMessage('Google Sign-In not configured: Set androidClientID');
-                    return;
-                  }
-                  if (Platform.OS === 'web' && !WEB_ID) {
-                    showSnackbarMessage('Google Sign-In not configured: Set webClientID');
-                    return;
-                  }
-                  promptAsync();
-                }}
-                disabled={!request || (Platform.OS === 'android' && !ANDROID_ID) || (Platform.OS === 'web' && !WEB_ID)}
+                onPress={handleGoogleSignIn}
+                // onPress={() => {
+                  // if (Platform.OS === 'android' && !ANDROID_ID) {
+                  //   showSnackbarMessage('Google Sign-In not configured');
+                  //   return;
+                  // }
+                  // if (Platform.OS === 'web' && !WEB_ID) {
+                  //   showSnackbarMessage('Google Sign-In not configured: Set webClientID');
+                  //   return;
+                  // }
+                  // promptAsync();
+                // }}
+                // disabled={!request}
               >
                 <AntDesign 
                   name="google" 
