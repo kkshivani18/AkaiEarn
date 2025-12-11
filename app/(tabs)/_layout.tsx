@@ -1,6 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
@@ -12,7 +12,7 @@ export default function TabLayout() {
           backgroundColor: '#1a1b23',
           borderTopColor: '#2a2b33',
           borderTopWidth: 1,
-          height: 95,
+          height: 105,
           // height: 78,
           paddingBottom: 30,
           paddingTop: 10,

@@ -321,44 +321,31 @@ const OfferScreen: React.FC = () => {
   }, [pendingSocialTask, appStateTimestamp]);
 
   useEffect(() => {
-    // Handle deep links when returning from web view
     const handleDeepLink = (event: { url: string }) => {
-      const { path, queryParams } = Linking.parse(event.url);
       
-      console.log('🔗 Deep link received:', event.url);
-      console.log('📍 Path:', path);
-      console.log('🔍 Query params:', queryParams);
-      
-      // Check if coming from task completion
-      if (path === 'offer-vault/complete' || path === 'complete') {
-        console.log('✅ Task completed, refreshing data...');
+      if (event.url.startsWith('offerwall://')) {
+        // navigate to offer screen
+        if (router.canGoBack()) {
+          router.replace('/(tabs)/offer');
+        }
         
-        // Refresh user profile to get updated coins and IQ
         fetchUserProfile();
-        
-        // Refresh social offers to update completion status
-        fetchSocialOffers();
-        
-        // Show success message
-        showSnackbarMessage('Task completed! Your rewards have been updated.');
-    }
-  };
+        showSnackbarMessage('Task completed!');
+      }
+    };
 
-  // Get initial URL (for when app is opened via deep link)
-  Linking.getInitialURL().then((url) => {
-    if (url) {
-      console.log('🔗 Initial URL:', url);
-      handleDeepLink({ url });
-    }
-  });
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
 
-  // Listen for deep link events (when app is already open)
-  const subscription = Linking.addEventListener('url', handleDeepLink);
+    const subscription = Linking.addEventListener('url', handleDeepLink);
 
-  return () => {
-    subscription.remove();
-  };
-}, []);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // complete social task function
   const completeSocialTask = async (offerId: string) => {
