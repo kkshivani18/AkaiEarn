@@ -1,8 +1,8 @@
+import * as Linking from 'expo-linking';
 import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Provider as PaperProvider } from 'react-native-paper';
-import * as Linking from 'expo-linking';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 
 function RootLayoutNav() {
   const { authState } = useAuth();
@@ -51,7 +51,7 @@ function RootLayoutNav() {
       // user is authenticated
       if (isOnIndex) {
         if (authState?.profileCompleted) {
-          router.replace('/(tabs)/offer');
+          router.replace('/(tabs)/home');
         } else {
           router.replace('/profile-completion');
         }

@@ -262,7 +262,6 @@ const OfferScreen: React.FC = () => {
     setLoadingSocial(true);
     try {
       const response = await socialAPI.getAllSocialOffers();
-      console.log('✅ Social offers response:', response);
       
       if (response.success && response.data) {
         response.data.forEach((offer: any) => {
@@ -289,17 +288,13 @@ const OfferScreen: React.FC = () => {
   // App State Listener for Social Tasks
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      console.log('🔄 App state changed:', appState.current, '->', nextAppState);
       
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        console.log('✅ App came to foreground');
         
         if (pendingSocialTask) {
           const timeSpentAway = Date.now() - appStateTimestamp;
-          console.log(`⏱️ Time spent away: ${timeSpentAway}ms`);
           
           if (timeSpentAway > 3000) {
-            console.log('🎯 Completing social task:', pendingSocialTask);
             await completeSocialTask(pendingSocialTask);
           } else {
             console.log('⚠️ Not enough time away, not completing');
@@ -308,7 +303,6 @@ const OfferScreen: React.FC = () => {
           setPendingSocialTask(null);
         }
       } else if (nextAppState.match(/inactive|background/)) {
-        console.log('📱 App went to background');
         setAppStateTimestamp(Date.now());
       }
 
@@ -350,7 +344,6 @@ const OfferScreen: React.FC = () => {
   // complete social task function
   const completeSocialTask = async (offerId: string) => {
     if (completingSocialOffer === offerId) {
-      console.log('⚠️ Already processing this offer');
       return;
     }
 
@@ -358,10 +351,7 @@ const OfferScreen: React.FC = () => {
     
     try {
       const response = await socialAPI.completeSocialOffer(offerId);
-      console.log('✅ Completed social offer:', response);
-      
       if (response.success) {
-        console.log('✅ Social offer completed successfully');
         await fetchSocialOffers();
         
         if (userProfile) {
@@ -379,7 +369,6 @@ const OfferScreen: React.FC = () => {
       console.error('❌ Failed to complete social offer:', error);
       
       if (error.response?.status === 409) {
-        console.log('⚠️ Task already completed (409), refreshing list...');
         await fetchSocialOffers(); 
         showSnackbarMessage('Task was already completed');
       } else {
@@ -394,25 +383,21 @@ const OfferScreen: React.FC = () => {
   // social offer handler - just open link and track
   const handleCompleteSocialOffer = async (offer: SocialOffer) => {
     if (offer.completed) {
-      console.log('⚠️ Offer already completed');
       showSnackbarMessage(`You've already completed this task and earned ${offer.reward.coinsOnCorrect} points!`);
       return; 
     }
 
     if (completingSocialOffer === offer._id) {
-      console.log('⚠️ Already processing this offer');
       return;
     }
 
     try {
       // Set pending task before opening external link
       setPendingSocialTask(offer._id);
-      console.log('🎯 Setting pending social task:', offer._id);
       
       const canOpen = await Linking.canOpenURL(offer.redirectLink);
       if (canOpen) {
         await Linking.openURL(offer.redirectLink);
-        console.log('🔗 Opened external link:', offer.redirectLink);
       } else {
         console.warn('⚠️ Cannot open URL:', offer.redirectLink);
         setPendingSocialTask(null);
@@ -455,7 +440,6 @@ const OfferScreen: React.FC = () => {
 
   const getFilteredTasks = (): OfferTask[] => {
     if (fetchingTasks || (allTasks.length === 0 && loading)) {
-      console.log('⏳ Still loading tasks, returning empty array');
       return [];
     }
     
