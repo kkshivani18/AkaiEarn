@@ -1,8 +1,31 @@
+import { CDPHooksProvider, Config } from "@coinbase/cdp-hooks";
 import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Provider as PaperProvider } from 'react-native-paper';
 import * as Linking from 'expo-linking';
+import * as SecureStore from 'expo-secure-store';
+import "../globals";
+
+const cdpConfig: Config = {
+  projectId: process.env.EXPO_PUBLIC_CDP_PROJECT_ID!,
+  basePath: process.env.EXPO_PUBLIC_CDP_BASE_PATH,
+  useMock: process.env.EXPO_PUBLIC_USE_MOCK === "true",
+  customAuth: {
+    getJwt: async () => {
+      try {
+        // Get JWT from secure storage
+        const token = await SecureStore.getItemAsync('authToken');
+        console.log(token);
+        
+        return token || undefined;
+      } catch (error) {
+        console.error('Failed to get JWT:', error);
+        return undefined;
+      }
+    }
+  }
+};
 
 function RootLayoutNav() {
   const { authState } = useAuth();
@@ -64,10 +87,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
+    <CDPHooksProvider config={cdpConfig} >
     <PaperProvider>
       <AuthProvider>
         <RootLayoutNav />
       </AuthProvider>
     </PaperProvider>
+    </CDPHooksProvider>
   );
 }

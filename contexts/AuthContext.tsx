@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
-import { authAPI } from '../services/api'
+import { authAPI } from '../services/api';
+import { useAuthenticateWithJWT } from "@coinbase/cdp-hooks";
 
 interface AuthProps{
   authState?: { token: string | null, authenticated: boolean | null, user?: {email: string, coins?: number}, profileCompleted?: boolean };
@@ -9,6 +10,7 @@ interface AuthProps{
   onLogout?: () => Promise<any>;
   onProfileCompleted?: () => void;
   onGoogleLogin?: (idToken: string) => Promise<any>;
+  onWalletCreated: () => void;
 }
 
 interface AuthContextType {
@@ -19,6 +21,7 @@ interface AuthContextType {
   onProfileCompleted?: () => void;
   onGoogleLogin?: (idToken: string) => Promise<any>;
   updateTokenBalance: (tokens: number) => void;
+  onWalletCreated: () => void;
 }
 
 const TOKEN_KEY = 'authToken';
@@ -39,12 +42,17 @@ export const AuthProvider = ({children}: any) => {
     authenticated: boolean | null;
     user?: {email: string, coins?: number};
     profileCompleted?: boolean;
+    walletCreated?: boolean;
   }>({
     token: null,
     authenticated: null,
     user: undefined,
-    profileCompleted: false
+    profileCompleted: false,
+    walletCreated: false
   });
+
+  const { authenticateWithJWT } = useAuthenticateWithJWT();
+
 
   useEffect(() => {
     const loadToken = async () => {
@@ -63,29 +71,38 @@ export const AuthProvider = ({children}: any) => {
             // persist user data for quick access
             try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
             setAuthState({
-              token: token, 
+              token: token,
               authenticated: true,
               user: userData.user || userData,
-              profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? false
+              profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? false,
+              walletCreated: userData.walletAddress === null ? false : true
             });
-            console.log('✅ Token valid, user authenticated');
+            try {
+              await authenticateWithJWT();
+              console.log('✅ CDP authentication restored on app start');
+            } catch (cdpError) {
+              console.error('❌ CDP re-authentication failed:', cdpError);
+              // Don't fail the login if CDP auth fails, just log it
+            }
           } catch (error) {
             console.log('❌ Token validation failed:', error);
             console.log('❌ Clearing invalid token...');
             await SecureStore.deleteItemAsync(TOKEN_KEY);
             setAuthState({
-              token: null, 
+              token: null,
               authenticated: false,
               user: undefined,
-              profileCompleted: false
+              profileCompleted: false,
+              walletCreated: false
             });
           }
         } else {
           setAuthState({
-            token: null, 
+            token: null,
             authenticated: false,
             user: undefined,
-            profileCompleted: false
+            profileCompleted: false,
+            walletCreated: false
           });
         }
       } catch (error) {
@@ -114,7 +131,7 @@ export const AuthProvider = ({children}: any) => {
         // refresh user from backend and update auth state
         const userData = await authAPI.getUser();
         try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
-        setAuthState({ 
+        setAuthState({
           token: result.authToken,
           authenticated: true,
           user: userData.user || userData,
@@ -160,12 +177,23 @@ export const AuthProvider = ({children}: any) => {
         // fetch current user to get authoritative profileCompleted flag
         const userData = await authAPI.getUser();
         try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
-        setAuthState({ 
+        setAuthState({
           token: result.authToken,
           authenticated: true,
           user: userData.user || userData || result.user || { name: 'User', email },
-          profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? false
+          profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? false,
+          walletCreated: userData.walletAddress === null ? false : true
         });
+
+        // Authenticate with CDP using the JWT
+        try {
+          const {user, isNewUser}=await authenticateWithJWT();
+          console.log('✅ Successfully authenticated with CDP');
+          console.log(user, isNewUser);
+        } catch (cdpError) {
+          console.error('❌ CDP authentication failed:', cdpError);
+          // Don't fail the login if CDP auth fails, just log it
+        }
 
       }
       
@@ -206,7 +234,7 @@ export const AuthProvider = ({children}: any) => {
 
       // Reset auth state
       setAuthState({
-        token: null, 
+        token: null,
         authenticated: false,
         user: undefined,
         profileCompleted: false
@@ -216,7 +244,7 @@ export const AuthProvider = ({children}: any) => {
       
       // Even if there's an error, reset the state
       setAuthState({
-        token: null, 
+        token: null,
         authenticated: false,
         user: undefined,
         profileCompleted: false
@@ -292,12 +320,20 @@ export const AuthProvider = ({children}: any) => {
     }
   };
 
+  const walletCreated=()=>{
+    setAuthState(prev=>({
+      ...prev,
+      walletCreated:true
+    }))
+  }
+
   const value: AuthContextType = {
     onRegister: register,
     onLogin: login,
     onLogout: logout,
     onProfileCompleted: onProfileCompleted,
     onGoogleLogin: loginWithGoogle,
+    onWalletCreated: walletCreated,
     authState: authState,
     updateTokenBalance,
   }

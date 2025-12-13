@@ -15,6 +15,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import IQMeter from '../../components/IQMeter';
 import { calculateStreakStatus } from '../../components/Streak';
+import { WalletInfo } from '../../components/WalletInfo';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBalance } from '../../contexts/BalanceContext';
 import { authAPI, configAPI } from '../../services/api';
@@ -289,6 +290,13 @@ export default function ProfileScreen() {
                 </View>
               </View>
             </View>
+          </View>
+        </AnimatedSection>
+
+        {/* CDP Wallet Info */}
+        <AnimatedSection delay={250}>
+          <View style={styles.iqSectionContainer}>
+            <WalletInfo />
           </View>
         </AnimatedSection>
 
