@@ -74,7 +74,7 @@ function RootLayoutNav() {
       // user is authenticated
       if (isOnIndex) {
         if (authState?.profileCompleted) {
-          router.replace('/(tabs)/offer');
+          router.replace('/(tabs)/home');
         } else {
           router.replace('/profile-completion');
         }
