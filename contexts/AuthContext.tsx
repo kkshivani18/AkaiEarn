@@ -1,7 +1,7 @@
+import { useAuthenticateWithJWT } from "@coinbase/cdp-hooks";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 import { authAPI } from '../services/api';
-import { useAuthenticateWithJWT } from "@coinbase/cdp-hooks";
 
 interface AuthProps{
   authState?: { token: string | null, authenticated: boolean | null, user?: {email: string, coins?: number}, profileCompleted?: boolean };
@@ -25,7 +25,7 @@ interface AuthContextType {
 }
 
 const TOKEN_KEY = 'authToken';
-const AuthContext = createContext<AuthProps | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
