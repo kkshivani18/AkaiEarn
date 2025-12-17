@@ -6,15 +6,19 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface WalletInfoProps {
   style?: any;
+  points?: number;
 }
 
-export const WalletInfo: React.FC<WalletInfoProps> = ({ style }) => {
+export const WalletInfo: React.FC<WalletInfoProps> = ({ style, points = 0 }) => {
   const { evmAddress } = useEvmAddress();
   const { currentUser } = useCurrentUser();
   const { isSignedIn } = useIsSignedIn();
   const { createEvmSmartAccount } = useCreateEvmSmartAccount();
   const [creatingWallet, setCreatingWallet] = useState(false);
   const {onWalletCreated}=useAuth()
+
+  const MIN_POINTS_REQ = 500;
+  const hasEnoughPoints = points >= MIN_POINTS_REQ;
 
   // Use EVM address if available, otherwise fall back to smart account
   const walletAddress = evmAddress || currentUser?.evmSmartAccountObjects?.[0]?.address;
@@ -38,6 +42,13 @@ console.log(currentUser);
 
 
   const createWallet = async () => {
+    if (!hasEnoughPoints) {
+      Alert.alert(
+        "Insufficient Points",
+        `You need at least ${MIN_POINTS_REQ} points to create a wallet.`
+      );
+      return;
+    }
 
     setCreatingWallet(true);
     try {
@@ -80,17 +91,22 @@ console.log(currentUser);
         </TouchableOpacity>
       ): (
         // Show create wallet button if signed into CDP but no wallet exists
-        <TouchableOpacity
-          onPress={createWallet}
-          style={[styles.createButton, creatingWallet && styles.buttonDisabled]}
-          disabled={creatingWallet}
-        >
-          {creatingWallet ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.createButtonText}>Create Smart Wallet</Text>
-          )}
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            onPress={createWallet}
+            style={[
+              styles.createButton,
+              (creatingWallet || !hasEnoughPoints) && styles.buttonDisabled
+            ]}
+            disabled={creatingWallet || !hasEnoughPoints}
+          >
+            {creatingWallet ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.createButtonText}>Create Smart Wallet</Text>
+            )}
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
@@ -139,5 +155,12 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  pointsRequirement: {
+    fontSize: 14,
+    color: '#6c757d',
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '500',
   },
 });

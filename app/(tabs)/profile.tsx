@@ -1,3 +1,4 @@
+import UserOps from "@/components/UserOps";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -12,14 +13,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Snackbar } from "react-native-paper";
 import Svg, { Path } from "react-native-svg";
 import IQMeter from "../../components/IQMeter";
-import { calculateStreakStatus } from "../../components/Streak";
 import { WalletInfo } from "../../components/WalletInfo";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBalance } from "../../contexts/BalanceContext";
-import { authAPI, configAPI } from "../../services/api";
-import UserOps from "@/components/UserOps";
+import { configAPI } from "../../services/api";
+import { useUserStore } from "../../stores/userStore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -194,34 +195,26 @@ const AccountMenu = ({ onLogout }: { onLogout: () => void }) => (
 export default function ProfileScreen() {
   const { authState, onLogout } = useAuth();
   const { balance, userData, refreshBalance } = useBalance();
+  
+  // use Zustand store 
+  const userStore = useUserStore();
+  const {
+    name,
+    email,
+    iq,
+    coins,
+    streakCount,
+    longestStreak,
+    loading: storeLoading,
+    fetchUserData,
+    shouldRefetch,
+  } = userStore;
 
-  // profile data not in balance context
-  const [userProfile, setUserProfile] = useState<{
-    name: string;
-    email: string;
-    _id: string;
-    coins?: number;
-    inrBalance?: number;
-    iq?: number;
-    streakCount?: number;
-    longestStreak?: number;
-    lastStreakAt?: string;
-    username?: string;
-    tags?: string[];
-    occupation?: string;
-    gender?: string;
-    dob?: string;
-  } | null>(null);
-  const [userIQ, setUserIQ] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [iqRanges, setIqRanges] = useState<any[]>([]);
-
-  const [streakData, setStreakData] = useState({
-    currentStreak: 3,
-    longestStreak: 15,
-    lastStreakAt: new Date().toISOString(),
-    isActive: true,
-  });
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const hasShownWalletNotification = useRef(false);
+  const previousCoins = useRef<number>(coins);
 
   // Logout handler
   const handleLogout = () => {
@@ -246,82 +239,28 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        setLoading(true);
-        const response = await authAPI.getUser();
-        const userData = response.user || response.data || response;
-
-        if (
-          userData &&
-          (userData.firstName ||
-            userData.username ||
-            userData.name ||
-            userData.email)
-        ) {
-          // map backend fields to frontend fields
-          const mappedUserData = {
-            name:
-              userData.firstName ||
-              userData.username ||
-              userData.name ||
-              "User",
-            email: userData.email,
-            _id: userData._id,
-            iq: userData.iq,
-            coins: userData.coins || 0,
-            inrBalance: userData.inrBalance || 0,
-            streakCount: userData.streakCount,
-            longestStreak: userData.longestStreak,
-            lastStreakAt: userData.lastStreakAt,
-          };
-
-          setUserProfile(mappedUserData);
-          setUserIQ(mappedUserData.iq || 0);
-
-          // streak data from user profile
-          if (mappedUserData.streakCount !== undefined) {
-            const isActive = calculateStreakStatus(
-              mappedUserData.lastStreakAt || new Date().toISOString()
-            );
-            setStreakData({
-              currentStreak: mappedUserData.streakCount || 3,
-              longestStreak: mappedUserData.longestStreak || 15,
-              lastStreakAt:
-                mappedUserData.lastStreakAt || new Date().toISOString(),
-              isActive: isActive,
-            });
-          }
+    const loadUserData = async () => {
+      if (authState?.authenticated) {
+        if (shouldRefetch()) {
+          setLoading(true);
+          await fetchUserData();
+          setLoading(false);
+        } else {
+          console.log('using cached data');
         }
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
-        setUserProfile({
-          name: "User",
-          email: "user@example.com",
-          _id: "",
-          iq: 0,
-          coins: 0,
-          inrBalance: 0,
-        });
-      } finally {
-        setLoading(false);
+        
+        refreshBalance?.();
       }
     };
 
-    if (authState?.authenticated) {
-      fetchUserProfile();
-      // Force refresh balance when profile loads
-      refreshBalance?.();
-    }
-  }, [authState?.authenticated, refreshBalance]);
+    loadUserData();
+  }, [authState?.authenticated]);
 
-  // load IQ ranges
   useEffect(() => {
     const loadIqRanges = async () => {
       try {
         const response = await configAPI.getIqRanges();
 
-        // Handle different response structures
         if (response && response.data) {
           setIqRanges(response.data || []);
         } else if (response && Array.isArray(response)) {
@@ -337,6 +276,21 @@ export default function ProfileScreen() {
 
     loadIqRanges();
   }, []);
+
+  useEffect(() => {
+    const WALLET_CREATION_THRESHOLD = 500;
+    
+    if (
+      !hasShownWalletNotification.current &&
+      previousCoins.current < WALLET_CREATION_THRESHOLD &&
+      coins >= WALLET_CREATION_THRESHOLD
+    ) {
+      setSnackbarVisible(true);
+      hasShownWalletNotification.current = true;
+    }
+    
+    previousCoins.current = coins;
+  }, [coins]);
 
   return (
     <View style={styles.container}>
@@ -355,7 +309,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.centeredContent}>
           <AnimatedSection delay={100}>
-            <ProfileHeader userProfile={userProfile} />
+            <ProfileHeader userProfile={{ name, email }} />
           </AnimatedSection>
         </View>
 
@@ -369,12 +323,14 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.statInfo}>
                   <Text style={styles.statLabel}>Points Balance</Text>
-                  {/* Change this line to show proper balance */}
                   <Text style={styles.statValue}>
-                    {balance > 0
-                      ? balance.toLocaleString()
-                      : (userProfile?.coins || 0).toLocaleString()}
+                    {coins.toLocaleString()}
                   </Text>
+                  {coins < 0 && (
+                    <Text style={styles.negativeWarning}>
+                      Negative balance - please contact support
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
@@ -384,7 +340,7 @@ export default function ProfileScreen() {
         {/* CDP Wallet Info */}
         <AnimatedSection delay={250}>
           <View style={styles.iqSectionContainer}>
-            <WalletInfo />
+            <WalletInfo points={coins} />
           </View>
         </AnimatedSection>
         <UserOps />
@@ -394,7 +350,7 @@ export default function ProfileScreen() {
           <View style={styles.iqSectionContainer}>
             <Text style={styles.sectionTitle}>IQ Level</Text>
             <BlurView intensity={40} tint="dark" style={styles.iqContainer}>
-              <IQMeter iqValue={userIQ} />
+              <IQMeter iqValue={iq || 0} />
             </BlurView>
           </View>
         </AnimatedSection>
@@ -411,14 +367,14 @@ export default function ProfileScreen() {
                 <View style={styles.statInfo}>
                   <Text style={styles.statLabel}>Streak</Text>
                   <Text style={styles.statValue}>
-                    {userProfile?.streakCount || 0} Days
+                    {streakCount || 0} Days
                   </Text>
                 </View>
               </View>
               <View style={styles.statCardRight}>
                 <Text style={styles.statSubValue}>Longest </Text>
                 <Text style={styles.statSubLabel}>
-                  {userProfile?.longestStreak || 0} Days
+                  {longestStreak || 0} Days
                 </Text>
               </View>
             </View>
@@ -429,6 +385,19 @@ export default function ProfileScreen() {
           <AccountMenu onLogout={handleLogout} />
         </AnimatedSection>
       </ScrollView>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={4000}
+        action={{
+          label: 'Got it',
+          onPress: () => setSnackbarVisible(false),
+        }}
+        style={styles.snackbar}
+      >
+        🎉 You can now create wallet!
+      </Snackbar>
     </View>
   );
 }
@@ -686,5 +655,15 @@ const styles = StyleSheet.create({
   icon: {
     width: 24,
     height: 24,
+  },
+  snackbar: {
+    backgroundColor: '#10B981',
+    marginBottom: 80,
+  },
+  negativeWarning: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+    marginLeft: 10,
   },
 });

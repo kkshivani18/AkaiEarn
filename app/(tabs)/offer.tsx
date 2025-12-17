@@ -8,7 +8,8 @@ import { ActivityIndicator, Alert, AppState, AppStateStatus, Dimensions, FlatLis
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OfferSkeletonLoader, SocialSkeletonLoader } from '../../components/SkeletonLoader';
 import { useAuth } from '../../contexts/AuthContext';
-import { authAPI, offersAPI, socialAPI } from '../../services/api';
+import { offersAPI, socialAPI } from '../../services/api';
+import { useUserStore } from '../../stores/userStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -45,16 +46,14 @@ type SocialOffer = {
 
 const OfferScreen: React.FC = () => {
   const { authState } = useAuth();
+  
+  // Use Zustand store for user data
+  const { name, email, iq, coins, fetchUserData, shouldRefetch } = useUserStore();
+  
   const [activeIndex, setActiveIndex] = useState(0);
   const [allTasks, setAllTasks] = useState<OfferTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<{
-    name: string;
-    email: string;
-    iq?: number;
-    coins?: number;
-  } | null>(null);
   const [activeTaskTab, setActiveTaskTab] = useState<'audio' | 'image' | 'video'>('video');
   const [fetchingTasks, setFetchingTasks] = useState(false);
   const flatListRef = useRef<FlatList<any> | null>(null);
@@ -131,14 +130,14 @@ const OfferScreen: React.FC = () => {
 
   // check if task is locked based on user IQ
   const isTaskLocked = (task: OfferTask): boolean => {
-    const userIQ = userProfile?.iq || 0;
+    const userIQ = iq || 0;
     return userIQ < task.minimumIq;
   };
 
   const handleTaskSelect = (task: OfferTask) => {
     if (isTaskLocked(task)) {
       
-      showSnackbarMessage(`You need at least ${task.minimumIq} IQ to unlock this task. Current IQ: ${userProfile?.iq || 0}.`);
+      showSnackbarMessage(`You need at least ${task.minimumIq} IQ to unlock this task. Current IQ: ${iq || 0}.`);
       return;
     }
     if (!task.creativeLink) {
@@ -193,43 +192,29 @@ const OfferScreen: React.FC = () => {
     }
   }, [authState?.authenticated]);
 
-  // fetch user profile data
-  const fetchUserProfile = React.useCallback(async () => {
-    try {
-      const response = await authAPI.getUser();
-      const userData = response.user || response.data || response;
-      
-      if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
-        setUserProfile({
-          name: userData.firstName || userData.username || userData.name || 'User',
-          email: userData.email,
-          iq: userData.iq || 0,
-          coins: userData.coins || 0,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      setUserProfile({
-        name: 'User',
-        email: 'user@example.com',
-        iq: 0,
-        coins: 0,
-      });
-    }
-  }, []);
-
+  // Load user data from store (with smart caching)
   React.useEffect(() => {
     if (authState?.authenticated) {
-      fetchUserProfile();
+      // Check if we should refetch from API
+      if (shouldRefetch()) {
+        console.log('🔄 Refetching user data from API in offer screen...');
+        fetchUserData();
+      } else {
+        console.log('✅ Using cached user data from store in offer screen');
+      }
     }
-  }, [authState?.authenticated, fetchUserProfile]);
+  }, [authState?.authenticated]);
 
   useFocusEffect(
     React.useCallback(() => {
       if (authState?.authenticated) {
-        fetchUserProfile();
+        // Only refetch if data is stale
+        if (shouldRefetch()) {
+          console.log('🔄 Screen focused, refetching user data...');
+          fetchUserData();
+        }
       }
-    }, [authState?.authenticated, fetchUserProfile, allTasks.length, activeTaskTab])
+    }, [authState?.authenticated, allTasks.length, activeTaskTab])
   );
 
   useEffect(() => {
@@ -323,7 +308,7 @@ const OfferScreen: React.FC = () => {
           router.replace('/(tabs)/offer');
         }
         
-        fetchUserProfile();
+        fetchUserData();
         showSnackbarMessage('Task completed!');
       }
     };
@@ -353,14 +338,7 @@ const OfferScreen: React.FC = () => {
       const response = await socialAPI.completeSocialOffer(offerId);
       if (response.success) {
         await fetchSocialOffers();
-        
-        if (userProfile) {
-          const newCoins = response.coins || ((userProfile.coins || 0) + (socialOffers.find(o => o._id === offerId)?.reward.coinsOnCorrect || 0));
-          setUserProfile({
-            ...userProfile,
-            coins: newCoins
-          });
-        }
+        fetchUserData();
         
         const offer = socialOffers.find(o => o._id === offerId);
         showSnackbarMessage(`Task completed. You earned ${offer?.reward.coinsOnCorrect || 0} points!`);
@@ -490,19 +468,19 @@ const OfferScreen: React.FC = () => {
           <View style={styles.profileInfo}>
             <View style={styles.avatarContainer}>
               <Text style={styles.avatarText}>
-                {userProfile?.name ? userProfile.name.charAt(0).toUpperCase() : 'U'}
+                {name ? name.charAt(0).toUpperCase() : 'U'}
               </Text>
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{userProfile?.name || 'Loading...'}</Text>
-              <Text style={styles.userIQ}>IQ: {userProfile?.iq || 0}</Text>
+              <Text style={styles.userName}>{name || 'Loading...'}</Text>
+              <Text style={styles.userIQ}>IQ: {iq || 0}</Text>
             </View>
           </View>
           
           {/* Updated balance card*/}
           <View style={styles.balanceCard}>
             <View style={{flexDirection: 'row'}}>
-              <Text style={styles.balanceTokens}>{userProfile?.coins?.toLocaleString() || 0}</Text>
+              <Text style={styles.balanceTokens}>{coins?.toLocaleString() || 0}</Text>
               <Text style={styles.balanceLabel}> Points</Text>
             </View>
           </View>

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -8,15 +10,9 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useColorScheme,
-  ScrollView,
+  useColorScheme
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, AntDesign, FontAwesome } from '@expo/vector-icons';
-import { useAuth } from '../contexts/AuthContext'
-import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser'; 
-import * as Google from 'expo-auth-session/providers/google';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SignUpModalProps {
   visible: boolean;
@@ -40,20 +36,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { onRegister, onGoogleLogin } = useAuth();
   const router = useRouter();
-
-  // auth session for web
-  // WebBrowser.maybeCompleteAuthSession();
-
-  // const ANDROID_ID = process.env.androidClientID;
-  // const WEB_ID = process.env.webClientID
-  // const EXPO_ID = process.env.expoClientID || '';
-  
-    // Google OAuth request
-    // const [request, response, promptAsync] = Google.useAuthRequest({
-    //   androidClientId: ANDROID_ID,
-    //   webClientId: WEB_ID,
-    //   scopes: ['openid', 'profile', 'email'],
-    // });
 
   // snackbar state
   const [showSnackbar, setShowSnackbar] = useState(false);

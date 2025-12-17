@@ -1,15 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useAuth } from '../../contexts/AuthContext';
-import { authAPI } from '../../services/api';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  iq?: number;
-  coins?: number;
-}
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useUserStore } from '../../stores/userStore';
 
 interface HeaderSectionProps {
   onNotificationPress?: () => void;
@@ -20,62 +12,19 @@ export const HeaderSection: React.FC<HeaderSectionProps> = ({
   onNotificationPress, 
   onMenuPress 
 }) => {
-  const { authState } = useAuth();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUserProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await authAPI.getUser();
-      const userData = response.user || response.data || response;
-      
-      if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
-        setUserProfile({
-          name: userData.firstName || userData.username || userData.name || 'User',
-          email: userData.email,
-          iq: userData.iq || 0,
-          coins: userData.coins || 0,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      setUserProfile({
-        name: 'User',
-        email: 'user@example.com',
-        iq: 0,
-        coins: 0,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (authState?.authenticated) {
-      fetchUserProfile();
-    }
-  }, [authState?.authenticated]);
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="small" color="#fff" />
-      </View>
-    );
-  }
+  const { name, iq, coins } = useUserStore();
 
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
-        <Text style={styles.greeting}>Hello, {userProfile?.name || 'User'}</Text>
+        <Text style={styles.greeting}>Hello, {name || 'User'}</Text>
         <View style={styles.statsContainer}>
           <View style={styles.statBadge}>
-            <Text style={styles.statText}>IQ: {userProfile?.iq || 0}</Text>
+            <Text style={styles.statText}>IQ: {iq || 0}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBadge}>
-            <Text style={styles.statText}>Points: {userProfile?.coins || 0}</Text>
+            <Text style={styles.statText}>Points: {coins || 0}</Text>
           </View>
         </View>
       </View>

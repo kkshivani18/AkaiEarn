@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { socialAPI } from '../../services/api';
+import { useUserStore } from '../../stores/userStore';
 
 type SocialOffer = {
   _id: string;
@@ -34,6 +35,7 @@ interface SocialTasksProps {
 
 export const SocialTasks: React.FC<SocialTasksProps> = ({ onTaskComplete }) => {
   const { authState } = useAuth();
+  const { fetchUserData } = useUserStore();
   const [socialOffers, setSocialOffers] = useState<SocialOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingSocialOffer, setCompletingSocialOffer] = useState<string | null>(null);
@@ -102,6 +104,7 @@ export const SocialTasks: React.FC<SocialTasksProps> = ({ onTaskComplete }) => {
       
       if (response.success) {
         await fetchSocialOffers();
+        await fetchUserData();
         
         if (onTaskComplete) {
           onTaskComplete();

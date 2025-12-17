@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useUserStore } from '../../stores/userStore';
 import { CarouselSection } from '../components/CarouselSection';
 import { DocsSection } from '../components/DocsSection';
 import { HeaderSection } from '../components/HeaderSection';
@@ -12,33 +13,41 @@ import { WelcomeSection } from '../components/WelcomeSection';
 
 export default function HomeScreen() {
   const { authState } = useAuth();
+  const { fetchUserData, shouldRefetch } = useUserStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (authState?.authenticated) {
-      const timer = setTimeout(() => {
+    const loadData = async () => {
+      if (authState?.authenticated) {
+        if (shouldRefetch()) {
+          await fetchUserData();
+        } else {
+          console.log('using cached data');
+        }
+        
+        const timer = setTimeout(() => {
+          setLoading(false);
+        }, 1500);
+        
+        return () => clearTimeout(timer);
+      } else {
         setLoading(false);
-      }, 1500);
-      
-      return () => clearTimeout(timer);
-    } else {
-      setLoading(false);
-    }
+      }
+    };
+
+    loadData();
   }, [authState?.authenticated]);
 
   const handleNotificationPress = () => {
     console.log('Notification pressed');
-    // navigate to notif screen
   };
 
   const handleMenuPress = () => {
     console.log('Menu pressed');
-    // open dashboard page
   };
 
   const handleEarnMorePress = () => {
     console.log('Earn More pressed');
-    // Navigate to offers tab
     router.push('/(tabs)/offer');
   };
 

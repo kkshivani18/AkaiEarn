@@ -2,6 +2,7 @@ import { useAuthenticateWithJWT } from "@coinbase/cdp-hooks";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 import { authAPI } from '../services/api';
+import { useUserStore } from '../stores/userStore';
 
 interface AuthProps{
   authState?: { token: string | null, authenticated: boolean | null, user?: {email: string, coins?: number}, profileCompleted?: boolean };
@@ -77,12 +78,31 @@ export const AuthProvider = ({children}: any) => {
               profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? false,
               walletCreated: userData.walletAddress === null ? false : true
             });
+            
+            // initialize zustand store with user data
+            const user = userData.user || userData;
+            useUserStore.getState().setUser({
+              id: user._id || user.id,
+              name: user.firstName || user.username || user.name,
+              email: user.email,
+              username: user.username || user.firstName || user.name,
+              iq: user.iq || 0,
+              coins: user.coins || 0,
+              inrBalance: user.inrBalance || 0,
+              walletAddress: userData.walletAddress || null,
+              streakCount: user.streakCount || 0,
+              longestStreak: user.longestStreak || 0,
+              lastStreakAt: user.lastStreakAt || null,
+              profileCompleted: userData.profileCompleted ?? user.profileCompleted ?? false,
+              authenticated: true,
+              token: token,
+            });
+            
             try {
               await authenticateWithJWT();
               console.log('✅ CDP authentication restored on app start');
             } catch (cdpError) {
               console.error('❌ CDP re-authentication failed:', cdpError);
-              // Don't fail the login if CDP auth fails, just log it
             }
           } catch (error) {
             console.log('❌ Token validation failed:', error);
@@ -95,6 +115,7 @@ export const AuthProvider = ({children}: any) => {
               profileCompleted: false,
               walletCreated: false
             });
+            useUserStore.getState().logout();
           }
         } else {
           setAuthState({
@@ -137,7 +158,9 @@ export const AuthProvider = ({children}: any) => {
           user: userData.user || userData,
           profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? false
         });
-        console.log('✅ Token stored and user loaded');
+        
+        // initialize zustand store
+        await useUserStore.getState().fetchUserData();
       }
       
       return result;
@@ -185,6 +208,8 @@ export const AuthProvider = ({children}: any) => {
           walletCreated: userData.walletAddress === null ? false : true
         });
 
+        await useUserStore.getState().fetchUserData();
+
         // Authenticate with CDP using the JWT
         try {
           const {user, isNewUser}=await authenticateWithJWT();
@@ -192,7 +217,6 @@ export const AuthProvider = ({children}: any) => {
           console.log(user, isNewUser);
         } catch (cdpError) {
           console.error('❌ CDP authentication failed:', cdpError);
-          // Don't fail the login if CDP auth fails, just log it
         }
 
       }
@@ -239,6 +263,9 @@ export const AuthProvider = ({children}: any) => {
         user: undefined,
         profileCompleted: false
       });
+      
+      // Clear Zustand store
+      useUserStore.getState().logout();
     } catch (error) {
       console.error('❌ AuthContext logout error:', error);
       
@@ -249,6 +276,7 @@ export const AuthProvider = ({children}: any) => {
         user: undefined,
         profileCompleted: false
       });
+      useUserStore.getState().logout();
     }
   };
 

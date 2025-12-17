@@ -2,15 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    ViewToken
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewToken
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { offersAPI } from '../../services/api';
@@ -277,7 +277,7 @@ export const CarouselSection: React.FC<CarouselSectionProps> = ({
         }}
       />
       
-      {tasks.length > 1 && (
+      {/* {tasks.length > 1 && (
         <View style={styles.dotsContainer}>
           {tasks.map((_, index) => (
             <View
@@ -289,7 +289,7 @@ export const CarouselSection: React.FC<CarouselSectionProps> = ({
             />
           ))}
         </View>
-      )}
+      )} */}
     </View>
   );
 };
