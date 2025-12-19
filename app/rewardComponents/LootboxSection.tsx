@@ -66,7 +66,7 @@ export const LootboxSection: React.FC<LootboxSectionProps> = ({ onClaimPress }) 
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 16,
-    marginTop: 20,
+    marginTop: 25,
     marginBottom: 60,
     width: 340,
     alignSelf: 'flex-start',

@@ -66,7 +66,7 @@ export const SpinWheelSection: React.FC<SpinWheelSectionProps> = ({ onSpinPress 
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 16,
-    marginTop: 20, 
+    marginTop: -30, 
     marginBottom: 60,
     width: 340,
     alignSelf: 'flex-start',

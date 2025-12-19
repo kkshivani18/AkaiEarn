@@ -7,6 +7,7 @@ import { useUserStore } from '../../stores/userStore';
 import { RewardHeaderSection } from '../rewardComponents/rewardHeader';
 import { LootboxSection } from '../rewardComponents/LootboxSection';
 import { SpinWheelSection } from '../rewardComponents/SpinWheelSection';
+import { ReferralSection } from '../rewardComponents/ReferralSection';
 import { OfferSkeletonLoader } from '../../components/SkeletonLoader';
 
 export default function RewardScreen() {
@@ -51,6 +52,14 @@ export default function RewardScreen() {
   function handleSpinWheel(): void {
     console.log('handleSpinWheel pressed');
   }
+  
+  function handleCopyReferral(): void {
+    console.log('Copy referral code');
+  }
+  
+  function handleLearnMoreReferral(): void {
+    console.log('Learn more about referrals');
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -59,6 +68,12 @@ export default function RewardScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <LootboxSection onClaimPress={handleClaimLootbox} />
         <SpinWheelSection onSpinPress={handleSpinWheel} />
+        <ReferralSection
+          referralCode="DE7P4P8E"
+          totalReferrals={2}
+          onCopyPress={handleCopyReferral}
+          onLearnMorePress={handleLearnMoreReferral}
+        />
       </ScrollView>
     </SafeAreaView>
   );
