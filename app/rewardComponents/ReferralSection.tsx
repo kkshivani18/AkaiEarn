@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { router } from 'expo-router';
 
 interface ReferralSectionProps {
   referralCode?: string;
@@ -23,7 +24,9 @@ export const ReferralSection: React.FC<ReferralSectionProps> = ({
   };
 
   const handleLearnMore = () => {
-    if (onLearnMorePress) onLearnMorePress();
+    if (onLearnMorePress) {
+      router.replace('/');
+    }
   };
 
   return (

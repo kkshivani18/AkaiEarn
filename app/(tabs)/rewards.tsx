@@ -38,7 +38,7 @@ export default function RewardScreen() {
   }, [authState?.authenticated]);
 
   const handleClaimLootbox = () => {
-    console.log('Claim lootbox pressed');
+    router.replace('/rewardComponents/lootboxComponents/lootboxesPage');
   };
 
   if (loading) {
