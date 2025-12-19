@@ -1,3 +1,4 @@
+import { SendUSDC } from "@/components/SendUSDC";
 import UserOps from "@/components/UserOps";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -328,7 +329,7 @@ export default function ProfileScreen() {
                   </Text>
                   {coins < 0 && (
                     <Text style={styles.negativeWarning}>
-                      Negative balance - please contact support
+                      Negative balance 
                     </Text>
                   )}
                 </View>
@@ -343,9 +344,16 @@ export default function ProfileScreen() {
             <WalletInfo points={coins} />
           </View>
         </AnimatedSection>
+        
+        {/* Send USDC */}
+        <AnimatedSection delay={275}>
+          <View style={styles.iqSectionContainer}>
+            <SendUSDC />
+          </View>
+        </AnimatedSection>
+        
         <UserOps />
 
-        {/* Full width sections */}
         <AnimatedSection delay={300}>
           <View style={styles.iqSectionContainer}>
             <Text style={styles.sectionTitle}>IQ Level</Text>

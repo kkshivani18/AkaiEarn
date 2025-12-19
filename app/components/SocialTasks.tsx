@@ -74,7 +74,7 @@ export const SocialTasks: React.FC<SocialTasksProps> = ({ onTaskComplete }) => {
         if (pendingSocialTask) {
           const timeSpentAway = Date.now() - appStateTimestamp;
           
-          if (timeSpentAway > 3000) {
+          if (timeSpentAway > 6000) {
             await completeSocialTask(pendingSocialTask);
           }
           
@@ -131,6 +131,7 @@ export const SocialTasks: React.FC<SocialTasksProps> = ({ onTaskComplete }) => {
     }
 
     try {
+      await socialAPI.startSocialOffer(offer._id);
       setPendingSocialTask(offer._id);
       
       const canOpen = await Linking.canOpenURL(offer.redirectLink);

@@ -71,6 +71,112 @@ function UserOps(props: Props) {
     }
   };
 
+  const handleOpenLootcase_100 = async () => {
+    if (!smartAccount) {
+      Alert.alert("Error", "No Smart Account available.");
+      return;
+    }
+
+    const requiredCoins = 100;
+    if (coins < requiredCoins) {
+      const message = `Insufficient coins. You need ${requiredCoins} coins to open lootcase.`;
+      console.log("UserOps Lootcase Error:", message);
+      setSnackbarMessage(message);
+      setSnackbarVisible(true);
+      return;
+    }
+
+    setErrorMessage("");
+
+    try {
+      const pointsToSpend = parseUnits("100", 0);
+
+      const transferData = encodeFunctionData({
+        abi: abi,
+        functionName: "openLootcase",
+        args: [pointsToSpend],
+      });
+
+      const result = await sendUserOperation({
+        evmSmartAccount: smartAccount as `0x${string}`,
+        network: "base",
+        calls: [
+          {
+            to: contractAddress,
+            data: transferData,
+            value: 0n,
+          },
+        ],
+        useCdpPaymaster: true,
+      });
+
+      if (result?.userOperationHash) {
+        Alert.alert("Transaction Success", "User operation sent successfully");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to send user operation";
+      setErrorMessage(message);
+      Alert.alert(
+        "Transaction Failed",
+        message + (message.endsWith(".") ? "" : ".")
+      );
+    }
+  };
+
+  const handleOpenLootcase_500 = async () => {
+    if (!smartAccount) {
+      Alert.alert("Error", "No Smart Account available.");
+      return;
+    }
+
+    const requiredCoins = 500;
+    if (coins < requiredCoins) {
+      const message = `Insufficient coins. You need ${requiredCoins} coins to open lootcase.`;
+      console.log("UserOps Lootcase Error:", message);
+      setSnackbarMessage(message);
+      setSnackbarVisible(true);
+      return;
+    }
+
+    setErrorMessage("");
+
+    try {
+      const pointsToSpend = parseUnits("500", 0);
+
+      const transferData = encodeFunctionData({
+        abi: abi,
+        functionName: "openLootcase",
+        args: [pointsToSpend],
+      });
+
+      const result = await sendUserOperation({
+        evmSmartAccount: smartAccount as `0x${string}`,
+        network: "base",
+        calls: [
+          {
+            to: contractAddress,
+            data: transferData,
+            value: 0n,
+          },
+        ],
+        useCdpPaymaster: true,
+      });
+
+      if (result?.userOperationHash) {
+        Alert.alert("Transaction Success", "User operation sent successfully");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to send user operation";
+      setErrorMessage(message);
+      Alert.alert(
+        "Transaction Failed",
+        message + (message.endsWith(".") ? "" : ".")
+      );
+    }
+  };
+
   const handleWithdrawUSDC = async () => {
     if (!smartAccount) {
       Alert.alert("Error", "No Smart Account available.");
@@ -116,7 +222,9 @@ function UserOps(props: Props) {
 
   return (
     <View>
+      <Button title="Open Lootcase 100" onPress={handleOpenLootcase_100} />
       <Button title="Open Lootcase" onPress={handleOpenLootcase} />
+      <Button title="Open Lootcase 500" onPress={handleOpenLootcase_500} />
       <Button title="Withdraw USDC" onPress={handleWithdrawUSDC} />
       {errorMessage && <Text>{errorMessage}</Text>}
       {status === "success" && <Text>Transaction Success</Text>}

@@ -209,6 +209,12 @@ export const socialAPI = {
     return response.data;
   },
 
+  // Start a social offer 
+  startSocialOffer: async (offerId: string) => {
+    const response = await api.post('/social/start', { offerId });
+    return response.data;
+  },
+
   // Complete a social offer
   completeSocialOffer: async (offerId: string) => {
     const response = await api.post('/social/complete', { offerId });
