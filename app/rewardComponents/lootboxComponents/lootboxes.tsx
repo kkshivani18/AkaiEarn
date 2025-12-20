@@ -17,6 +17,7 @@ interface LootboxCardProps {
   imageGradientColors?: readonly [string, string, ...string[]];
   buttonBorderColor?: string;
   buttonShadowColor?: string;
+  prizeColor?: string;
   onPress?: () => void;
   disabled?: boolean;
 }
@@ -32,6 +33,7 @@ const LootboxCard: React.FC<LootboxCardProps> = ({
   imageGradientColors,
   buttonBorderColor,
   buttonShadowColor,
+  prizeColor = '#FFFFFF',
   onPress,
   disabled = false,
 }) => {
@@ -45,7 +47,7 @@ const LootboxCard: React.FC<LootboxCardProps> = ({
           />
         <View style={styles.cardTextArea}>
           <Text style={styles.cardTitle}>{title}</Text>
-          <Text style={styles.cardSubtitle}>{prizeRange}</Text>
+          <Text style={[styles.cardSubtitle, { color: prizeColor }]}> Win {prizeRange}</Text>
           <View style={styles.buttonContainer}>
             {buttonShadowColor && (
               <View style={[styles.buttonShadow, { backgroundColor: buttonShadowColor }]} />
@@ -131,7 +133,7 @@ export const LootboxesSection: React.FC = () => {
     <View style={styles.container}>
       <LootboxCard
         title="BRONZE BOX"
-        prizeRange="Win $0.15 - $0.2"
+        prizeRange="$0.15 - $0.2"
         pointsText="Open for 100 Pts"
         imageSource={require('../../../assets/app-images/bronze_box.png')}
         borderColor="#84DE49"
@@ -140,12 +142,13 @@ export const LootboxesSection: React.FC = () => {
         imageGradientColors={['#6DBF32', '#94EE56', '#6DBF32']}
         buttonBorderColor="#B9F091"
         buttonShadowColor="#5DA926"
+        prizeColor="#84DE49"
         onPress={() => handleOpenLootbox('bronze', 100, 'bronze-box-id')}
         disabled={openingBox === 'bronze'}
       />
       <LootboxCard
         title="SILVER BOX"
-        prizeRange="Win $0.37 - $0.5"
+        prizeRange="$0.37 - $0.5"
         pointsText="Open for 200 Pts"
         imageSource={require('../../../assets/app-images/silver_box.png')}
         borderColor="#49ACCE"
@@ -153,12 +156,13 @@ export const LootboxesSection: React.FC = () => {
         buttonColors={['#49ACCE', '#6BD6F7']}
         buttonBorderColor="#AEE6FA"
         buttonShadowColor="#2A93B8"
+        prizeColor="#49ACCE"
         onPress={() => handleOpenLootbox('silver', 200, 'silver-box-id')}
         disabled={openingBox === 'silver'}
       />
       <LootboxCard
         title="GOLDEN BOX"
-        prizeRange="Win $1.12 - $1.5"
+        prizeRange="$1.12 - $1.5"
         pointsText="Open for 500 Pts"
         imageSource={require('../../../assets/app-images/golden_box.png')}
         borderColor="#FFB917"
@@ -166,11 +170,12 @@ export const LootboxesSection: React.FC = () => {
         buttonColors={['#FFCD0A', '#FFB917']}
         buttonBorderColor="#FFE083"
         buttonShadowColor="#D78F00"
+        prizeColor="#FFCD0A"
         onPress={() => handleOpenLootbox('golden', 500, 'golden-box-id')}
         disabled={openingBox === 'golden'}
       />
 
-      <Text style={{color: "#FFFFFF", alignSelf: 'center', marginTop: 12, fontSize: 16}}>Provably Fair & Odds</Text>
+      <Text style={{color: "#FFFFFF", alignSelf: 'center', marginTop: 4, fontSize: 16}}>Provably Fair & Odds</Text>
       
       <TouchableOpacity activeOpacity={0.85} style={styles.historyButton}>
         <Image
@@ -195,7 +200,10 @@ export const LootboxesSection: React.FC = () => {
                     <Ionicons name="person" size={20} color="#000" />
                   </View>
                   <Image source={item.chest} style={styles.liveChest} resizeMode="contain" />
-                  <Text style={styles.liveRewardText}>{item.reward}</Text>
+                  <View style={{alignItems: 'center'}}>
+                    <Text style={[styles.liveRewardText, {lineHeight: 18}]}>+ 50</Text>
+                    <Text style={[styles.liveRewardText, {fontSize: 12}]}>Rewards</Text>
+                  </View>
                 </View>
               </View>
             ))}
@@ -214,8 +222,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    width: 340,
-    height: 150,
+    width: 310,
+    height: 110,
     borderRadius: 10,
     borderWidth: 2,
     alignSelf: 'center',
@@ -230,15 +238,17 @@ const styles = StyleSheet.create({
     marginHorizontal: -60
   },
   cardImage: {
-    width: 270,
-    height: 270,
+    width: 200,
+    height: 200,
+    left: 10
   },
   cardTextArea: {
     flex: 1,
-    marginHorizontal: -50
+    marginHorizontal: 0,
+    marginTop: 16
   },
   cardTitle: {
-    fontSize: 21,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 2,
@@ -252,11 +262,11 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: 'relative',
-    width: 151,
+    width: 140,
   },
   buttonShadow: {
     position: 'absolute',
-    width: 151,
+    width: 140,
     height: 40,
     borderRadius: 10,
     top: 5,
@@ -264,7 +274,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   openButton: {
-    width: 151,
+    width: 140,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 0.8,
@@ -285,7 +295,7 @@ const styles = StyleSheet.create({
   },
   historyButton: {
     alignSelf: 'center',
-    marginTop: 10,
+    marginTop: 2,
   },
   historyButtonImage: {
     width: 231,
@@ -311,7 +321,7 @@ const styles = StyleSheet.create({
   liveToggle: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -319,21 +329,22 @@ const styles = StyleSheet.create({
   liveList: {
     paddingVertical: 10,
     paddingHorizontal: 4,
-    gap: 12,
+    gap: 6,
   },
   liveCard: {
     height: 64,
-    borderRadius: 32,
+    borderRadius: 20,
     borderWidth: 2,
-    marginRight: 12,
+    marginRight: 6,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
   liveCardInner: {
     height: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 10,
+    paddingHorizontal: 6,
+    marginRight: -25
+    // gap: 10,
   },
   avatar: {
     width: 38,
@@ -346,11 +357,13 @@ const styles = StyleSheet.create({
   liveChest: {
     width: 100,
     height: 100,
+    left: -10
   },
   liveRewardText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+    left: -30,
   },
 });
 

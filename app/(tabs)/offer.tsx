@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { OfferSkeletonLoader, SocialSkeletonLoader } from '../../components/SkeletonLoader';
 import { useAuth } from '../../contexts/AuthContext';
 import { offersAPI, socialAPI } from '../../services/api';
+import { HeaderSection } from '../offerComponents/offerHeader';
 import { useUserStore } from '../../stores/userStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -462,41 +463,11 @@ const OfferScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <HeaderSection/>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
-        <View style={styles.profileHeader}>
-          <View style={styles.profileInfo}>
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>
-                {name ? name.charAt(0).toUpperCase() : 'U'}
-              </Text>
-            </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{name || 'Loading...'}</Text>
-              <Text style={styles.userIQ}>IQ: {iq || 0}</Text>
-            </View>
-          </View>
-          
-          {/* Updated balance card*/}
-          <View style={styles.balanceCard}>
-            <View style={{flexDirection: 'row'}}>
-              <Text style={styles.balanceTokens}>{coins?.toLocaleString() || 0}</Text>
-              <Text style={styles.balanceLabel}> Points</Text>
-            </View>
-          </View>
-        </View>
-
+        
         {/* Tasks for You Section */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Tasks for you</Text>
-            {error && (
-              <TouchableOpacity onPress={() => window.location.reload()}>
-                <Text style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          
           {error && (
             <Text style={styles.errorText}>⚠️ {error}</Text>
           )}
@@ -668,93 +639,6 @@ const OfferScreen: React.FC = () => {
                   ]}
                 />
               ))}
-            </View>
-          )}
-        </View>
-
-        {/* Social Tasks */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Social Tasks</Text>
-            {loadingSocial && (
-              <ActivityIndicator size="small" color="#007AFF" />
-            )}
-          </View>
-          
-          {loadingSocial ? (
-            <SocialSkeletonLoader count={3} />
-          ) : socialOffers.length > 0 ? (
-            socialOffers.map((offer) => (
-              <TouchableOpacity 
-                key={offer._id}
-                style={[
-                  styles.socialTaskCard
-                ]}
-                onPress={() => handleCompleteSocialOffer(offer)}
-                activeOpacity={offer.completed ? 0.9 : 0.7}
-                disabled={completingSocialOffer === offer._id}
-              >
-                <View style={styles.socialTaskLeft}>
-                  <View style={[
-                    styles.socialIcon
-                  ]}>
-                    {offer.imageLink ? (
-                      <Image 
-                        source={{ uri: offer.imageLink }} 
-                        style={styles.socialIconImage} 
-                        resizeMode="cover" 
-                      />
-                    ) : (
-                      <Ionicons 
-                        name={getSocialOfferIcon(offer.type)}
-                        size={20} 
-                        color={getSocialOfferColor(offer.type)} 
-                      />
-                    )}
-                  </View>
-                  <View style={styles.socialTaskInfo}>
-                    <Text style={[
-                      styles.socialTaskTitle,
-                      offer.completed && styles.socialTaskTitleCompleted
-                    ]}>
-                      {offer.description}
-                    </Text>
-                    <Text style={[
-                      styles.socialTaskReward,
-                      offer.completed && styles.socialTaskRewardCompleted
-                    ]}>
-                      {offer.completed ? `${offer.reward.coinsOnCorrect} Points` : `+${offer.reward.coinsOnCorrect} Points`}
-                    </Text>
-                  </View>
-                </View>
-                
-                {offer.completed ? (
-                  <View style={styles.completedBadge}>
-                    <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
-                    <Text style={styles.completedText}>Completed</Text>
-                  </View>
-                ) : completingSocialOffer === offer._id ? (
-                  <View style={styles.processingBadge}>
-                    <ActivityIndicator size="small" color="#007AFF" />
-                  </View>
-                ) : pendingSocialTask === offer._id ? (
-                  <View style={styles.pendingBadge}>
-                    <Ionicons name="time-outline" size={16} color="#FF9500" />
-                    <Text style={styles.pendingText}>Pending</Text>
-                  </View>
-                ) : (
-                  <View style={styles.tapToOpenBadge}>
-                    <Ionicons name="open-outline" size={16} color="#007AFF" />
-                    <Text style={styles.tapToOpenText}>Complete</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.emptyTasksContainer}>
-              <Ionicons name="gift-outline" size={48} color="#666" />
-              <Text style={styles.emptyTasksText}>No social tasks available</Text>
-              <Text style={styles.emptyTasksSubtext}>Check back later for new tasks</Text>
             </View>
           )}
         </View>

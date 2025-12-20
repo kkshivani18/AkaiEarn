@@ -9,11 +9,6 @@ import { LootboxesSection } from './lootboxes';
 export default function LootboxesPage() {
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.backBar}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)/rewards')} style={styles.backButton} activeOpacity={0.8}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
       <LootboxHeaderSection />
       <ScrollView contentContainerStyle={styles.content}>
         <LootboxesSection />

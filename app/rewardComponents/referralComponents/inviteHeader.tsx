@@ -7,14 +7,14 @@ import { useUserStore } from '../../../stores/userStore';
 interface HeaderSectionProps {
 }
 
-export const LootboxHeaderSection: React.FC<HeaderSectionProps> = ({ 
+export const HeaderSection: React.FC<HeaderSectionProps> = ({ 
 }) => {
-  const { name, iq, coins } = useUserStore();
+  const { iq, coins } = useUserStore();
 
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
-        <Text style={styles.greeting}>Lootboxes</Text>
+        <Text style={styles.greeting}>Fellow Explorers</Text>
         <View style={styles.statsContainer}>
           <View style={styles.statBadge}>
             <Text style={styles.statText}>IQ: {iq || 0}</Text>
@@ -25,10 +25,13 @@ export const LootboxHeaderSection: React.FC<HeaderSectionProps> = ({
           </View>
         </View>
       </View>
-      <View style={styles.backBar}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)/rewards')} style={styles.backButton} activeOpacity={0.8}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
+
+      <View style={styles.rightSection}>
+        <View style={styles.backBar}>
+          <TouchableOpacity onPress={() => router.replace('/(tabs)/rewards')} style={styles.backButton} activeOpacity={0.8}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -37,15 +40,14 @@ export const LootboxHeaderSection: React.FC<HeaderSectionProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
     backgroundColor: '#0a0b0f',
-    justifyContent: 'space-between',
   },
   leftSection: {
     flex: 1,
-    marginRight: 12,
   },
   greeting: {
     color: '#fff',
