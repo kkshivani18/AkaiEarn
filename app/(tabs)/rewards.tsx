@@ -9,6 +9,7 @@ import { LootboxSection } from '../rewardComponents/LootboxSection';
 import { SpinWheelSection } from '../rewardComponents/SpinWheelSection';
 import { ReferralSection } from '../rewardComponents/ReferralSection';
 import { OfferSkeletonLoader } from '../../components/SkeletonLoader';
+import { CouponSection } from '../rewardComponents/CouponSection';
 
 export default function RewardScreen() {
   const { authState } = useAuth();
@@ -61,6 +62,10 @@ export default function RewardScreen() {
     console.log('Learn more about referrals');
   }
 
+  function handleViewHistory(): void {
+    console.log('View History pressed');
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <RewardHeaderSection/>
@@ -74,6 +79,7 @@ export default function RewardScreen() {
           onCopyPress={handleCopyReferral}
           onLearnMorePress={handleLearnMoreReferral}
         />
+        <CouponSection onViewHistory={handleViewHistory} />
       </ScrollView>
     </SafeAreaView>
   );
