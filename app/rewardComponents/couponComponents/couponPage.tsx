@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '../../../stores/userStore';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const CouponHeaderSection = () => {
   const { iq, coins } = useUserStore();
@@ -34,9 +34,21 @@ const CouponHeaderSection = () => {
 };
 
 export default function CouponPage() {
-  const handleCopyCode = async () => {
-    await Clipboard.setStringAsync('NIKKE20');
-    console.log('Coupon code copied to clipboard');
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    
+    setTimeout(() => {
+      setShowSnackbar(false);
+    }, 2000);
+  };
+
+  const handleCopyCode = async (code: string) => {
+    await Clipboard.setStringAsync(code);
+    showSnackbarMessage('Coupon code copied');
   };
 
   return (
@@ -57,12 +69,12 @@ export default function CouponPage() {
             </View>
             
             <TouchableOpacity 
-              onPress={handleCopyCode} 
+              onPress={() => handleCopyCode('NIKE20')} 
               style={styles.copyButton}
               activeOpacity={0.8}
             >
               <Ionicons name="copy-outline" size={18} color="#EF4444" />
-              <Text style={styles.copyButtonText}>NIKKE20</Text>
+              <Text style={styles.copyButtonText}>NIKE20</Text>
             </TouchableOpacity>
           </View>
           
@@ -83,48 +95,17 @@ export default function CouponPage() {
           <View style={styles.leftContent}>
             <View style={styles.textContainer}>
               <Text style={styles.upToText}>Up to</Text>
-              <Text style={styles.discountText}>20% OFF</Text>
+              <Text style={styles.discountText}>50% OFF</Text>
               <Text style={styles.couponText}>Nike Discount Coupon</Text>
             </View>
             
             <TouchableOpacity 
-              onPress={handleCopyCode} 
+              onPress={() => handleCopyCode('NIKE50')} 
               style={styles.copyButton}
               activeOpacity={0.8}
             >
               <Ionicons name="copy-outline" size={18} color="#EF4444" />
-              <Text style={styles.copyButtonText}>NIKKE20</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.rightSection}>
-            <Image
-              source={require('../../../assets/app-images/nike_coupon.png')}
-              style={styles.bannerImage}
-              resizeMode="contain"
-            />
-          </View>
-        </LinearGradient>
-        <LinearGradient
-          colors={['#FFB917', '#FFEBA3', '#EFD69D']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.bannerContainer}
-        >
-          <View style={styles.leftContent}>
-            <View style={styles.textContainer}>
-              <Text style={styles.upToText}>Up to</Text>
-              <Text style={styles.discountText}>20% OFF</Text>
-              <Text style={styles.couponText}>Nike Discount Coupon</Text>
-            </View>
-            
-            <TouchableOpacity 
-              onPress={handleCopyCode} 
-              style={styles.copyButton}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="copy-outline" size={18} color="#EF4444" />
-              <Text style={styles.copyButtonText}>NIKKE20</Text>
+              <Text style={styles.copyButtonText}>NIKE50</Text>
             </TouchableOpacity>
           </View>
           
@@ -137,6 +118,12 @@ export default function CouponPage() {
           </View>
         </LinearGradient>
       </ScrollView>
+
+      {showSnackbar && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -217,6 +204,25 @@ const styles = StyleSheet.create({
     width: 118,
     height: 118,
     borderRadius: 10,
+  },
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    zIndex: 10,
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

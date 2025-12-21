@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { authAPI, referralAPI } from '../../services/api';
 
 interface ReferralSectionProps {
@@ -23,6 +23,8 @@ export const ReferralSection: React.FC<ReferralSectionProps> = ({
   const [referredUsersDetails, setReferredUsersDetails] = useState<any[]>([]);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingReferredUsers, setLoadingReferredUsers] = useState(false);
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   useEffect(() => {
       fetchUserProfile();
@@ -151,8 +153,18 @@ export const ReferralSection: React.FC<ReferralSectionProps> = ({
     return 'Just now';
   };
   
+  const showSnackbarMessage = (message: string) => {
+    setSnackbarMessage(message);
+    setShowSnackbar(true);
+    
+    setTimeout(() => {
+      setShowSnackbar(false);
+    }, 2000);
+  };
+  
   const handleCopy = () => {
     Clipboard.setStringAsync(displayReferralCode);
+    showSnackbarMessage('Referral code copied');
     if (onCopyPress) onCopyPress();
   };
 
@@ -222,6 +234,12 @@ export const ReferralSection: React.FC<ReferralSectionProps> = ({
           resizeMode="contain"
         />
       </View>
+
+      {showSnackbar && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -346,5 +364,24 @@ const styles = StyleSheet.create({
   pandasImage: {
     width: '100%',
     height: '100%'
+  },
+  snackbar: {
+    position: 'absolute',
+    bottom: -220,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    zIndex: 10,
+  },
+  snackbarText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
