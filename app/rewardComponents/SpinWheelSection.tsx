@@ -2,6 +2,8 @@ import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+
 
 interface SpinWheelSectionProps {
   onSpinPress?: () => void;
@@ -10,9 +12,7 @@ interface SpinWheelSectionProps {
 export const SpinWheelSection: React.FC<SpinWheelSectionProps> = ({ onSpinPress }) => {
   const handleSpinPress = () => {
     console.log('Spin wheel pressed');
-    if (onSpinPress) {
-      onSpinPress();
-    }
+    router.push('/rewardComponents/spinwheelComponents/spinwheelPage');
   };
 
   return (

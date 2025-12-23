@@ -222,7 +222,7 @@ export const socialAPI = {
   },
 };
 
-// Rewards/Coupons API - Updated to use proper backend endpoints
+// Rewards/Coupons API 
 export const couponsAPI = {
   // get available spin wheel coupons 
   getSpinWheelCoupons: async () => {
@@ -240,6 +240,7 @@ export const couponsAPI = {
             description: '20% off Entire Order',
             expiryDate: '2024-12-31',
             imageLink: 'https://logo.clearbit.com/amazon.com',
+            couponCode: 'AMZ20'
           },
           {
             _id: '675bb78ad52bb7f76b050b6c',
@@ -247,6 +248,7 @@ export const couponsAPI = {
             description: 'One Month Free',
             expiryDate: '2024-12-31',
             imageLink: 'https://logo.clearbit.com/netflix.com',
+            couponCode: 'NFLXFREE'
           },
           {
             _id: '675bb793d52bb7f76b050b6e',
@@ -254,6 +256,7 @@ export const couponsAPI = {
             description: '3 Months Premium',
             expiryDate: '2024-12-31',
             imageLink: 'https://logo.clearbit.com/spotify.com',
+            couponCode: 'SPOT3MO'
           }
         ]
       };
@@ -341,9 +344,28 @@ export const couponsAPI = {
       throw error;
     }
   },
-};
 
-// API functions that match your backend exactly
+  // purchase spin with coins
+  purchaseSpinWithCoins: async () => {
+    try {
+      const response = await api.post('/rewards/spin-wheel/purchase');
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to purchase spin:', error);
+      throw error;
+    }
+  },
+  // select coupon from paid spin 
+  selectPaidSpinCoupon: async (couponId: string) => {
+    try {
+      const response = await api.post('/rewards/spin-wheel/select-paid', { couponId });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API: Failed to select paid spin coupon:', error);
+      throw error;
+    }
+  },};
+
 export const authAPI = {
   register: async (email: string, password: string) => {
     try {

@@ -1,34 +1,13 @@
-import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  useColorScheme,
-  ScrollView,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../contexts/AuthContext';
-import * as WebBrowser from 'expo-web-browser';
-// import * as Google from 'expo-auth-session/providers/google';
-// import * as AuthSession from "expo-auth-session";
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { authAPI } from '../services/api';
 import Constants from "expo-constants";
-
-GoogleSignin.configure({
-  webClientId: '767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com',
-  offlineAccess: true,
-  scopes: ['profile', 'email'],
-});
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import React, { useState, useEffect } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 
 interface SignInModalProps {
   visible: boolean;
@@ -59,8 +38,25 @@ export const Login: React.FC<SignInModalProps> = ({
   const { onLogin, onGoogleLogin } = useAuth();
   const params = useLocalSearchParams();
 
+  useEffect(() => {
+    const configureGoogleSignIn = async () => {
+      try {
+        await GoogleSignin.configure({
+          webClientId: '767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com',
+          offlineAccess: true,
+          scopes: ['profile', 'email'],
+        });
+        console.log('Google Sign-In configured successfully');
+      } catch (error) {
+        console.error('Failed to configure Google Sign-In:', error);
+      }
+    };
+
+    configureGoogleSignIn();
+  }, []);
+
   // check for reset token on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const token = params.token as string;
     if (token && visible) {
       setResetToken(token);
@@ -68,59 +64,9 @@ export const Login: React.FC<SignInModalProps> = ({
       setShowForgotPassword(false);
     }
   }, [params.token, visible]);
-
-  const extra = Constants.expoConfig?.extra;
   
   // auth session for web
   WebBrowser.maybeCompleteAuthSession();
-
-  const ANDROID_ID = extra?.androidClientID;
-  const WEB_ID = extra?.webClientID;
-
-  // Google OAuth request
-  // const [request, response, promptAsync] = Google.useAuthRequest({
-  //   androidClientId: "767073531304-iv7vrcp5ejhkftv1jn9qcatmv6bvsdqk.apps.googleusercontent.com",
-  //   webClientId: "767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com",
-  //   scopes: ['openid', 'profile', 'email'],
-  // });
-
-  // GoogleSignin.configure({
-  //   webClientId: '767073531304-4ippqgs57d13jac4u9e1fms99ao155ve.apps.googleusercontent.com',
-  //   offlineAccess: true,
-  // });
-
-  // useEffect(() => {
-  //   const handleGoogleResponse = async () => {
-  //     if (response?.type !== 'success') return;
-  //     // Prefer idToken for backend verification if available
-  //     const idToken = response.params?.id_token || response.authentication?.idToken;
-  //     if (!idToken) {
-  //       showSnackbarMessage('No idToken received from Google');
-  //       return;
-  //     }
-  //     console.log('Google Sign-In successful, authenticating');
-  //     try {
-  //       const result = await onGoogleLogin?.(idToken);
-  //       if (result?.success) {
-  //         onClose();
-  //         // Navigate based on profile completion if backend returns it
-  //         const needsProfile = result?.user?.profileCompleted === false || result?.profileCompleted === false;
-  //         if (needsProfile) {
-  //           router.replace('/profile-completion');
-  //         } else {
-  //           router.replace('/(tabs)/offer');
-  //         }
-  //       } else {
-  //         showSnackbarMessage(result?.msg || result?.error || 'Could not sign in with Google');
-  //       }
-  //     } catch (e: any) {
-  //       showSnackbarMessage(e?.message || 'Unexpected error during Google Sign-In');
-  //     }
-  //   };
-  //     if (response) {
-  //       handleGoogleResponse();
-  //   }
-  // }, [response]);
 
   const handleGoogleSignIn = async () => {
   try {
@@ -383,18 +329,6 @@ export const Login: React.FC<SignInModalProps> = ({
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleSignIn}
-                // onPress={() => {
-                  // if (Platform.OS === 'android' && !ANDROID_ID) {
-                  //   showSnackbarMessage('Google Sign-In not configured');
-                  //   return;
-                  // }
-                  // if (Platform.OS === 'web' && !WEB_ID) {
-                  //   showSnackbarMessage('Google Sign-In not configured: Set webClientID');
-                  //   return;
-                  // }
-                  // promptAsync();
-                // }}
-                // disabled={!request}
               >
                 <AntDesign 
                   name="google" 
