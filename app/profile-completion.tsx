@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
@@ -8,6 +7,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -23,6 +23,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authAPI, referralAPI } from '../services/api';
 
 const ProfileCompletionScreen: React.FC = () => {
+  const [currentStep, setCurrentStep] = React.useState<number>(1);
   const [fullName, setFullName] = React.useState<string>('');
   const [occupation, setOccupation] = React.useState<string | null>(null);
   const [gender, setGender] = React.useState<string>('');
@@ -44,12 +45,12 @@ const ProfileCompletionScreen: React.FC = () => {
     { label: 'Prefer not to say', value: 'prefer-not-to-say' },
   ];
 
-  // Format Date as MM/DD/YYYY 
-  const formatDateMMDDYYYY = (d: Date) => {
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
+  // Format Date as DD/MM/YYYY 
+  const formatDateDDMMYYYY = (d: Date) => {
     const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
-    return `${mm}/${dd}/${yyyy}`;
+    return `${dd}/${mm}/${yyyy}`;
   };
   
   const { onProfileCompleted } = useAuth();
@@ -150,7 +151,57 @@ const ProfileCompletionScreen: React.FC = () => {
     setTimeout(() => setShowSnackbar(false), 3000);
   };
 
-  const handleNext = async () => {
+  const handleNextStep = () => {
+    // Validate current step before moving forward
+    if (currentStep === 1) {
+      if (!fullName.trim()) {
+        Alert.alert('Error', 'Please enter your full name');
+        return;
+      }
+      const nameWords = fullName.trim().split(/\s+/);
+      if (nameWords.length < 2) {
+        Alert.alert('Error', 'Please enter your full name (first and last name)');
+        return;
+      }
+      if (nameWords.some(word => word.length < 2 || word.length > 50)) {
+        Alert.alert('Error', 'Each name part must be 2-50 characters long');
+        return;
+      }
+      if (!occupation) {
+        Alert.alert('Error', 'Please select your occupation');
+        return;
+      }
+      setCurrentStep(2);
+    } else if (currentStep === 2) {
+      if (!gender) {
+        Alert.alert('Error', 'Please select your gender');
+        return;
+      }
+      if (!dobDate) {
+        Alert.alert('Error', 'Please select your date of birth');
+        return;
+      }
+      const today = new Date();
+      if (dobDate > today) {
+        Alert.alert('Error', 'Date of birth cannot be in the future');
+        return;
+      }
+      const age = today.getFullYear() - dobDate.getFullYear();
+      if (age < 13 || age > 120) {
+        Alert.alert('Error', 'Please enter a valid date of birth (age must be between 13 and 120 years)');
+        return;
+      }
+      setCurrentStep(3);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleComplete = async () => {
     console.log('Profile completion with data:', {
       fullName,
       occupation,
@@ -161,51 +212,14 @@ const ProfileCompletionScreen: React.FC = () => {
       isReferralVerified
     });
     
-    if (!fullName || !occupation || !dobDate || !gender) {
-      Alert.alert('Incomplete Form', 'Please fill out all required fields.');
-      return;
-    }
-    
-    const nameWords = fullName.trim().split(/\s+/);
-    if (nameWords.length < 2) {
-      Alert.alert('Error', 'Please enter your full name (first and last name)');
-      return;
-    }
-    
-    if (nameWords.some(word => word.length < 2 || word.length > 50)) {
-      Alert.alert('Error', 'Each name part must be 2-50 characters long');
-      return;
-    }
-    
-    const validGenders = ['male', 'female', 'other', 'prefer-not-to-say'];
-    if (!validGenders.includes(gender.toLowerCase())) {
-      Alert.alert('Error', 'Please enter a valid gender: male, female, other, or prefer-not-to-say');
-      return;
-    }
-    
-    const inputDate = dobDate!;
-    const today = new Date();
-    if (inputDate > today) {
-      Alert.alert('Error', 'Date of birth cannot be in the future');
-      return;
-    }
-    
-    // Validate age is reasonable (between 13 and 120 years)
-    const age = today.getFullYear() - inputDate.getFullYear();
-    if (age < 13 || age > 120) {
-      Alert.alert('Error', 'Please enter a valid date of birth (age must be between 13 and 120 years)');
+    if (referralCode.trim() && !isReferralVerified) {
+      Alert.alert('Referral Code Not Verified', 'Please verify your referral code before proceeding, or leave it empty.');
       return;
     }
     
     setLoading(true);
     
     try {
-      if (referralCode.trim() && !isReferralVerified) {
-        Alert.alert('Referral Code Not Verified', 'Please verify your referral code before proceeding, or leave it empty.');
-        setLoading(false);
-        return;
-      }
-      
       const firstName = fullName.trim().split(/\s+/)[0];
       const profileData = {
         name: fullName.trim(), 
@@ -277,15 +291,205 @@ const ProfileCompletionScreen: React.FC = () => {
   ];
 
   const pickerSelectStyles = StyleSheet.create({
-    inputIOS: { ...styles.input },
-    inputAndroid: { ...styles.input },
-    placeholder: { color: '#a1a1aa' },
+    inputIOS: { 
+      backgroundColor: '#FFD700',
+      color: '#333',
+      padding: 14,
+      borderRadius: 8,
+      fontSize: 15,
+      marginBottom: 16,
+    },
+    inputAndroid: { 
+      backgroundColor: '#FFD700',
+      color: '#333',
+      padding: 14,
+      borderRadius: 8,
+      fontSize: 15,
+      marginBottom: 16,
+    },
+    placeholder: { color: '#666' },
     iconContainer: {
       top: 18,
       right: 15,
     },
   });
  
+  const renderStepContent = () => {
+    if (currentStep === 1) {
+      return (
+        <>
+          <Text style={styles.stepLabel}>FULL NAME</Text>
+          <TextInput
+            style={styles.stepInput}
+            placeholder="Full Name"
+            placeholderTextColor="#666"
+            value={fullName}
+            onChangeText={setFullName}
+            autoCapitalize="words"
+            autoCorrect={false}
+          />
+
+          <Text style={styles.stepLabel}>OCCUPATION</Text>
+          <RNPickerSelect
+            onValueChange={(value) => setOccupation(value)}
+            items={occupationItems}
+            style={pickerSelectStyles}
+            placeholder={{ label: 'WriteHere', value: null }}
+            useNativeAndroidPickerStyle={false}
+            value={occupation}
+            Icon={() => (
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            )}
+          />
+        </>
+      );
+    } else if (currentStep === 2) {
+      return (
+        <>
+          <Text style={styles.stepLabel}>GENDER</Text>
+          <View style={styles.genderContainer}>
+            <View style={styles.genderInputWrapper}>
+              <RNPickerSelect
+                onValueChange={(value) => setGender(value)}
+                items={genderItems}
+                style={pickerSelectStyles}
+                placeholder={{ label: 'Select', value: '' }}
+                useNativeAndroidPickerStyle={false}
+                value={gender}
+                Icon={() => (
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                )}
+              />
+            </View>
+            <View style={styles.genderButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  gender === 'male' && styles.genderButtonSelected
+                ]}
+                onPress={() => setGender('male')}
+              >
+                <Ionicons name="male" size={20} color={gender === 'male' ? '#007AFF' : '#666'} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  gender === 'female' && styles.genderButtonSelected
+                ]}
+                onPress={() => setGender('female')}
+              >
+                <Ionicons name="female" size={20} color={gender === 'female' ? '#007AFF' : '#666'} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Text style={styles.stepLabel}>DATE OF BIRTH</Text>
+          <TouchableOpacity
+            style={styles.stepInput}
+            activeOpacity={0.8}
+            onPress={() => setShowDobPicker(true)}
+          >
+            <Text style={{ color: dobDate ? '#333' : '#666' }}>
+              {dobDate ? formatDateDDMMYYYY(dobDate) : 'DD/MM/YYYY'}
+            </Text>
+          </TouchableOpacity>
+          {showDobPicker && (
+            <DateTimePicker
+              value={dobDate || new Date(new Date().getFullYear() - 20, 0, 1)}
+              mode="date"
+              maximumDate={new Date()}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(_event, selectedDate) => {
+                setShowDobPicker(false);
+                if (selectedDate) setDobDate(selectedDate);
+              }}
+            />
+          )}
+        </>
+      );
+    } else if (currentStep === 3) {
+      return (
+        <>
+          <Text style={styles.stepLabel}>LOCATION</Text>
+          <TouchableOpacity
+            style={styles.stepInput}
+            activeOpacity={0.8}
+            onPress={handleLocationAccess}
+          >
+            <Text style={{ color: location ? '#333' : '#666', flex: 1 }}>
+              {location ? 'Location Shared' : 'Share Your Current Location'}
+            </Text>
+            <Ionicons name="location" size={18} color="#666" />
+          </TouchableOpacity>
+
+          <Text style={styles.stepLabel}>REFFERAL CODE</Text>
+          <View style={styles.referralContainer}>
+            <TextInput
+              style={[
+                styles.referralInput,
+                referralVerificationStatus === 'valid' && styles.inputValid,
+                referralVerificationStatus === 'invalid' && styles.inputInvalid
+              ]}
+              placeholder="Paste Here............"
+              placeholderTextColor="#666"
+              value={referralCode}
+              onChangeText={handleReferralCodeChange}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!isReferralVerified}
+            />
+            <TouchableOpacity
+              style={[
+                styles.verifyButton,
+                referralVerificationStatus === 'verifying' && styles.verifyButtonDisabled,
+                referralVerificationStatus === 'valid' && styles.verifyButtonValid,
+                isReferralVerified && styles.verifyButtonDisabled
+              ]}
+              onPress={verifyReferralCode}
+              disabled={referralVerificationStatus === 'verifying' || isReferralVerified || !referralCode.trim()}
+            >
+              {referralVerificationStatus === 'verifying' ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : referralVerificationStatus === 'valid' ? (
+                <Ionicons name="checkmark" size={16} color="white" />
+              ) : (
+                <Text style={styles.verifyButtonText}>VERIFY</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          
+          {/* Verification status message */}
+          {referralVerificationMessage && (
+            <View style={[
+              styles.verificationMessage,
+              referralVerificationStatus === 'valid' && styles.verificationMessageValid,
+              referralVerificationStatus === 'invalid' && styles.verificationMessageInvalid
+            ]}>
+              <Ionicons 
+                name={
+                  referralVerificationStatus === 'valid' ? 'checkmark-circle' :
+                  referralVerificationStatus === 'invalid' ? 'alert-circle' : 'information-circle'
+                } 
+                size={14} 
+                color={
+                  referralVerificationStatus === 'valid' ? '#10B981' :
+                  referralVerificationStatus === 'invalid' ? '#EF4444' : '#3B82F6'
+                } 
+              />
+              <Text style={[
+                styles.verificationMessageText,
+                referralVerificationStatus === 'valid' && styles.verificationMessageTextValid,
+                referralVerificationStatus === 'invalid' && styles.verificationMessageTextInvalid
+              ]}>
+                {referralVerificationMessage}
+              </Text>
+            </View>
+          )}
+        </>
+      );
+    }
+  };
+
   return (
     <LinearGradient
       colors={['#0f172a', '#0b1220', '#07121a']}
@@ -296,173 +500,79 @@ const ProfileCompletionScreen: React.FC = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flexContainer}
         >
-          <BlurView intensity={60} tint="dark" style={styles.mobileScreen}>
-            <View style={styles.header}>
-              <TouchableOpacity style={styles.backButton} onPress={handleBackNavigation}>
-                <Ionicons name="arrow-back" size={24} color="white" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>About You</Text>
-              <View style={{ width: 40 }} />
+          <View style={styles.screenContainer}>
+            <View style={styles.imageSection}>
+              <Image
+                source={require('../assets/app-images/onboarding_page_img.png')}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+              />
             </View>
 
-            <ScrollView contentContainerStyle={styles.formContainer}>
-              <Text style={styles.label}>Full name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your full name"
-                placeholderTextColor="#a1a1aa"
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
+            {/* Form Panel Section */}
+            <View style={styles.formPanel}>
+              <Text style={styles.questTitle}>QUEST: ABOUT YOU</Text>
+              
+              {/* Progress Indicator */}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressCrystal}>
+                  <Ionicons name="diamond" size={24} color="#007AFF" />
+                </View>
+                <View style={styles.progressBarContainer}>
+                  <View style={styles.progressBar}>
+                    <View 
+                      style={[
+                        styles.progressBarFill, 
+                        { width: `${(currentStep / 3) * 100}%` }
+                      ]} 
+                    />
+                  </View>
+                </View>
+                <Text style={styles.progressText}>PROGRESS: {currentStep}/3</Text>
+              </View>
 
-              <Text style={styles.label}>Occupation</Text>
-              <RNPickerSelect
-                onValueChange={(value) => setOccupation(value)}
-                items={occupationItems}
-                style={pickerSelectStyles}
-                placeholder={{ label: 'Select occupation', value: null }}
-                useNativeAndroidPickerStyle={false}
-                Icon={() => (
-                  <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-                )}
-              />
-
-              <Text style={styles.label}>Gender</Text>
-              <RNPickerSelect
-                onValueChange={(value) => setGender(value)}
-                items={genderItems}
-                style={pickerSelectStyles}
-                placeholder={{ label: 'Select gender', value: '' }}
-                useNativeAndroidPickerStyle={false}
-                value={gender}
-                Icon={() => (
-                  <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
-                )}
-              />
-
-              <Text style={styles.label}>Date of birth</Text>
-              <TouchableOpacity
-                style={styles.input}
-                activeOpacity={0.8}
-                onPress={() => setShowDobPicker(true)}
+              <ScrollView 
+                contentContainerStyle={styles.stepContent}
+                showsVerticalScrollIndicator={false}
               >
-                <Text style={{ color: dobDate ? '#fff' : '#a1a1aa' }}>
-                  {dobDate ? formatDateMMDDYYYY(dobDate) : 'MM/DD/YYYY'}
-                </Text>
-              </TouchableOpacity>
-              {showDobPicker && (
-                <DateTimePicker
-                  value={dobDate || new Date(new Date().getFullYear() - 20, 0, 1)}
-                  mode="date"
-                  maximumDate={new Date()}
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(_event, selectedDate) => {
-                    setShowDobPicker(false);
-                    if (selectedDate) setDobDate(selectedDate);
-                  }}
-                />
-              )}
+                {renderStepContent()}
+              </ScrollView>
 
-              <Text style={styles.label}>Referral Code (Optional)</Text>
-              <View style={styles.referralContainer}>
-                <TextInput
+              {/* Navigation Buttons */}
+              <View style={styles.navigationContainer}>
+                {currentStep > 1 && (
+                  <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={handlePreviousStep}
+                  >
+                    <Ionicons name="arrow-back" size={20} color="white" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity 
                   style={[
-                    styles.referralInput,
-                    referralVerificationStatus === 'valid' && styles.inputValid,
-                    referralVerificationStatus === 'invalid' && styles.inputInvalid
-                  ]}
-                  placeholder="Enter code"
-                  placeholderTextColor="#a1a1aa"
-                  value={referralCode}
-                  onChangeText={handleReferralCodeChange}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!isReferralVerified}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.verifyButton,
-                    referralVerificationStatus === 'verifying' && styles.verifyButtonDisabled,
-                    referralVerificationStatus === 'valid' && styles.verifyButtonValid,
-                    isReferralVerified && styles.verifyButtonDisabled
-                  ]}
-                  onPress={verifyReferralCode}
-                  disabled={referralVerificationStatus === 'verifying' || isReferralVerified || !referralCode.trim()}
+                    styles.continueButton, 
+                    loading && styles.continueButtonDisabled
+                  ]} 
+                  onPress={currentStep === 3 ? handleComplete : handleNextStep}
+                  disabled={loading}
                 >
-                  {referralVerificationStatus === 'verifying' ? (
+                  {loading ? (
                     <ActivityIndicator size="small" color="white" />
-                  ) : referralVerificationStatus === 'valid' ? (
-                    <Ionicons name="checkmark" size={16} color="white" />
                   ) : (
-                    <Text style={styles.verifyButtonText}>Verify</Text>
+                    <Text style={styles.continueButtonText}>
+                      {currentStep === 3 ? 'COMPLETE QUEST' : 'CONTINUE QUEST'}
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
-              
-              {/* Verification status message */}
-              {referralVerificationMessage && (
-                <View style={[
-                  styles.verificationMessage,
-                  referralVerificationStatus === 'valid' && styles.verificationMessageValid,
-                  referralVerificationStatus === 'invalid' && styles.verificationMessageInvalid
-                ]}>
-                  <Ionicons 
-                    name={
-                      referralVerificationStatus === 'valid' ? 'checkmark-circle' :
-                      referralVerificationStatus === 'invalid' ? 'alert-circle' : 'information-circle'
-                    } 
-                    size={14} 
-                    color={
-                      referralVerificationStatus === 'valid' ? '#10B981' :
-                      referralVerificationStatus === 'invalid' ? '#EF4444' : '#3B82F6'
-                    } 
-                  />
-                  <Text style={[
-                    styles.verificationMessageText,
-                    referralVerificationStatus === 'valid' && styles.verificationMessageTextValid,
-                    referralVerificationStatus === 'invalid' && styles.verificationMessageTextInvalid
-                  ]}>
-                    {referralVerificationMessage}
-                  </Text>
-                </View>
-              )}
-
-              <View style={styles.locationCard}>
-                <Text style={styles.locationTitle}>Location</Text>
-                <Text style={styles.locationSubtitle}>
-                  To provide you with tasks relevant to your location, we need your permission to access your location.
-                </Text>
-                <TouchableOpacity
-                  style={styles.locationButton}
-                  onPress={handleLocationAccess}
-                >
-                  <Ionicons name="location-sharp" size={20} color="white" />
-                  <Text style={styles.locationButtonText}>
-                    Allow location access
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-
-            <View style={styles.footer}>
-              <TouchableOpacity 
-                style={[styles.nextButton, loading && styles.nextButtonDisabled]} 
-                onPress={handleNext}
-                disabled={loading}
-              >
-                <Text style={styles.nextButtonText}>
-                  {loading ? 'Saving...' : 'Next'}
-                </Text>
-              </TouchableOpacity>
             </View>
+
             {showSnackbar && (
               <View style={styles.snackbar}>
                 <Text style={styles.snackbarText}>{snackbarMessage}</Text>
               </View>
             )}
-          </BlurView>
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
@@ -472,96 +582,147 @@ const ProfileCompletionScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flexContainer: { flex: 1 },
-  mobileScreen: {
+  screenContainer: {
     flex: 1,
-    margin: 14,
-    borderRadius: 15,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
-    backgroundColor: 'rgba(10,10,12,0.6)',
   },
-  header: {
+  imageSection: {
+    flex: 1,
+    minHeight: '40%',
+  },
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+  },
+  formPanel: {
+    backgroundColor: '#1F1F1F',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    minHeight: '50%',
+    maxHeight: '60%',
+    borderTopEndRadius: 50,
+    borderTopStartRadius: 50,
+  },
+  questTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    paddingTop: Platform.OS === 'android' ? 18 : 18,
+    marginBottom: 20,
+    gap: 12,
   },
-  backButton: { padding: 8, marginLeft: -8 },
-  headerTitle: { flex: 1, textAlign: 'center', color: 'white', fontSize: 18, fontWeight: '700' },
-  formContainer: { paddingHorizontal: 18, paddingBottom: 20 },
-  label: { color: '#d4d4d8', fontSize: 13, marginBottom: 8 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    color: 'white',
-    padding: 12,
-    borderRadius: 12,
-    fontSize: 15,
-    marginBottom: 16,
-  },
-  chipsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-  },
-  chipSelected: {
-    backgroundColor: '#0ea5ff', 
-    borderColor: '#0ea5ff',
-  },
-  chipUnselected: {
-    backgroundColor: 'transparent',
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  chipTextSelected: { color: '#001018', fontSize: 14, fontWeight: '600' },
-  chipTextUnselected: { color: '#d4d4d8', fontSize: 14 },
-
-  locationCard: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 6,
-    marginBottom: 12,
-  },
-  locationTitle: { color: 'white', fontSize: 15, fontWeight: '600' },
-  locationSubtitle: { color: '#a1a1aa', fontSize: 12, marginTop: 8, marginBottom: 12 },
-  locationButton: {
-    flexDirection: 'row',
+  progressCrystal: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#111827',
-    paddingVertical: 10,
-    borderRadius: 10,
   },
-  locationButtonText: { color: 'white', fontSize: 14, marginLeft: 8 },
-
-  footer: {
-    padding: 18,
-    borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.03)',
+  progressBarContainer: {
+    flex: 1,
   },
-  nextButton: {
-    backgroundColor: '#007AFF', // blue primary button
-    paddingVertical: 12,
-    marginHorizontal: 12,
-    borderRadius: 12,
+  progressBar: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#007AFF',
+    borderRadius: 3,
+  },
+  progressText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    minWidth: 80,
+  },
+  stepContent: {
+    paddingBottom: 10,
+  },
+  stepLabel: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  stepInput: {
+    backgroundColor: '#FFD700',
+    color: '#333',
+    padding: 14,
+    borderRadius: 8,
+    fontSize: 15,
+    marginBottom: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  nextButtonDisabled: { opacity: 0.6 },
-  nextButtonText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  genderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  genderInputWrapper: {
+    flex: 1,
+  },
+  genderButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  genderButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  genderButtonSelected: {
+    backgroundColor: 'rgba(0, 122, 255, 0.2)',
+    borderColor: '#007AFF',
+  },
 
+  navigationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 10,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueButtonDisabled: {
+    opacity: 0.6,
+  },
+  continueButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '700',
+  },
   // New referral verification styles
   referralContainer: {
     flexDirection: 'row',
@@ -571,12 +732,10 @@ const styles = StyleSheet.create({
   },
   referralInput: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    color: 'white',
-    padding: 12,
-    borderRadius: 12,
+    backgroundColor: '#FFD700',
+    color: '#333',
+    padding: 14,
+    borderRadius: 8,
     fontSize: 15,
   },
   inputValid: {
