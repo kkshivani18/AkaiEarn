@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFB917',
     gap: 6,
     alignSelf: 'flex-start', 
-    marginTop: 5,
+    marginTop: -8,
   },
   copyButtonText: {
     color: '#EF4444',
