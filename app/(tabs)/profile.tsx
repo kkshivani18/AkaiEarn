@@ -1,223 +1,170 @@
-import { SendUSDC } from "@/components/SendUSDC";
-import UserOps from "@/components/UserOps";
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from '@expo/vector-icons';
+import { useUserStore } from '../../stores/userStore';
+import { useAuth } from '../../contexts/AuthContext';
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Animated,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Snackbar } from "react-native-paper";
-import Svg, { Path } from "react-native-svg";
 import IQMeter from "../../components/IQMeter";
-import { WalletInfo } from "../../components/WalletInfo";
-import { useAuth } from "../../contexts/AuthContext";
-import { useBalance } from "../../contexts/BalanceContext";
-import { configAPI } from "../../services/api";
-import { useUserStore } from "../../stores/userStore";
-
-const { width, height } = Dimensions.get("window");
-
-const AnimatedSection = ({
-  children,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-}) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      delay,
-      useNativeDriver: true,
-    }).start();
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 600,
-      delay,
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim, slideAnim]);
-
-  return (
-    <Animated.View
-      style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
-    >
-      {children}
-    </Animated.View>
-  );
-};
-
-const BackIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.icon}>
-    <Path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15 19l-7-7 7-7"
-    />
-  </Svg>
-);
-const ChevronRightIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#A1A1AA" style={styles.icon}>
-    <Path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M9 5l7 7-7 7"
-    />
-  </Svg>
-);
-const LogoutIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#EF4444" style={styles.icon}>
-    <Path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-    />
-  </Svg>
-);
-const EditProfileIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#A1A1AA" style={styles.icon}>
-    <Path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-    />
-  </Svg>
-);
-const HistoryIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#A1A1AA" style={styles.icon}>
-    <Path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    />
-  </Svg>
-);
-const PenIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.penIcon}>
-    <Path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-    />
-  </Svg>
-);
-
-// UI Section
-const ProfileHeader = ({ userProfile }: { userProfile: any }) => (
-  <View style={styles.profileSection}>
-    <View style={styles.avatarContainer}>
-      <View style={styles.avatarGlow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {userProfile?.name ? userProfile.name.charAt(0).toUpperCase() : "U"}
-          </Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => router.push("/edit-profile")}
-      >
-        <PenIcon />
-      </TouchableOpacity>
-    </View>
-    <Text style={styles.profileName}>{userProfile?.name || "Loading..."}</Text>
-    <Text style={styles.profileEmail}>
-      {userProfile?.email || "Loading..."}
-    </Text>
-  </View>
-);
-
-const AccountMenu = ({ onLogout }: { onLogout: () => void }) => (
-  <View style={styles.accountSectionContainer}>
-    <Text style={styles.sectionTitle}>Account</Text>
-    <BlurView intensity={40} tint="dark" style={styles.menuContainer}>
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => router.push("/edit-profile")}
-      >
-        <View style={styles.menuItemContent}>
-          <View style={styles.iconContainer}>
-            <EditProfileIcon />
-          </View>
-          <Text style={styles.menuItemText}>Edit Profile</Text>
-        </View>
-        <ChevronRightIcon />
-      </TouchableOpacity>
-
-      <View style={styles.divider} />
-
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => router.push("/reward-history")}
-      >
-        <View style={styles.menuItemContent}>
-          <View style={styles.iconContainer}>
-            <HistoryIcon />
-          </View>
-          <Text style={styles.menuItemText}>Labelling History</Text>
-        </View>
-        <ChevronRightIcon />
-      </TouchableOpacity>
-
-      <View style={styles.divider} />
-
-      <TouchableOpacity onPress={onLogout} style={styles.menuItem}>
-        <View style={styles.menuItemContent}>
-          <View style={styles.iconContainer}>
-            <LogoutIcon />
-          </View>
-          <Text style={[styles.menuItemText, { color: "#EF4444" }]}>
-            Logout
-          </Text>
-        </View>
-      </TouchableOpacity>
-    </BlurView>
-  </View>
-);
+import { configAPI, contractAPI } from '../../services/api';
+import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn } from '@coinbase/cdp-hooks';
 
 export default function ProfileScreen() {
-  const { authState, onLogout } = useAuth();
-  const { balance, userData, refreshBalance } = useBalance();
+  const { name, iq, coins, balance, dollars, fetchUserData } = useUserStore();
+  const { onLogout } = useAuth();
+  const { currentUser } = useCurrentUser();
+  const { createEvmSmartAccount } = useCreateEvmSmartAccount();
+  const { isSignedIn } = useIsSignedIn();
+  const [currentStreak, setCurrentStreak] = useState<number>(0);
+  const [longestStreak, setLongestStreak] = useState<number>(0);
+  const [loadingStreak, setLoadingStreak] = useState<boolean>(true);
+  const [creatingWallet, setCreatingWallet] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const displayName = name || 'User';
+  const displayIq = typeof iq === 'number' ? iq : 200;
+  const points = typeof coins === 'number' && coins > 0 ? coins : 0;
   
-  // use Zustand store 
-  const userStore = useUserStore();
-  const {
-    name,
-    email,
-    iq,
-    coins,
-    streakCount,
-    longestStreak,
-    loading: storeLoading,
-    fetchUserData,
-    shouldRefetch,
-  } = userStore;
+  // convert balance from micro-units to dollars 
+  const appRewardsUsd = typeof balance === 'number' ? balance / 1_000_000 : 0;
+  const walletBalanceUsd = typeof dollars === 'number' ? dollars : 0;
+  
+  const walletUnlockTarget = 200;
+  const progress = Math.max(0, Math.min(1, points / walletUnlockTarget));
+  const hasUnlockedWallet = points >= walletUnlockTarget;
+  const canWithdraw = balance >= 1_000_000; 
 
-  const [loading, setLoading] = useState(false);
-  const [iqRanges, setIqRanges] = useState<any[]>([]);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const hasShownWalletNotification = useRef(false);
-  const previousCoins = useRef<number>(coins);
+  useEffect(() => {
+    // check if user already has a wallet
+    const existingWallet = currentUser?.evmSmartAccountObjects?.[0]?.address;
+    if (existingWallet) {
+      setWalletAddress(existingWallet);
+    }
+  }, [currentUser]);
 
-  // Logout handler
+  useEffect(() => {
+    const fetchStreak = async () => {
+      try {
+        setLoadingStreak(true);
+        const response = await configAPI.checkDailyStreak();
+        if (response) {
+          setCurrentStreak(response.streakCount || 0);
+          setLongestStreak(response.longestStreak || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching streak data:', error);
+        setCurrentStreak(0);
+        setLongestStreak(0);
+      } finally {
+        setLoadingStreak(false);
+      }
+    };
+
+    fetchStreak();
+  }, []);
+
+  const handleCreateWallet = async () => {
+    if (!hasUnlockedWallet) {
+      Alert.alert(
+        'Insufficient Points',
+        `You need at least ${walletUnlockTarget} points to create a wallet. Current points: ${points}`
+      );
+      return;
+    }
+
+    if (!isSignedIn) {
+      Alert.alert('Error', 'Not logged in to CDP. Please sign in first.');
+      return;
+    }
+
+    setCreatingWallet(true);
+    try {
+      // Create CDP smart wallet
+      const result = await createEvmSmartAccount({ enableSpendPermissions: true });
+
+      if (result) {
+        console.log('✅ Wallet created:', result);
+        setWalletAddress(result);
+
+        // Register user on-chain via backend
+        try {
+          const response = await contractAPI.createUser(result);
+          if (response.success) {
+            Alert.alert(
+              'You are registered.',
+              `Your walletAddress is: ${result.slice(0, 6)}...${result.slice(-4)}`,
+              [{ text: 'Ok' }]
+            );
+          }
+        } catch (backendError: any) {
+          console.error('❌ Backend registration error:', backendError);
+          Alert.alert(
+            'Wallet Created',
+            `Wallet created but backend registration failed: ${backendError.response?.data?.message || backendError.message}`,
+            [{ text: 'Ok' }]
+          );
+        }
+      } else {
+        throw new Error('Wallet creation failed - no address returned');
+      }
+    } catch (error: any) {
+      console.error('❌ Wallet creation error:', error);
+      Alert.alert('Error', error.message || 'Failed to create smart wallet');
+    } finally {
+      setCreatingWallet(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!canWithdraw) {
+      Alert.alert(
+        'Minimum Not Met',
+        `You need at least $1 in App Rewards to transfer to your wallet.\n\nCurrent: $${appRewardsUsd.toFixed(2)}`
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Confirm Transfer',
+      `Transfer $${appRewardsUsd.toFixed(2)} from App Rewards to your Wallet?\n\nThis will send USDC tokens to your wallet address.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Transfer',
+          onPress: async () => {
+            setWithdrawing(true);
+            try {
+              const response = await contractAPI.withdrawUSDC();
+              
+              if (response.success) {
+                Alert.alert(
+                  'Transfer Successful!',
+                  `$${appRewardsUsd.toFixed(2)} has been transferred to your wallet!`,
+                  [
+                    {
+                      text: 'Awesome!',
+                      onPress: async () => {
+                        await fetchUserData();
+                      },
+                    },
+                  ]
+                );
+              }
+            } catch (error: any) {
+              console.error('❌ Withdrawal error:', error);
+              const errorMessage = error.response?.data?.message || error.message || 'Failed to transfer rewards';
+              Alert.alert('Transfer Failed', errorMessage);
+            } finally {
+              setWithdrawing(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
@@ -239,280 +186,550 @@ export default function ProfileScreen() {
     ]);
   };
 
-  useEffect(() => {
-    const loadUserData = async () => {
-      if (authState?.authenticated) {
-        if (shouldRefetch()) {
-          setLoading(true);
-          await fetchUserData();
-          setLoading(false);
-        } else {
-          console.log('using cached data');
-        }
-        
-        refreshBalance?.();
-      }
-    };
-
-    loadUserData();
-  }, [authState?.authenticated]);
-
-  useEffect(() => {
-    const loadIqRanges = async () => {
-      try {
-        const response = await configAPI.getIqRanges();
-
-        if (response && response.data) {
-          setIqRanges(response.data || []);
-        } else if (response && Array.isArray(response)) {
-          setIqRanges(response);
-        } else {
-          setIqRanges([]);
-        }
-      } catch (error) {
-        console.error("Failed to load IQ ranges:", error);
-        setIqRanges([]);
-      }
-    };
-
-    loadIqRanges();
-  }, []);
-
-  useEffect(() => {
-    const WALLET_CREATION_THRESHOLD = 500;
-    
-    if (
-      !hasShownWalletNotification.current &&
-      previousCoins.current < WALLET_CREATION_THRESHOLD &&
-      coins >= WALLET_CREATION_THRESHOLD
-    ) {
-      setSnackbarVisible(true);
-      hasShownWalletNotification.current = true;
-    }
-    
-    previousCoins.current = coins;
-  }, [coins]);
+  const AnimatedSection = ({
+    children,
+    delay = 0,
+  }: {
+    children: React.ReactNode;
+    delay?: number;
+  }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(20)).current;
+  
+    useEffect(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        delay,
+        useNativeDriver: true,
+      }).start();
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        delay,
+        useNativeDriver: true,
+      }).start();
+    }, [fadeAnim, slideAnim]);
+  
+    return (
+      <Animated.View
+        style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
+      >
+        {children}
+      </Animated.View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["#0a101bff", "#060910ff", "#071014ff"]}
-        style={StyleSheet.absoluteFill}
-      ></LinearGradient>
-      <BlurView intensity={80} tint="dark" style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <BackIcon />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 24 }} />
-      </BlurView>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Profile</Text>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.centeredContent}>
-          <AnimatedSection delay={100}>
-            <ProfileHeader userProfile={{ name, email }} />
-          </AnimatedSection>
+        <ScrollView>
+        <View style={styles.card}>
+          <View style={styles.headerRow}>
+            <View style={styles.avatar}>
+              <Ionicons name="person-circle" size={52} color="#8AB6FF" />
+            </View>
+            <View style={styles.headerTextCol}>
+              <Text style={styles.helloText}>Hello, {displayName}</Text>
+              <View style={styles.iqBadge}>
+                <Text style={styles.iqBadgeText}>{displayIq} IQ</Text>
+              </View>
+            </View>
+          </View>
+
+          <LinearGradient
+            colors={['#FFB917', '#FFEBA3', '#EFD69D']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.statsBar}
+          >
+            <View style={styles.statItem}>
+              <Image
+                source={require('../../assets/app-images/points_crystal.png')}
+                style={styles.statIcon}
+                resizeMode="contain"
+              />
+              <View style={styles.statTextContainer}>
+                <Text style={styles.statLabel}>Points</Text>
+                <Text style={styles.statValue}>{points}</Text>
+              </View>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.statItem}>
+              <Image
+                source={require('../../assets/app-images/app_rewards_cash.png')}
+                style={styles.statIcon}
+                resizeMode="contain"
+              />
+              <View style={styles.statTextContainer}>
+                <Text style={styles.statLabel}>App Rewards</Text>
+                <Text style={styles.statValue}>${appRewardsUsd.toFixed(2)}</Text>
+              </View>
+            </View>
+          </LinearGradient>
         </View>
 
-        {/* Points Balance */}
-        <AnimatedSection delay={200}>
-          <View style={styles.iqSectionContainer}>
-            <View style={styles.statCard}>
-              <View style={styles.statCardLeft}>
-                <View style={styles.statIcon}>
-                  <Text style={styles.statIconText}>🪙</Text>
+        {walletAddress ? (
+          // Wallet already created - show balance transfer UI
+          <View style={styles.walletBalanceCard}>
+            <View style={styles.balanceRow}>
+              <View style={styles.balanceItem}>
+                <Text style={styles.balanceTitle}>App Rewards</Text>
+                <View style={styles.balanceValueRow}>
+                  <Image
+                    source={require('../../assets/app-images/app_rewards_cash.png')}
+                    style={styles.balanceIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.balanceValue}>${appRewardsUsd.toFixed(2)}</Text>
                 </View>
-                <View style={styles.statInfo}>
-                  <Text style={styles.statLabel}>Points Balance</Text>
-                  <Text style={styles.statValue}>
-                    {coins.toLocaleString()}
+              </View>
+              <Image
+                source={require('../../assets/app-images/convert_arrows.png')}
+                style={styles.arrowIcon}
+                resizeMode="contain"
+              />
+              <View style={styles.balanceItem}>
+                <Text style={styles.balanceTitle}>Wallet Balance</Text>
+                <View style={styles.balanceValueRow}>
+                  <Image
+                    source={require('../../assets/app-images/profile_wallet.png')}
+                    style={styles.balanceIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.balanceValue}>${walletBalanceUsd.toFixed(2)}</Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={[
+                styles.convertButton,
+                (!canWithdraw || withdrawing) && { opacity: 0.6 }
+              ]}
+              activeOpacity={0.85}
+              disabled={!canWithdraw || withdrawing}
+              onPress={handleWithdraw}
+            >
+              {canWithdraw ? (
+                <>
+                  <Ionicons name="checkmark-circle" size={20} color="#1F2937" style={{ marginRight: 8 }} />
+                  <Text style={styles.convertButtonText}>
+                    {withdrawing ? 'Transferring...' : 'Transfer to Wallet'}
                   </Text>
-                  {coins < 0 && (
-                    <Text style={styles.negativeWarning}>
-                      Negative balance 
-                    </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="lock-closed" size={20} color="#1F2937" style={{ marginRight: 8 }} />
+                  <Text style={styles.convertButtonText}>Convert to Wallet</Text>
+                  <Text style={styles.convertSubtext}>Reach min $1 to Transfer</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <Text style={styles.safetyText}>Your wallet balance is safe!!</Text>
+          </View>
+        ) : (
+          // Wallet not created yet - show create wallet UI
+          <View style={styles.walletCard}>
+            {hasUnlockedWallet ? (
+              <>
+                <Text style={styles.walletTitle}>Create Your Wallet</Text>
+                <TouchableOpacity
+                  style={[styles.createWalletButton, creatingWallet && styles.buttonDisabled]}
+                  onPress={handleCreateWallet}
+                  disabled={creatingWallet}
+                  activeOpacity={0.85}
+                >
+                  {creatingWallet ? (
+                    <ActivityIndicator color="#1F2937" />
+                  ) : (
+                    <Text style={styles.createWalletText}>Create Smart Wallet</Text>
                   )}
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.walletTitle}>Unlock Your Wallet</Text>
+                <View style={styles.progressBarContainer}>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+                  </View>
+                  <Text style={styles.progressText}>{points}/{walletUnlockTarget}</Text>
+                  <View style={styles.walletIcon}>
+                    <Image
+                      source={require('../../assets/app-images/profile_wallet.png')}
+                      style={styles.walletImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+        )}
+
+        <View style={styles.featuresRow}>
+          <LinearGradient
+            colors={['#994071', '#E85EAA', '#F08DC3', '#E85EAA', '#994071']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.streaksCard}
+          >
+              <Text style={styles.streaksTitle}>Streaks</Text>
+              <View style={styles.streaksStats}>
+                <View style={styles.glassmorphism}>
+                    <Text style={styles.streakLabel}>Current</Text>
+                    <Text style={styles.streakValue}>{loadingStreak ? '-' : currentStreak}</Text>
+                </View>
+                <View style={styles.glassmorphism}>
+                    <Text style={styles.streakLabel}>Highest</Text>
+                    <Text style={styles.streakValue}>{loadingStreak ? '-' : longestStreak}</Text>
                 </View>
               </View>
-            </View>
-          </View>
-        </AnimatedSection>
+          </LinearGradient>
 
-        {/* CDP Wallet Info */}
-        <AnimatedSection delay={250}>
-          <View style={styles.iqSectionContainer}>
-            <WalletInfo points={coins} />
-          </View>
-        </AnimatedSection>
-        
-        {/* Send USDC */}
-        <AnimatedSection delay={275}>
-          <View style={styles.iqSectionContainer}>
-            <SendUSDC />
-          </View>
-        </AnimatedSection>
-        
-        <UserOps />
+          <TouchableOpacity style={styles.bigWinCard} activeOpacity={0.85}>
+            <Image
+              source={require('../../assets/app-images/big_win.png')}
+              style={styles.bigWinText}
+              resizeMode="contain"
+            />
+            <Text style={styles.startEarningText}>START EARNING</Text>
+            <Image
+              source={require('../../assets/app-images/big_win_chest.png')}
+              style={styles.chestImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </View>
 
-        <AnimatedSection delay={300}>
+        <View style={styles.iqLevelCard}>
+          <Text style={styles.iqLevelTitle}>IQ Level</Text>
+          <AnimatedSection delay={300}>
           <View style={styles.iqSectionContainer}>
-            <Text style={styles.sectionTitle}>IQ Level</Text>
-            <BlurView intensity={40} tint="dark" style={styles.iqContainer}>
               <IQMeter iqValue={iq || 0} />
-            </BlurView>
           </View>
         </AnimatedSection>
+        </View>
 
-        {/* Streak Card */}
-        <AnimatedSection delay={350}>
-          <View style={styles.iqSectionContainer}>
-            <Text style={styles.sectionTitle}>Streak</Text>
-            <View style={styles.statCard}>
-              <View style={styles.statCardLeft}>
-                <View style={styles.statIcon}>
-                  <Text style={styles.statIconStreakText}>🔥</Text>
-                </View>
-                <View style={styles.statInfo}>
-                  <Text style={styles.statLabel}>Streak</Text>
-                  <Text style={styles.statValue}>
-                    {streakCount || 0} Days
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.statCardRight}>
-                <Text style={styles.statSubValue}>Longest </Text>
-                <Text style={styles.statSubLabel}>
-                  {longestStreak || 0} Days
-                </Text>
+        <TouchableOpacity 
+          style={styles.labelHistoryCard} 
+          activeOpacity={0.85}
+          onPress={() => router.push('/reward-history')}
+        >
+          <View style={styles.labelHistoryLeft}>
+            <View style={styles.labelHistoryCircle}>
+              <View style={styles.circularProgress}>
+                <Text style={styles.labelHistoryCount}>12</Text>
               </View>
             </View>
+            <View style={styles.labelHistoryTextContainer}>
+              <Text style={styles.labelHistoryTitle}>Labelling History</Text>
+              <Text style={styles.labelHistorySubtitle}>View you previous labellings</Text>
+            </View>
           </View>
-        </AnimatedSection>
+          <Ionicons name="chevron-forward" size={24} color="#71717A" />
+        </TouchableOpacity>
 
-        <AnimatedSection delay={400}>
-          <AccountMenu onLogout={handleLogout} />
-        </AnimatedSection>
-      </ScrollView>
-
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={4000}
-        action={{
-          label: 'Got it',
-          onPress: () => setSnackbarVisible(false),
-        }}
-        style={styles.snackbar}
-      >
-        🎉 You can now create wallet!
-      </Snackbar>
-    </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.85}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    // paddingTop: 15,
-    paddingTop: 40,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0b0f',
   },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "white" },
-  scrollContent: { paddingTop: 95, paddingHorizontal: 20, paddingBottom: 120 },
-  centeredContent: {
-    alignItems: "center",
-    width: "100%",
+  content: {
+    paddingHorizontal: 13,
+    paddingVertical: 13,
   },
-  // Profile Header
-  profileSection: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  avatarContainer: {
-    position: "relative",
+  title: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '700',
     marginBottom: 16,
   },
-  avatarGlow: {
-    shadowColor: "#829acaff",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 25,
-    elevation: 15,
-    borderRadius: 999,
+  card: {
+    backgroundColor: '#1a1b20',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   avatar: {
-    width: 105,
-    height: 105,
-    borderRadius: 60,
-    backgroundColor: "#FDE68A",
-    justifyContent: "center",
-    alignItems: "center",
-    // borderWidth: 4,
-    // borderColor: '#1F2937',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#2a2b31',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  avatarText: {
-    fontSize: 52,
-    fontWeight: "bold",
-    color: "#1F2937",
+  headerTextCol: {
+    flex: 1,
   },
-  editButton: {
-    position: "absolute",
-    top: 80,
-    right: 0,
-    backgroundColor: "#EF4444",
-    width: 30,
-    height: 30,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#EF4444",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 3,
-    borderColor: "white",
+  helloText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 6,
   },
-  penIcon: {
-    width: 15,
-    height: 15,
+  iqBadge: {
+    backgroundColor: '#FF6EC7',
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 14,
   },
-  profileName: {
+  iqBadgeText: {
+    color: '#1F2937',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  statsBar: {
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: 310,
+    marginLeft: -7
+  },
+  statItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  statIcon: {
+    width: 60,
+    height: 60,
+    left: -5
+  },
+  statTextContainer: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  divider: {
+    width: 1,
+    height: 36,
+    backgroundColor: '#1F2937',
+    opacity: 0.3,
+    marginHorizontal: 10,
+    left: -10
+  },
+  statLabel: {
+    color: '#1F2937',
+    fontSize: 13,
+    fontWeight: '600',
+    left: -10
+  },
+  statValue: {
+    color: '#1F2937',
     fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
+    fontWeight: '800',
+    left: -10
   },
-  profileEmail: {
-    fontSize: 15,
-    color: "#A1A1AA",
+  walletCard: {
+    backgroundColor: '#2a2b31',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 16,
+    overflow: 'visible',
+    zIndex: 1,
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  walletTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 2,
+  },
+  createWalletButton: {
+    backgroundColor: '#FFB917',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  createWalletText: {
+    color: '#1F2937',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  walletBalanceCard: {
+    backgroundColor: '#10B981',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  balanceItem: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  balanceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  balanceValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  balanceIcon: {
+    width: 32,
+    height: 32,
+  },
+  balanceValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1F2937',
+  },
+  arrowIcon: {
+    width: 40,
+    height: 40,
+    marginHorizontal: 8,
+  },
+  convertButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    position: 'relative',
+  },
+  convertButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginRight: 4,
+  },
+  convertSubtext: {
+    fontSize: 11,
+    color: '#1F2937',
+    position: 'absolute',
+    bottom: -16,
+  },
+  safetyText: {
+    fontSize: 14,
+    color: '#1F2937',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  progressBarContainer: {
+    height: 50,
+    position: 'relative',
+    justifyContent: 'center',
     marginTop: 4,
   },
-  // tokens and INR balance
-  socialTaskCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#1a1b23",
+  progressTrack: {
+    height: '100%',
+    width: '100%',
+    backgroundColor: '#4a4b51',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#2a2b33",
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#FFFFFF3B',
   },
-  // IQ Section
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#FFB917',
+  },
+  progressText: {
+    position: 'absolute',
+    width: '100%',
+    textAlign: 'center',
+    color: '#FFA400',
+    fontSize: 22,
+    fontWeight: '800',
+    zIndex: 2,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 2,
+  },
+  walletIcon: {
+    position: 'absolute',
+    right: -10,
+    top: -10,
+    zIndex: 3,
+  },
+  walletImage: {
+    width: 70,
+    height: 70,
+  },
+  walletButton: {
+    marginTop: 12,
+    backgroundColor: '#AA4CF0',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  walletButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  iqLevelCard: {
+    backgroundColor: '#27282E',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  iqLevelTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+
   iqSectionContainer: {
     width: "100%",
     alignItems: "flex-start",
-    marginBottom: 15,
+    marginBottom: -30,
   },
   iqContainer: {
     width: "100%",
@@ -523,155 +740,204 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.15)",
     overflow: "hidden",
   },
-  // Stats Grid
-  statsGrid: {
-    display: "none",
-  },
-  statCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
 
-  statCardLeft: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    flex: 1,
-    marginLeft: 45,
+  iqMeterContainer: {
+    alignItems: 'center',
+    position: 'relative',
   },
-  statCardRight: {
-    alignItems: "stretch",
+  iqArcContainer: {
+    width: 200,
+    height: 120,
+    position: 'relative',
+    marginBottom: 20,
   },
-  statIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 25,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: -50,
+  iqArc: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 12,
+    borderColor: 'transparent',
+    borderTopColor: '#A855F7',
+    borderRightColor: '#3B82F6',
+    borderBottomColor: 'transparent',
+    borderLeftColor: '#10B981',
+    transform: [{ rotate: '-135deg' }],
+    top: 10,
+    left: 10,
   },
-  statIconStreak: {
-    width: 38,
-    height: 38,
-    borderRadius: 25,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    // marginLeft: -50,
+  iqArcBackground: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 12,
+    borderColor: '#3A3B41',
+    borderTopColor: 'transparent',
+    borderLeftColor: 'transparent',
+    transform: [{ rotate: '45deg' }],
+    top: 10,
+    left: 10,
   },
-  statIconText: {
-    fontSize: 25,
+  iqValueContainer: {
+    alignItems: 'center',
+    marginTop: -80,
   },
-  statIconStreakText: {
-    fontSize: 25,
-  },
-  statInfo: {
-    flex: 1,
-  },
-  // statLabel: {
-  //   fontSize: 14,
-  //   color: '#A1A1AA',
-  //   marginBottom: 4,
-  //   marginLeft: 10
-  // },
-  // statValue: {
-  //   fontSize: 18,
-  //   // fontWeight: 'bold',
-  //   color: 'white',
-  //   marginLeft: 10
-  // },
-  statLabel: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "white",
-    marginLeft: 10,
-  },
-  statValue: {
-    fontSize: 15,
-    color: "#A1A1AA",
-    marginBottom: 4,
-    marginLeft: 10,
-  },
-  statSubValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 4,
-    alignItems: "center",
-  },
-  statSubLabel: {
+  iqLevelLabel: {
+    color: '#A1A1AA',
     fontSize: 14,
-    color: "#71717A",
+    fontWeight: '600',
+    marginBottom: 4,
   },
-
-  // Account Menu
-  accountSectionContainer: {
-    width: "100%",
-    alignItems: "flex-start",
-    paddingTop: 15,
+  iqLevelValue: {
+    color: '#FFFFFF',
+    fontSize: 48,
+    fontWeight: '800',
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
+  labelHistoryCard: {
+    backgroundColor: '#27282E',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
-    alignSelf: "flex-start",
   },
-  menuContainer: {
-    width: "100%",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    overflow: "hidden",
+  labelHistoryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
-  menuItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  menuItemContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    justifyContent: "center",
-    alignItems: "center",
+  labelHistoryCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1F2937',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 16,
   },
-  menuItemText: {
-    fontSize: 18,
-    color: "white",
-    fontWeight: "500",
+  circularProgress: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 4,
+    borderColor: '#0EA5E9',
+    borderTopColor: 'transparent',
+    borderRightColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ rotate: '-45deg' }],
   },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    marginHorizontal: 20,
+  labelHistoryCount: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+    transform: [{ rotate: '45deg' }],
   },
-  icon: {
-    width: 24,
-    height: 24,
+  labelHistoryTextContainer: {
+    flex: 1,
   },
-  snackbar: {
-    backgroundColor: '#10B981',
-    marginBottom: 80,
+  labelHistoryTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  negativeWarning: {
-    fontSize: 12,
-    color: '#EF4444',
+  labelHistorySubtitle: {
+    color: '#A1A1AA',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  streaksCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    justifyContent: 'space-between',
+    height: 105,
+    overflow: 'hidden',
+  },
+  glassmorphism: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    padding: 6,
+    justifyContent: 'space-between',
+    marginTop: -10,
+    marginLeft: -10,
+    marginRight: 6,
+  },
+  streaksTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 15,
+    marginTop: -7
+  },
+  streaksStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginLeft: 4
+  },
+  streakItem: {
+    flex: 1,
+  },
+  streakLabel: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+    opacity: 0.9,
+    marginTop: -5
+  },
+  streakValue: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  bigWinCard: {
+    flex: 1,
+    backgroundColor: '#5B21B6',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 105,
+    position: 'relative',
+  },
+  bigWinText: {
+    width: 120,
+    height: 55,
+    marginBottom: 8,
+    right: 40
+  },
+  startEarningText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 3,
+    bottom: -4
+  },
+  chestImage: {
+    width: 110,
+    height: 110,
+    position: 'absolute',
+    right: -15,
+    top: -35,
+  },
+  logoutButton: {
     marginTop: 4,
-    marginLeft: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

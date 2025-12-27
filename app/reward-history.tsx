@@ -680,7 +680,7 @@ export default function RewardHistoryScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <BackIcon />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Reward History</Text>
+          <Text style={styles.headerTitle}>Labelling History</Text>
           <View style={{width: 24}} />
         </BlurView>
 

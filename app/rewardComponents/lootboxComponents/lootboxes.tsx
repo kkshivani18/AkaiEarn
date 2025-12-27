@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { lootBoxAPI } from '../../../services/api';
-import { useBalance } from '../../../contexts/BalanceContext';
 import { useUserStore } from '../../../stores/userStore';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useCurrentUser, useSendUserOperation } from '@coinbase/cdp-hooks';
+import { encodeFunctionData, parseUnits } from 'viem';
+import { abi } from '../../../config/abi';
 
 interface LootboxCardProps {
   title: string;
@@ -80,8 +82,14 @@ const LootboxCard: React.FC<LootboxCardProps> = ({
 
 export const LootboxesSection: React.FC = () => {
   const [openingBox, setOpeningBox] = useState<string | null>(null);
-  const { name, iq, coins } = useUserStore();
+  const { coins, fetchUserData, updateCoins } = useUserStore();
+  const { currentUser } = useCurrentUser();
+  const { sendUserOperation } = useSendUserOperation();
   const [liveExpanded, setLiveExpanded] = useState(true);
+  
+  const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
+  const contractAddress = '0x9f1e7032cef3dc4dda0ed96bd75e44f0655a3239';
+  
   const liveItems = [
     { id: 'gold-1', borderColor: '#FFB917', chest: require('../../../assets/app-images/golden_box.png'), reward: '+ 50 Rewards' },
     { id: 'br-1', borderColor: '#84DE49', chest: require('../../../assets/app-images/bronze_box.png'), reward: '+ 50 Rewards' },
@@ -89,13 +97,18 @@ export const LootboxesSection: React.FC = () => {
     { id: 'gold-2', borderColor: '#FFB917', chest: require('../../../assets/app-images/golden_box.png'), reward: '+ 50 Rewards' },
   ];
 
-  const handleOpenLootbox = async (boxType: string, points: number, boxId: string) => {
-    const userPoints = coins;
-    
-    if (points > userPoints) {
+  const handleOpenLootbox = async (boxType: string, points: number) => {
+    // Check if wallet exists
+    if (!smartAccount) {
+      Alert.alert('Wallet Required', 'Please create your wallet in Profile first to open lootboxes.');
+      return;
+    }
+
+    // Check if user has enough points
+    if (points > coins) {
       Alert.alert(
         'Insufficient Points',
-        `You need ${points} points. \nYour points: ${userPoints}.`,
+        `You need ${points} points to open this lootbox.\nYour points: ${coins}`,
         [{ text: 'OK' }]
       );
       return;
@@ -104,26 +117,57 @@ export const LootboxesSection: React.FC = () => {
     setOpeningBox(boxType);
 
     try {
-      const response = await lootBoxAPI.openLootBox(boxId, points);
+      const pointsToSpend = parseUnits(points.toString(), 0);
 
-      if (response.success) {
-        const reward = response.reward;
+      const transferData = encodeFunctionData({
+        abi: abi,
+        functionName: 'openLootcase',
+        args: [pointsToSpend],
+      });
+
+      const result = await sendUserOperation({
+        evmSmartAccount: smartAccount as `0x${string}`,
+        network: 'base',
+        calls: [
+          {
+            to: contractAddress,
+            data: transferData,
+            value: 0n,
+          },
+        ],
+        useCdpPaymaster: true,
+      });
+
+      if (result?.userOperationHash) {
+        const newCoins = coins - points;
+        updateCoins(newCoins);
+        console.log(`✅ Points updated: ${coins} -> ${newCoins}, hash: ${result.userOperationHash}...`);
 
         Alert.alert(
-          'Lootbox Unlocked!',
-          `You received:\n\n💰 ${reward.cryptoAmount} ${reward.cryptoSymbol}\n\nRemaining Points: ${response.userStats.remainingPoints}`,
-          [{ text: 'Awesome!' }]
+          'Lootbox Opened!',
+          `Transaction submitted successfully!\n\nPoints spent: ${points}\nRemaining points: ${newCoins}\n\nHash: ${result.userOperationHash.slice(0, 10)}...`,
+          [
+            {
+              text: 'Awesome!',
+              onPress: async () => {
+                // Sync with backend after a short delay to get actual blockchain state
+                setTimeout(async () => {
+                  await fetchUserData();
+                }, 2000);
+              },
+            },
+          ]
         );
       }
     } catch (error: any) {
       console.error('❌ Failed to open lootbox:', error);
-
+      
       let errorMessage = 'Failed to open lootbox. Please try again.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      if (error.message) {
+        errorMessage = error.message;
       }
 
-      Alert.alert('Error', errorMessage);
+      Alert.alert('Transaction Failed', errorMessage);
     } finally {
       setOpeningBox(null);
     }
@@ -143,7 +187,7 @@ export const LootboxesSection: React.FC = () => {
         buttonBorderColor="#B9F091"
         buttonShadowColor="#5DA926"
         prizeColor="#84DE49"
-        onPress={() => handleOpenLootbox('bronze', 100, 'bronze-box-id')}
+        onPress={() => handleOpenLootbox('bronze', 100)}
         disabled={openingBox === 'bronze'}
       />
       <LootboxCard
@@ -157,7 +201,7 @@ export const LootboxesSection: React.FC = () => {
         buttonBorderColor="#AEE6FA"
         buttonShadowColor="#2A93B8"
         prizeColor="#49ACCE"
-        onPress={() => handleOpenLootbox('silver', 200, 'silver-box-id')}
+        onPress={() => handleOpenLootbox('silver', 200)}
         disabled={openingBox === 'silver'}
       />
       <LootboxCard
@@ -171,15 +215,19 @@ export const LootboxesSection: React.FC = () => {
         buttonBorderColor="#FFE083"
         buttonShadowColor="#D78F00"
         prizeColor="#FFCD0A"
-        onPress={() => handleOpenLootbox('golden', 500, 'golden-box-id')}
+        onPress={() => handleOpenLootbox('golden', 500)}
         disabled={openingBox === 'golden'}
       />
 
       <Text style={{color: "#FFFFFF", alignSelf: 'center', marginTop: 4, fontSize: 16}}>Provably Fair & Odds</Text>
       
-      <TouchableOpacity activeOpacity={0.85} style={styles.historyButton}>
+      <TouchableOpacity 
+        activeOpacity={0.85} 
+        style={styles.historyButton}
+        onPress={() => router.push('/rewardComponents/lootboxComponents/lootboxHistory')}
+      >
         <Image
-          source={require('../../../assets/app-images/loot_hist_button.png')}
+          source={require('../../../assets/app-images/lootbox_hist.png')}
           style={styles.historyButtonImage}
           resizeMode="contain"
         />

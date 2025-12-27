@@ -629,6 +629,16 @@ export const configAPI = {
       throw error;
     }
   },
+
+  // Check and update daily streak
+  checkDailyStreak: async () => {
+    try {
+      const response = await api.get('/config/check-streak');
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
 };
 
 // Add this new API section after configAPI
@@ -713,6 +723,27 @@ export const lootBoxAPI = {
   // user's transactions (protected)
   getUserTransactions: async (limit: number = 20) => {
     const response = await api.get(`/lootboxes/transactions/user?limit=${limit}`);
+    return response.data;
+  },
+
+  // get user's lootbox logs
+  getLootboxHistory: async () => {
+    const response = await api.get('/contract/lootbox-history');
+    return response.data;
+  },
+};
+
+// Contract API
+export const contractAPI = {
+  // create user on-chain with wallet address
+  createUser: async (walletAddress: string) => {
+    const response = await api.post('/contract/createUser', { walletAddress });
+    return response.data;
+  },
+  
+  // withdraw USDC from contract to user's wallet
+  withdrawUSDC: async () => {
+    const response = await api.post('/contract/withdrawUSDC');
     return response.data;
   },
 };

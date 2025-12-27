@@ -10,6 +10,8 @@ interface UserState {
   iq: number;
   coins: number;
   inrBalance: number;
+  balance: number;
+  dollars: number;
   walletAddress: string | null;
   
   streakCount: number;
@@ -50,6 +52,8 @@ const initialState = {
   iq: 0,
   coins: 0,
   inrBalance: 0,
+  balance: 0,
+  dollars: 0,
   walletAddress: null,
   streakCount: 0,
   longestStreak: 0,
@@ -115,6 +119,8 @@ export const useUserStore = create<UserState>((set, get) => ({
           iq: userData.iq || 0,
           coins: userData.coins || 0,
           inrBalance: userData.inrBalance || 0,
+          balance: userData.balance || 0,
+          dollars: userData.dollars || 0,
           walletAddress: userData.walletAddress || null,
           streakCount: userData.streakCount || 0,
           longestStreak: userData.longestStreak || 0,

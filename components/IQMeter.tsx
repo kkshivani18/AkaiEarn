@@ -38,7 +38,8 @@ const polarToCartesian = (centerX: number, centerY: number, radius: number, angl
 const describeArc = (x: number, y: number, radius: number, startAngle: number, endAngle: number) => {
   const start = polarToCartesian(x, y, radius, endAngle);
   const end = polarToCartesian(x, y, radius, startAngle);
-  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 0 ${end.x} ${end.y}`;
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
 };
 
 /**
@@ -68,7 +69,23 @@ const IQMeter: React.FC<IQMeterProps> = ({ iqValue = 90 }) => {
   }, [iqValue]);
   
   const radius = (METER_SIZE - STROKE_WIDTH) / 2;
-  const arcPath = describeArc(METER_SIZE / 2, METER_SIZE / 2, radius, 0, 180);
+  
+  // Full arc path (background - unfilled portion)
+  const fullArcPath = describeArc(METER_SIZE / 2, METER_SIZE / 2, radius, 0, 180);
+  
+  // Calculate the filled arc based on IQ value (0-100 maps to 0-180 degrees)
+  const filledAngle = Math.min(Math.max(iqValue, 0), MAX_IQ) / MAX_IQ * 180;
+  const filledArcPath = describeArc(METER_SIZE / 2, METER_SIZE / 2, radius, 0, filledAngle);
+  
+  // Determine which color to use based on the current IQ value
+  const getCurrentColor = () => {
+    for (const range of DEFAULT_IQ_RANGES) {
+      if (iqValue >= range.min && iqValue <= range.max) {
+        return range.colorHex;
+      }
+    }
+    return DEFAULT_IQ_RANGES[DEFAULT_IQ_RANGES.length - 1].colorHex; 
+  };
 
   return (
     <View style={styles.container}>
@@ -82,14 +99,18 @@ const IQMeter: React.FC<IQMeterProps> = ({ iqValue = 90 }) => {
               ))}
             </LinearGradient>
           </Defs>
+          
+          {/* Background arc (unfilled) */}
           <Path
-            d={arcPath}
+            d={fullArcPath}
             stroke="rgba(255, 255, 255, 0.1)"
-            strokeWidth={STROKE_WIDTH + 2}
+            strokeWidth={STROKE_WIDTH}
             fill="none"
           />
+          
+          {/* Filled arc based on IQ value */}
           <Path
-            d={arcPath}
+            d={filledArcPath}
             stroke="url(#grad)"
             strokeWidth={STROKE_WIDTH}
             strokeLinecap="round"
@@ -97,27 +118,20 @@ const IQMeter: React.FC<IQMeterProps> = ({ iqValue = 90 }) => {
           />
         </Svg>
         
-        <View style={[styles.needleContainer, { transform: [{ rotate: `${rotation}deg` }] }]}>
-          <View style={styles.needle} />
+        <View style={styles.textContainer}>
+          <Text style={styles.iqLabel}>Current Level</Text>
+          <Text style={styles.iqValue}>{Math.round(iqValue)}</Text>
         </View>
-
-        {/* <View style={styles.pivot} /> */}
-      </View>
-      
-      <View style={styles.textContainer}>
-        <Text style={styles.iqValue}>{Math.round(iqValue)}</Text>
-        {/* <Text style={styles.iqLabel}>{getIqLabel(iqValue)}</Text> */}
       </View>
     </View>
   );
 };
 
-// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
-    padding: 24,
+    padding: 12,
   },
   meterContainer: {
     width: METER_SIZE,
@@ -125,69 +139,31 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    top: -35,
   },
   svg: {
     position: 'absolute',
     top: 0,
   },
-  needleContainer: {
-    position: 'absolute',
-    width: METER_SIZE,
-    height: METER_WIDTH,
-    bottom: 0,
-    left: 0,
-    transformOrigin: 'center bottom',
-  },
-  needle: {
-    position: 'absolute',
-    width: 4,
-    height: METER_WIDTH * 0.9, // Make it almost as tall as the radius
-    backgroundColor: 'white',
-    borderRadius: 2,
-    bottom: 0, // Anchor it to the bottom of its container
-    left: '50%', // Center it horizontally
-    transform: [{ translateX: -2 }], // Fine-tune centering
-    shadowColor: 'white',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  // pivot: {
-  //   position: 'absolute',
-  //   width: 20,
-  //   height: 20,
-  //   borderRadius: 12,
-  //   backgroundColor: 'white',
-  //   borderWidth: 3,
-  //   borderColor: 'rgba(255, 255, 255, 0.2)',
-  //   bottom: -12, // Position it at the bottom, overlapping the card bg
-  //   left: '50%',
-  //   transform: [{ translateX: -12 }], // Center it horizontally
-  //   zIndex: 1, // Ensure pivot is on top of needle
-  //   shadowColor: 'white',
-  //   shadowOffset: { width: 0, height: 0 },
-  //   shadowOpacity: 0.6,
-  //   shadowRadius: 8,
-  //   elevation: 8,
-  // },
   textContainer: {
+    position: 'absolute',
     alignItems: 'center',
-    marginTop: 24, // Pushed down to be below the pivot
+    bottom: 20,
+    top: 50
   },
   iqValue: {
-    fontSize: 23,
-    fontWeight: 'bold',
+    fontSize: 46,
+    fontWeight: '800',
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   iqLabel: {
-    fontSize: 17,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#A1A1AA',
-    marginTop: 8,
+    marginBottom: 4,
     textAlign: 'center',
   },
 });
