@@ -521,7 +521,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   stepLabel: {
     color: 'white',
@@ -556,7 +556,8 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: 16,
+    marginBottom: 15,
+    marginTop: -6
   },
   forgotPasswordText: {
     color: '#FFD700',

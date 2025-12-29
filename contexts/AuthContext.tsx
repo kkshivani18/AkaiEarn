@@ -161,6 +161,15 @@ export const AuthProvider = ({children}: any) => {
         
         // initialize zustand store
         await useUserStore.getState().fetchUserData();
+
+        // Authenticate with CDP using the JWT
+        try {
+          const {user, isNewUser} = await authenticateWithJWT();
+          console.log('✅ Successfully authenticated new user with CDP');
+          console.log('CDP User:', user, 'Is New:', isNewUser);
+        } catch (cdpError) {
+          console.error('❌ CDP authentication failed during registration:', cdpError);
+        }
       }
       
       return result;

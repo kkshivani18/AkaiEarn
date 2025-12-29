@@ -141,11 +141,11 @@ export const LootboxesSection: React.FC = () => {
       if (result?.userOperationHash) {
         const newCoins = coins - points;
         updateCoins(newCoins);
-        console.log(`✅ Points updated: ${coins} -> ${newCoins}, hash: ${result.userOperationHash}...`);
+        console.log(`✅ Points updated: ${coins} -> ${newCoins}, hash: ${result.userOperationHash}`);
 
         Alert.alert(
           'Lootbox Opened!',
-          `Transaction submitted successfully!\n\nPoints spent: ${points}\nRemaining points: ${newCoins}\n\nHash: ${result.userOperationHash.slice(0, 10)}...`,
+          `Transaction submitted successfully!\n\nPoints spent: ${points}\nRemaining points: ${newCoins}\n\nHash: ${result.userOperationHash}`,
           [
             {
               text: 'Awesome!',

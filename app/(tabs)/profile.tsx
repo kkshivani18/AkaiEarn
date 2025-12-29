@@ -9,7 +9,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { router } from "expo-router";
 import IQMeter from "../../components/IQMeter";
 import { configAPI, contractAPI } from '../../services/api';
-import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn } from '@coinbase/cdp-hooks';
+import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn, useSendUserOperation } from '@coinbase/cdp-hooks';
+import { encodeFunctionData } from 'viem';
+import { abi } from '../../config/abi';
 
 export default function ProfileScreen() {
   const { name, iq, coins, balance, dollars, fetchUserData } = useUserStore();
@@ -17,24 +19,31 @@ export default function ProfileScreen() {
   const { currentUser } = useCurrentUser();
   const { createEvmSmartAccount } = useCreateEvmSmartAccount();
   const { isSignedIn } = useIsSignedIn();
+  const { sendUserOperation, status } = useSendUserOperation();
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [longestStreak, setLongestStreak] = useState<number>(0);
   const [loadingStreak, setLoadingStreak] = useState<boolean>(true);
   const [creatingWallet, setCreatingWallet] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [callsId, setCallsId] = useState<string>();
+
+  const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
+  const contractAddress = "0x9f1e7032cef3dc4dda0ed96bd75e44f0655a3239";
+  const [errorMessage, setErrorMessage] = useState("");
+
   const displayName = name || 'User';
   const displayIq = typeof iq === 'number' ? iq : 200;
   const points = typeof coins === 'number' && coins > 0 ? coins : 0;
   
-  // convert balance from micro-units to dollars 
-  const appRewardsUsd = typeof balance === 'number' ? balance / 1_000_000 : 0;
+  // convert balance from milli-units (3 decimals) to dollars 
+  const appRewardsUsd = typeof balance === 'number' ? balance / 1_000 : 0;
   const walletBalanceUsd = typeof dollars === 'number' ? dollars : 0;
   
   const walletUnlockTarget = 200;
   const progress = Math.max(0, Math.min(1, points / walletUnlockTarget));
   const hasUnlockedWallet = points >= walletUnlockTarget;
-  const canWithdraw = balance >= 1_000_000; 
+  const canWithdraw = balance >= 1_000; 
 
   useEffect(() => {
     // check if user already has a wallet
@@ -75,7 +84,10 @@ export default function ProfileScreen() {
     }
 
     if (!isSignedIn) {
-      Alert.alert('Error', 'Not logged in to CDP. Please sign in first.');
+      Alert.alert(
+        'Authentication Required', 
+        'Not authenticated with CDP. Please logout and login again to authenticate.'
+      );
       return;
     }
 
@@ -111,58 +123,146 @@ export default function ProfileScreen() {
       }
     } catch (error: any) {
       console.error('❌ Wallet creation error:', error);
-      Alert.alert('Error', error.message || 'Failed to create smart wallet');
+      
+      // Check for temporary secret error
+      if (error.message?.includes('Temporary secret not found') || error.message?.includes('APIError')) {
+        Alert.alert(
+          'Authentication Issue',
+          'CDP authentication expired. Please logout and login again to refresh your session.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Logout Now',
+              onPress: () => handleLogout()
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', error.message || 'Failed to create smart wallet');
+      }
     } finally {
       setCreatingWallet(false);
     }
   };
 
-  const handleWithdraw = async () => {
-    if (!canWithdraw) {
-      Alert.alert(
-        'Minimum Not Met',
-        `You need at least $1 in App Rewards to transfer to your wallet.\n\nCurrent: $${appRewardsUsd.toFixed(2)}`
-      );
+  // const handleWithdraw = async () => {
+  //   if (!canWithdraw) {
+  //     Alert.alert(
+  //       'Minimum Not Met',
+  //       `You need at least $1 in App Rewards to transfer to your wallet.\n\nCurrent: $${appRewardsUsd.toFixed(2)}`
+  //     );
+  //     return;
+  //   }
+
+  //   if (!walletAddress) {
+  //     Alert.alert('Error', 'No wallet address found. Please create a wallet first.');
+  //     return;
+  //   }
+
+  //   Alert.alert(
+  //     'Confirm Transfer',
+  //     `Transfer $${appRewardsUsd.toFixed(2)} from App Rewards to your Wallet?\n\nThis will send USDC tokens to your wallet address.`,
+  //     [
+  //       { text: 'Cancel', style: 'cancel' },
+  //       {
+  //         text: 'Transfer',
+  //         onPress: async () => {
+  //           setWithdrawing(true);
+  //           try {
+  //             const contractAddress = '0x9f1e7032cef3dc4dda0ed96bd75e44f0655a3239';
+              
+  //             const transferData = encodeFunctionData({
+  //               abi,
+  //               functionName: 'withdrawUSDC',
+  //               args: [],
+  //             });
+
+  //             const result = await sendUserOperation({
+  //               evmSmartAccount: walletAddress as `0x${string}`,
+  //               network: 'base',
+  //               calls: [
+  //                 {
+  //                   to: contractAddress,
+  //                   data: transferData,
+  //                   value: 0n,
+  //                 }
+  //               ],
+  //               useCdpPaymaster: true,
+  //             });
+
+  //             if (result?.userOperationHash) {
+  //               Alert.alert(
+  //                 'Transaction Success',
+  //                 'USDC withdrawal initiated!',
+  //                 [
+  //                   {
+  //                     text: 'Awesome!',
+  //                     onPress: async () => {
+  //                       setTimeout(async () => {
+  //                         await fetchUserData();
+  //                       }, 2000);
+  //                     },
+  //                   },
+  //                 ]
+  //               );
+  //             }
+  //           } catch (err) {
+  //             console.error('❌ Withdrawal error:', err);
+  //             const errorMessage = err instanceof Error ? err.message : 'Failed to send user operation';
+  //             Alert.alert(
+  //               'Transaction Failed',
+  //               errorMessage + (errorMessage.endsWith('.') ? '' : '.')
+  //             );
+  //           } finally {
+  //             setWithdrawing(false);
+  //           }
+  //         },
+  //       },
+  //     ]
+  //   );
+  // };
+
+  const handleWithdrawUSDC = async () => {
+    if (!smartAccount) {
+      Alert.alert("Error", "No Smart Account available.");
       return;
     }
+    try {
+      const transferData = encodeFunctionData({
+        abi: abi,
+        functionName: "withdrawUSDC",
+        args: [],
+      });
 
-    Alert.alert(
-      'Confirm Transfer',
-      `Transfer $${appRewardsUsd.toFixed(2)} from App Rewards to your Wallet?\n\nThis will send USDC tokens to your wallet address.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Transfer',
-          onPress: async () => {
-            setWithdrawing(true);
-            try {
-              const response = await contractAPI.withdrawUSDC();
-              
-              if (response.success) {
-                Alert.alert(
-                  'Transfer Successful!',
-                  `$${appRewardsUsd.toFixed(2)} has been transferred to your wallet!`,
-                  [
-                    {
-                      text: 'Awesome!',
-                      onPress: async () => {
-                        await fetchUserData();
-                      },
-                    },
-                  ]
-                );
-              }
-            } catch (error: any) {
-              console.error('❌ Withdrawal error:', error);
-              const errorMessage = error.response?.data?.message || error.message || 'Failed to transfer rewards';
-              Alert.alert('Transfer Failed', errorMessage);
-            } finally {
-              setWithdrawing(false);
-            }
+      const result = await sendUserOperation({
+        evmSmartAccount: smartAccount as `0x${string}`,
+        network: "base",
+        calls: [
+          {
+            to: contractAddress,
+            data: transferData,
+            value: 0n,
           },
-        },
-      ]
-    );
+        ],
+        useCdpPaymaster: true,
+      });
+
+      if (result?.userOperationHash) {
+        Alert.alert("Transaction Success", "USDC withdrawal initiated!");
+        
+        setTimeout(async () => {
+          await fetchUserData();
+        }, 2000);
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to send user operation";
+      setErrorMessage(message);
+      Alert.alert(
+        "Transaction Failed",
+        message + (message.endsWith(".") ? "" : ".")
+      );
+    }
   };
 
   const handleLogout = () => {
@@ -310,7 +410,7 @@ export default function ProfileScreen() {
               ]}
               activeOpacity={0.85}
               disabled={!canWithdraw || withdrawing}
-              onPress={handleWithdraw}
+              onPress={handleWithdrawUSDC}
             >
               {canWithdraw ? (
                 <>
@@ -432,7 +532,7 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={24} color="#71717A" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
         </ScrollView>
