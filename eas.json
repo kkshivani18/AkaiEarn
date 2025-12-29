@@ -10,12 +10,19 @@
       "android": {
         "buildType": "apk"
       }
-      
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_CDP_PROJECT_ID": "e783395e-a565-42e5-8519-fe95ab60d986",
+        "EXPO_PUBLIC_CDP_CREATE_ETHEREUM_ACCOUNT_TYPE": "smart",
+        "EXPO_PUBLIC_CDP_BASE_PATH": "https://api.cdp.coinbase.com/platform",
+        "EXPO_PUBLIC_USE_MOCK": "false",
+        "EXPO_PUBLIC_CDP_CREATE_SOLANA_ACCOUNT": "false",
+        "EXPO_PUBLIC_NATIVE_OAUTH_CALLBACK": "cdp-rn-demo://callback"
       }
     },
     "production": {
