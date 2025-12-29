@@ -29,7 +29,7 @@ export default function ProfileScreen() {
   const [callsId, setCallsId] = useState<string>();
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
-  const contractAddress = "0x9f1e7032cef3dc4dda0ed96bd75e44f0655a3239";
+  const contractAddress = "0x9F1e7032cEF3Dc4ddA0Ed96bD75E44f0655A3239";
   const [errorMessage, setErrorMessage] = useState("");
 
   const displayName = name || 'User';
@@ -144,83 +144,6 @@ export default function ProfileScreen() {
       setCreatingWallet(false);
     }
   };
-
-  // const handleWithdraw = async () => {
-  //   if (!canWithdraw) {
-  //     Alert.alert(
-  //       'Minimum Not Met',
-  //       `You need at least $1 in App Rewards to transfer to your wallet.\n\nCurrent: $${appRewardsUsd.toFixed(2)}`
-  //     );
-  //     return;
-  //   }
-
-  //   if (!walletAddress) {
-  //     Alert.alert('Error', 'No wallet address found. Please create a wallet first.');
-  //     return;
-  //   }
-
-  //   Alert.alert(
-  //     'Confirm Transfer',
-  //     `Transfer $${appRewardsUsd.toFixed(2)} from App Rewards to your Wallet?\n\nThis will send USDC tokens to your wallet address.`,
-  //     [
-  //       { text: 'Cancel', style: 'cancel' },
-  //       {
-  //         text: 'Transfer',
-  //         onPress: async () => {
-  //           setWithdrawing(true);
-  //           try {
-  //             const contractAddress = '0x9f1e7032cef3dc4dda0ed96bd75e44f0655a3239';
-              
-  //             const transferData = encodeFunctionData({
-  //               abi,
-  //               functionName: 'withdrawUSDC',
-  //               args: [],
-  //             });
-
-  //             const result = await sendUserOperation({
-  //               evmSmartAccount: walletAddress as `0x${string}`,
-  //               network: 'base',
-  //               calls: [
-  //                 {
-  //                   to: contractAddress,
-  //                   data: transferData,
-  //                   value: 0n,
-  //                 }
-  //               ],
-  //               useCdpPaymaster: true,
-  //             });
-
-  //             if (result?.userOperationHash) {
-  //               Alert.alert(
-  //                 'Transaction Success',
-  //                 'USDC withdrawal initiated!',
-  //                 [
-  //                   {
-  //                     text: 'Awesome!',
-  //                     onPress: async () => {
-  //                       setTimeout(async () => {
-  //                         await fetchUserData();
-  //                       }, 2000);
-  //                     },
-  //                   },
-  //                 ]
-  //               );
-  //             }
-  //           } catch (err) {
-  //             console.error('❌ Withdrawal error:', err);
-  //             const errorMessage = err instanceof Error ? err.message : 'Failed to send user operation';
-  //             Alert.alert(
-  //               'Transaction Failed',
-  //               errorMessage + (errorMessage.endsWith('.') ? '' : '.')
-  //             );
-  //           } finally {
-  //             setWithdrawing(false);
-  //           }
-  //         },
-  //       },
-  //     ]
-  //   );
-  // };
 
   const handleWithdrawUSDC = async () => {
     if (!smartAccount) {
