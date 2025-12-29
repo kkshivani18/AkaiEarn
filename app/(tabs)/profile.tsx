@@ -1,15 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Alert,
-  ScrollView,
-  Animated,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ScrollView, Animated, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -19,15 +9,11 @@ import { useAuth } from "../../contexts/AuthContext";
 import { router } from "expo-router";
 import IQMeter from "../../components/IQMeter";
 import { configAPI, contractAPI } from "../../services/api";
-import {
-  useCurrentUser,
-  useCreateEvmSmartAccount,
-  useIsSignedIn,
-  useSendUserOperation,
-} from "@coinbase/cdp-hooks";
+import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn, useSendUserOperation } from "@coinbase/cdp-hooks";
 import { createPublicClient, encodeFunctionData, http, parseUnits } from "viem";
 import { abi } from "../../config/abi";
 import { base } from "viem/chains";
+import { InfoPopup } from '../../components/popups/InfoPopup';
 
 // ERC20 ABI for balance and transfer
 const ERC20_ABI = [
@@ -67,6 +53,7 @@ export default function ProfileScreen() {
   const [usdcBalance, setUsdcBalance] = useState<bigint | undefined>(undefined);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [callsId, setCallsId] = useState<string>();
+  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
   console.log(smartAccount);
@@ -78,7 +65,6 @@ export default function ProfileScreen() {
   const displayIq = typeof iq === "number" ? iq : 200;
   const points = typeof coins === "number" && coins > 0 ? coins : 0;
 
-  // convert balance from milli-units (3 decimals) to dollars
   const appRewardsUsd = typeof balance === "number" ? balance / 1_00 : 0;
   const walletBalanceUsd = typeof dollars === "number" ? dollars : 0;
 
@@ -321,24 +307,19 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // clear auth tokens
-            await onLogout?.();
-            console.log("✅ Logout completed, tokens cleared");
-            router.replace("/");
-          } catch (error) {
-            console.error("❌ Logout failed:", error);
-            Alert.alert("Error", "Failed to logout. Please try again.");
-          }
-        },
-      },
-    ]);
+    setShowLogoutPopup(true);
+  };
+
+  const performLogout = async () => {
+    try {
+      // clear auth tokens
+      await onLogout?.();
+      console.log("✅ Logout completed, tokens cleared");
+      router.replace("/");
+    } catch (error) {
+      console.error("❌ Logout failed:", error);
+      Alert.alert("Error", "Failed to logout. Please try again.");
+    }
   };
 
   const AnimatedSection = ({
@@ -645,6 +626,30 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </ScrollView>
       </View>
+
+      {/* Logout Popup */}
+      <InfoPopup
+        visible={showLogoutPopup}
+        title="LOGOUT"
+        message="Are you sure you want to logout?"
+        headerImage={require('../../assets/app-images/yellow_header.png')}
+        buttons={[
+          {
+            text: "CANCEL",
+            onPress: () => setShowLogoutPopup(false),
+            backgroundImage: require('../../assets/app-images/success_bt_effect.png.png')
+          },
+          {
+            text: "LOGOUT",
+            onPress: () => {
+              setShowLogoutPopup(false);
+              performLogout();
+            },
+            backgroundImage: require('../../assets/app-images/error_bt_effect.png')
+          }
+        ]}
+        onClose={() => setShowLogoutPopup(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -817,7 +822,8 @@ const styles = StyleSheet.create({
   balanceValueRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 5,
+    marginLeft: -5
   },
   balanceIcon: {
     width: 32,
