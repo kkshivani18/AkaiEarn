@@ -1,12 +1,5 @@
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +7,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { offersAPI, authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { ErrorPopup } from '../components/popups/ErrorPopup';
+import { InfoPopup } from '../components/popups/InfoPopup';
 
 const CreativeTaskScreen: React.FC = () => {
   const params = useLocalSearchParams();
@@ -25,6 +20,10 @@ const CreativeTaskScreen: React.FC = () => {
   const [taskCompleted, setTaskCompleted] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [parametersReady, setParametersReady] = useState(false);
+
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorPopupMessage, setErrorPopupMessage] = useState('');
+  const [showExitPopup, setShowExitPopup] = useState(false);
 
   // task parameters 
   const labelOfferId = params.labelOfferId as string;
@@ -42,7 +41,8 @@ const CreativeTaskScreen: React.FC = () => {
         
         if (!labelOfferId || !taskTitle) {
           console.error('❌ Missing required task parameters:', { labelOfferId, taskTitle });
-          Alert.alert('Error', 'Missing task information. Please go back and try again.');
+          setErrorPopupMessage('Missing task information. Please go back and try again.');
+          setShowErrorPopup(true);
           return;
         }
 
@@ -146,7 +146,9 @@ const CreativeTaskScreen: React.FC = () => {
     if (missingParams.length > 0) {
       console.error('❌ Missing required parameters:', missingParams);
       console.error('❌ Current params:', urlParams);
-      Alert.alert('Parameter Error', `Missing: ${missingParams.join(', ')}`);
+      // Alert.alert('Parameter Error', `Missing: ${missingParams.join(', ')}`);
+      setErrorPopupMessage('This task has missing parameter');
+      setShowErrorPopup(true);
       return '';
     }
 
@@ -341,8 +343,6 @@ const CreativeTaskScreen: React.FC = () => {
       } catch {
         message = { type: 'MESSAGE', data: event.nativeEvent.data };
       }
-      
-      console.log('📨 Creative message received:', message);
 
       switch (message.type) {
         case 'CREATIVE_READY':
@@ -355,19 +355,20 @@ const CreativeTaskScreen: React.FC = () => {
         case 'SUBMIT':
           console.log('✅ Task completed:', message.data);
           setTaskCompleted(true);
-          // handleTaskCompletion(message.data || {});
           break;
           
         case 'ERROR':
           console.error('❌ Creative error:', message.data);
-          Alert.alert(
-            'Creative Error', 
-            message.data?.message || 'An error occurred',
-            [
-              { text: 'Debug Info', onPress: () => console.log('Debug:', message.data) },
-              { text: 'OK' }
-            ]
-          );
+          // Alert.alert(
+          //   'Creative Error', 
+          //   message.data?.message || 'An error occurred',
+          //   [
+          //     { text: 'Debug Info', onPress: () => console.log('Debug:', message.data) },
+          //     { text: 'OK' }
+          //   ]
+          // );
+          setErrorPopupMessage('Creative Error');
+          setShowErrorPopup(true);
           break;
           
         default:
@@ -471,16 +472,7 @@ const CreativeTaskScreen: React.FC = () => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => {
-              Alert.alert(
-                'Exit Task?',
-                'Are you sure you want to exit? Your progress will be lost.',
-                [
-                  { text: 'Stay', style: 'cancel' },
-                  { text: 'Exit', style: 'destructive', onPress: () => router.back() }
-                ]
-              );
-            }}
+            onPress={() => setShowExitPopup(true)}
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
@@ -513,7 +505,9 @@ const CreativeTaskScreen: React.FC = () => {
               const { nativeEvent } = syntheticEvent;
               console.error('❌ WebView error:', nativeEvent);
               setLoading(false);
-              Alert.alert('WebView Error', `Failed to load creative: ${nativeEvent.description}`);
+              // Alert.alert('WebView Error', `Failed to load creative: ${nativeEvent.description}`);
+              setErrorPopupMessage('Failed to load creative');
+              setShowErrorPopup(true);
             }}
             onLoadEnd={() => {
               console.log('📱 WebView load completed');
@@ -528,6 +522,34 @@ const CreativeTaskScreen: React.FC = () => {
             <Text style={styles.footerText}>Submitting your work...</Text>
           </View>
         )}
+        
+        <ErrorPopup
+          visible={showErrorPopup}
+          message={errorPopupMessage}
+          onClose={() => setShowErrorPopup(false)}
+        />
+        
+        <InfoPopup
+          visible={showExitPopup}
+          title="EXIT TASK?"
+          message="Are you sure you want to exit? Your progress will be lost."
+          buttons={[
+            {
+              text: "STAY",
+              onPress: () => setShowExitPopup(false),
+              variant: 'primary'
+            },
+            {
+              text: "EXIT",
+              onPress: () => {
+                setShowExitPopup(false);
+                router.back();
+              },
+              variant: 'secondary'
+            }
+          ]}
+          onClose={() => setShowExitPopup(false)}
+        />
       </SafeAreaView>
     </LinearGradient>
   );

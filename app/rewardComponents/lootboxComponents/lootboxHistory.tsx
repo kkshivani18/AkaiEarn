@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 16,
     borderWidth: 2,
-    padding: 16,
+    padding: 6,
     marginBottom: 4,
   },
   cardContent: {
@@ -254,8 +254,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   boxImage: {
-    width: 60,
-    height: 60,
+    width: 110,
+    height: 110,
+    marginTop: -20,
+    marginLeft: -20,
+    marginRight: -20,
+    marginBottom: -20
   },
   textSection: {
     flex: 1,
