@@ -26,8 +26,16 @@ export const InfoPopup: React.FC<InfoPopupProps> = ({
   message,
   buttons,
   onClose,
-  headerImage,
+  headerImage = require('../../assets/app-images/yellow_header.png'),
 }) => {
+  // Add default background images to buttons based on variant
+  const buttonsWithDefaults = buttons.map(button => ({
+    ...button,
+    backgroundImage: button.backgroundImage || 
+      (button.variant === 'secondary' 
+        ? require('../../assets/app-images/error_bt_effect.png')
+        : require('../../assets/app-images/success_bt_effect.png'))
+  }));
   return (
     <Modal
       visible={visible}
@@ -62,37 +70,20 @@ export const InfoPopup: React.FC<InfoPopupProps> = ({
 
           {/* Buttons */}
           <View style={styles.buttonsContainer}>
-            {buttons.map((button, index) => (
+            {buttonsWithDefaults.map((button, index) => (
               <TouchableOpacity
                 key={index}
                 style={styles.buttonWrapper}
                 onPress={button.onPress}
                 activeOpacity={0.8}
               >
-                {button.backgroundImage ? (
-                   <ImageBackground 
-                     source={button.backgroundImage} 
-                     style={styles.buttonImage}
-                     resizeMode="contain"
-                   >
-                      <Text style={[styles.buttonText, styles.buttonTextWithImage]}>{button.text}</Text>
-                   </ImageBackground>
-                ) : (
-                  <View style={styles.buttonShadow}>
-                    <LinearGradient
-                      colors={
-                        button.variant === 'secondary'
-                          ? ['#EF4444', '#DC2626']
-                          : ['#4ADE80', '#22C55E']
-                      }
-                      style={styles.button}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                    >
-                      <Text style={styles.buttonText}>{button.text}</Text>
-                    </LinearGradient>
-                  </View>
-                )}
+                <ImageBackground 
+                  source={button.backgroundImage} 
+                  style={styles.buttonImage}
+                  resizeMode="contain"
+                >
+                  <Text style={[styles.buttonText, styles.buttonTextWithImage]}>{button.text}</Text>
+                </ImageBackground>
               </TouchableOpacity>
             ))}
           </View>

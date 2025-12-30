@@ -7,6 +7,9 @@ import { router } from 'expo-router';
 import { useCurrentUser, useSendUserOperation } from '@coinbase/cdp-hooks';
 import { encodeFunctionData, parseUnits } from 'viem';
 import { abi } from '../../../config/abi';
+import { ErrorPopup } from '../../../components/popups/ErrorPopup';
+import { InfoPopup } from '../../../components/popups/InfoPopup';
+import { SuccessPopup } from '../../../components/popups/SuccessPopup';
 
 interface LootboxCardProps {
   title: string;
@@ -87,6 +90,15 @@ export const LootboxesSection: React.FC = () => {
   const { sendUserOperation } = useSendUserOperation();
   const [liveExpanded, setLiveExpanded] = useState(true);
   
+  // Popup states
+  const [showWalletRequiredPopup, setShowWalletRequiredPopup] = useState(false);
+  const [showInsufficientPointsPopup, setShowInsufficientPointsPopup] = useState(false);
+  const [insufficientPointsData, setInsufficientPointsData] = useState({ needed: 0, current: 0 });
+  const [showLootboxOpenedPopup, setShowLootboxOpenedPopup] = useState(false);
+  const [lootboxOpenedData, setLootboxOpenedData] = useState({ points: 0, remaining: 0, hash: '' });
+  const [showTransactionFailedPopup, setShowTransactionFailedPopup] = useState(false);
+  const [transactionFailedMessage, setTransactionFailedMessage] = useState('');
+  
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
   const contractAddress = '0x9f1e7032cef3dc4dda0ed96bd75e44f0655a3239';
   
@@ -100,17 +112,14 @@ export const LootboxesSection: React.FC = () => {
   const handleOpenLootbox = async (boxType: string, points: number) => {
     // Check if wallet exists
     if (!smartAccount) {
-      Alert.alert('Wallet Required', 'Please create your wallet in Profile first to open lootboxes.');
+      setShowWalletRequiredPopup(true);
       return;
     }
 
     // Check if user has enough points
     if (points > coins) {
-      Alert.alert(
-        'Insufficient Points',
-        `You need ${points} points to open this lootbox.\nYour points: ${coins}`,
-        [{ text: 'OK' }]
-      );
+      setInsufficientPointsData({ needed: points, current: coins });
+      setShowInsufficientPointsPopup(true);
       return;
     }
 
@@ -143,21 +152,8 @@ export const LootboxesSection: React.FC = () => {
         updateCoins(newCoins);
         console.log(`✅ Points updated: ${coins} -> ${newCoins}, hash: ${result.userOperationHash}`);
 
-        Alert.alert(
-          'Lootbox Opened!',
-          `Transaction submitted successfully!\n\nPoints spent: ${points}\nRemaining points: ${newCoins}\n\nHash: ${result.userOperationHash}`,
-          [
-            {
-              text: 'Awesome!',
-              onPress: async () => {
-                // Sync with backend after a short delay to get actual blockchain state
-                setTimeout(async () => {
-                  await fetchUserData();
-                }, 2000);
-              },
-            },
-          ]
-        );
+        setLootboxOpenedData({ points, remaining: newCoins, hash: result.userOperationHash });
+        setShowLootboxOpenedPopup(true);
       }
     } catch (error: any) {
       console.error('❌ Failed to open lootbox:', error);
@@ -167,7 +163,8 @@ export const LootboxesSection: React.FC = () => {
         errorMessage = error.message;
       }
 
-      Alert.alert('Transaction Failed', errorMessage);
+      setTransactionFailedMessage(errorMessage);
+      setShowTransactionFailedPopup(true);
     } finally {
       setOpeningBox(null);
     }
@@ -258,6 +255,55 @@ export const LootboxesSection: React.FC = () => {
           </ScrollView>
         )}
       </View>
+
+      {/* Popups */}
+      <InfoPopup
+        visible={showWalletRequiredPopup}
+        title="WALLET REQUIRED"
+        message="Please create your wallet in Profile first to open lootboxes."
+        buttons={[
+          {
+            text: "OK",
+            onPress: () => setShowWalletRequiredPopup(false),
+            variant: 'primary'
+          }
+        ]}
+        onClose={() => setShowWalletRequiredPopup(false)}
+      />
+
+      <InfoPopup
+        visible={showInsufficientPointsPopup}
+        title="INSUFFICIENT POINTS"
+        message={`You need ${insufficientPointsData.needed} points to open this lootbox.\n\nYour points: ${insufficientPointsData.current}`}
+        buttons={[
+          {
+            text: "OK",
+            onPress: () => setShowInsufficientPointsPopup(false),
+            variant: 'primary'
+          }
+        ]}
+        onClose={() => setShowInsufficientPointsPopup(false)}
+      />
+
+      <SuccessPopup
+        visible={showLootboxOpenedPopup}
+        title="LOOTBOX OPENED!"
+        message={`Transaction submitted successfully!\n\nPoints spent: ${lootboxOpenedData.points}\nRemaining points: ${lootboxOpenedData.remaining}\n\nHash: ${lootboxOpenedData.hash}`}
+        onContinue={() => {
+          setShowLootboxOpenedPopup(false);
+          // Sync with backend after a short delay
+          setTimeout(async () => {
+            await fetchUserData();
+          }, 2000);
+        }}
+      />
+
+      <ErrorPopup
+        visible={showTransactionFailedPopup}
+        title="TRANSACTION FAILED"
+        message={transactionFailedMessage}
+        onClose={() => setShowTransactionFailedPopup(false)}
+      />
     </View>
   );
 };

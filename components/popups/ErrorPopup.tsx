@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,14 +36,15 @@ export const ErrorPopup: React.FC<ErrorPopupProps> = ({
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* Header */}
-          <LinearGradient
-            colors={['#FFD700', '#FFA500']}
-            style={styles.header}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Text style={styles.headerText}>{title}</Text>
-          </LinearGradient>
+          <View style={styles.headerContainer}>
+            <ImageBackground 
+              source={require('../../assets/app-images/yellow_header.png')} 
+              style={styles.headerImage} 
+              resizeMode="stretch"
+            >
+              <Text style={styles.headerText}>{title}</Text>
+            </ImageBackground>
+          </View>
 
           {/* Content */}
           <View style={styles.content}>
@@ -58,14 +60,13 @@ export const ErrorPopup: React.FC<ErrorPopupProps> = ({
             onPress={onClose}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#DC2626', '#B91C1C']}
-              style={styles.button}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <ImageBackground 
+              source={require('../../assets/app-images/error_bt_effect.png')} 
+              style={styles.buttonImage}
+              resizeMode="contain"
             >
               <Text style={styles.buttonText}>CLOSE</Text>
-            </LinearGradient>
+            </ImageBackground>
           </TouchableOpacity>
         </View>
       </View>
@@ -84,68 +85,91 @@ const styles = StyleSheet.create({
   container: {
     width: width * 0.85,
     maxWidth: 400,
-    backgroundColor: '#2C2C2E',
-    borderRadius: 20,
-    borderWidth: 4,
-    borderColor: '#FFA500',
-    overflow: 'hidden',
+    backgroundColor: '#3A3A3C',
+    borderRadius: 24,
+    borderWidth: 5,
+    borderColor: '#FFB917',
+    shadowColor: '#FFB917',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
+    marginTop: 20,
   },
-  header: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+  headerContainer: {
+    borderBottomWidth: 0,
+    zIndex: 1,
+  },
+  headerImage: {
+    width: '103%',
+    height: 60,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderBottomWidth: 4,
-    borderBottomColor: '#8B4513',
+    alignSelf: 'center',
+    marginTop: -10,
+    marginLeft: -5,
+    marginBottom: -10,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   headerText: {
-    fontSize: 32,
+    fontSize: 25,
     fontWeight: '900',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    textShadowColor: '#000',
     textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
-    letterSpacing: 2,
+    textShadowRadius: 1,
+    marginBottom: 16,
   },
   content: {
-    padding: 30,
+    padding: 20,
+    paddingBottom: 5,
+    minHeight: 100,
+    justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 140,
+    backgroundColor: 'rgba(58, 58, 80, 0.8)',
   },
   warningContainer: {
     marginBottom: 15,
   },
   message: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 24,
   },
   buttonContainer: {
-    paddingHorizontal: 30,
-    paddingBottom: 30,
-  },
-  button: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
+    paddingHorizontal: 15,
+    paddingTop: 5,
+    backgroundColor: 'rgba(58, 58, 80, 0.8)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#7F1D1D',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
+    borderRadius: 20,
+    paddingBottom: 5,
+  },
+  buttonImage: {
+    width: '100%',
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   buttonText: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 1.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 0,
+    marginBottom: 15,
   },
 });

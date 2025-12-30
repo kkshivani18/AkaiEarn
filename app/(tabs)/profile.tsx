@@ -14,6 +14,8 @@ import { createPublicClient, encodeFunctionData, http, parseUnits } from "viem";
 import { abi } from "../../config/abi";
 import { base } from "viem/chains";
 import { InfoPopup } from '../../components/popups/InfoPopup';
+import { ErrorPopup } from '../../components/popups/ErrorPopup';
+import { SuccessPopup } from '../../components/popups/SuccessPopup';
 
 // ERC20 ABI for balance and transfer
 const ERC20_ABI = [
@@ -54,6 +56,15 @@ export default function ProfileScreen() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [callsId, setCallsId] = useState<string>();
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+
+  // Popup states
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorPopupMessage, setErrorPopupMessage] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successPopupMessage, setSuccessPopupMessage] = useState('');
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
+  const [infoPopupData, setInfoPopupData] = useState({ title: '', message: '' });
+  const [showAuthIssuePopup, setShowAuthIssuePopup] = useState(false);
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
   console.log(smartAccount);
@@ -140,7 +151,8 @@ export default function ProfileScreen() {
 
   const handleSendUserUSDC = async () => {
     if (!smartAccount) {
-      Alert.alert("Error", "No Smart Account available.");
+      setErrorPopupMessage("No Smart Account available.");
+      setShowErrorPopup(true);
       return;
     }
 
@@ -170,33 +182,34 @@ export default function ProfileScreen() {
 
       if (result?.userOperationHash) {
         getBalance();
-        Alert.alert("Transaction Success", "USDC sent successfully!");
+        setSuccessPopupMessage("USDC sent successfully!");
+        setShowSuccessPopup(true);
       }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to send user operation";
       setErrorMessage(message);
-      Alert.alert(
-        "Transaction Failed",
-        message + (message.endsWith(".") ? "" : ".")
-      );
+      setErrorPopupMessage(message + (message.endsWith(".") ? "" : "."));
+      setShowErrorPopup(true);
     }
   };
 
   const handleCreateWallet = async () => {
     if (!hasUnlockedWallet) {
-      Alert.alert(
-        "Insufficient Points",
-        `You need at least ${walletUnlockTarget} points to create a wallet. Current points: ${points}`
-      );
+      setInfoPopupData({
+        title: 'INSUFFICIENT POINTS',
+        message: `You need at least ${walletUnlockTarget} points to create a wallet. Current points: ${points}`
+      });
+      setShowInfoPopup(true);
       return;
     }
 
     if (!isSignedIn) {
-      Alert.alert(
-        "Authentication Required",
-        "Not authenticated with CDP. Please logout and login again to authenticate."
-      );
+      setInfoPopupData({
+        title: 'AUTHENTICATION REQUIRED',
+        message: 'Not authenticated with CDP. Please logout and login again to authenticate.'
+      });
+      setShowInfoPopup(true);
       return;
     }
 
@@ -215,23 +228,18 @@ export default function ProfileScreen() {
         try {
           const response = await contractAPI.createUser(result);
           if (response.success) {
-            Alert.alert(
-              "You are registered.",
-              `Your walletAddress is: ${result.slice(0, 6)}...${result.slice(
-                -4
-              )}`,
-              [{ text: "Ok" }]
-            );
+            setSuccessPopupMessage(`You are registered.\n\nYour walletAddress is: ${result.slice(0, 6)}...${result.slice(-4)}`);
+            setShowSuccessPopup(true);
           }
         } catch (backendError: any) {
           console.error("❌ Backend registration error:", backendError);
-          Alert.alert(
-            "Wallet Created",
-            `Wallet created but backend registration failed: ${
+          setInfoPopupData({
+            title: 'WALLET CREATED',
+            message: `Wallet created but backend registration failed: ${
               backendError.response?.data?.message || backendError.message
-            }`,
-            [{ text: "Ok" }]
-          );
+            }`
+          });
+          setShowInfoPopup(true);
         }
       } else {
         throw new Error("Wallet creation failed - no address returned");
@@ -244,19 +252,10 @@ export default function ProfileScreen() {
         error.message?.includes("Temporary secret not found") ||
         error.message?.includes("APIError")
       ) {
-        Alert.alert(
-          "Authentication Issue",
-          "CDP authentication expired. Please logout and login again to refresh your session.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Logout Now",
-              onPress: () => handleLogout(),
-            },
-          ]
-        );
+        setShowAuthIssuePopup(true);
       } else {
-        Alert.alert("Error", error.message || "Failed to create smart wallet");
+        setErrorPopupMessage(error.message || "Failed to create smart wallet");
+        setShowErrorPopup(true);
       }
     } finally {
       setCreatingWallet(false);
@@ -265,7 +264,8 @@ export default function ProfileScreen() {
 
   const handleWithdrawUSDC = async () => {
     if (!smartAccount) {
-      Alert.alert("Error", "No Smart Account available.");
+      setErrorPopupMessage("No Smart Account available.");
+      setShowErrorPopup(true);
       return;
     }
     try {
@@ -289,7 +289,8 @@ export default function ProfileScreen() {
       });
 
       if (result?.userOperationHash) {
-        Alert.alert("Transaction Success", "USDC withdrawal initiated!");
+        setSuccessPopupMessage("USDC withdrawal initiated!");
+        setShowSuccessPopup(true);
 
         setTimeout(async () => {
           await fetchUserData();
@@ -299,10 +300,8 @@ export default function ProfileScreen() {
       const message =
         err instanceof Error ? err.message : "Failed to send user operation";
       setErrorMessage(message);
-      Alert.alert(
-        "Transaction Failed",
-        message + (message.endsWith(".") ? "" : ".")
-      );
+      setErrorPopupMessage(message + (message.endsWith(".") ? "" : "."));
+      setShowErrorPopup(true);
     }
   };
 
@@ -318,7 +317,8 @@ export default function ProfileScreen() {
       router.replace("/");
     } catch (error) {
       console.error("❌ Logout failed:", error);
-      Alert.alert("Error", "Failed to logout. Please try again.");
+      setErrorPopupMessage("Failed to logout. Please try again.");
+      setShowErrorPopup(true);
     }
   };
 
@@ -632,12 +632,11 @@ export default function ProfileScreen() {
         visible={showLogoutPopup}
         title="LOGOUT"
         message="Are you sure you want to logout?"
-        headerImage={require('../../assets/app-images/yellow_header.png')}
         buttons={[
           {
             text: "CANCEL",
             onPress: () => setShowLogoutPopup(false),
-            backgroundImage: require('../../assets/app-images/success_bt_effect.png.png')
+            variant: 'primary'
           },
           {
             text: "LOGOUT",
@@ -645,10 +644,62 @@ export default function ProfileScreen() {
               setShowLogoutPopup(false);
               performLogout();
             },
-            backgroundImage: require('../../assets/app-images/error_bt_effect.png')
+            variant: 'secondary'
           }
         ]}
         onClose={() => setShowLogoutPopup(false)}
+      />
+
+      {/* Error Popup */}
+      <ErrorPopup
+        visible={showErrorPopup}
+        message={errorPopupMessage}
+        onClose={() => setShowErrorPopup(false)}
+      />
+
+      {/* Success Popup */}
+      <SuccessPopup
+        visible={showSuccessPopup}
+        message={successPopupMessage}
+        onContinue={() => setShowSuccessPopup(false)}
+      />
+
+      {/* Info Popup */}
+      <InfoPopup
+        visible={showInfoPopup}
+        title={infoPopupData.title}
+        message={infoPopupData.message}
+        buttons={[
+          {
+            text: "OK",
+            onPress: () => setShowInfoPopup(false),
+            variant: 'primary'
+          }
+        ]}
+        onClose={() => setShowInfoPopup(false)}
+      />
+
+      {/* Authentication Issue Popup */}
+      <InfoPopup
+        visible={showAuthIssuePopup}
+        title="AUTHENTICATION ISSUE"
+        message="CDP authentication expired. Please logout and login again to refresh your session."
+        buttons={[
+          {
+            text: "CANCEL",
+            onPress: () => setShowAuthIssuePopup(false),
+            variant: 'primary'
+          },
+          {
+            text: "LOGOUT NOW",
+            onPress: () => {
+              setShowAuthIssuePopup(false);
+              handleLogout();
+            },
+            variant: 'secondary'
+          }
+        ]}
+        onClose={() => setShowAuthIssuePopup(false)}
       />
     </SafeAreaView>
   );

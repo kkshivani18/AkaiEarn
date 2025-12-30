@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { offersAPI, socialAPI } from '../../services/api';
 import { HeaderSection } from '../offerComponents/offerHeader';
 import { useUserStore } from '../../stores/userStore';
+import { ErrorPopup } from '../../components/popups/ErrorPopup';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -74,6 +75,10 @@ const OfferScreen: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [pendingSocialTask, setPendingSocialTask] = useState<string | null>(null);
   const [appStateTimestamp, setAppStateTimestamp] = useState<number>(0);
+  
+  // error popup
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorPopupMessage, setErrorPopupMessage] = useState('');
 
   const showSnackbarMessage = (message: string) => {
     setSnackbarMessage(message);
@@ -143,7 +148,8 @@ const OfferScreen: React.FC = () => {
     }
     if (!task.creativeLink) {
       console.error('❌ No creative link found for task:', task);
-      Alert.alert('Error', 'This task is not properly configured. Please try another task.');
+      setErrorPopupMessage('This task is not properly configured. Please try another task.');
+      setShowErrorPopup(true);
       return;
     }
     
@@ -352,7 +358,6 @@ const OfferScreen: React.FC = () => {
         showSnackbarMessage('Task was already completed');
       } else {
         console.error('Completion failed:', error.response?.data?.message);
-        // Don't show error alert for completion failures
       }
     } finally {
       setCompletingSocialOffer(null);
@@ -380,12 +385,14 @@ const OfferScreen: React.FC = () => {
       } else {
         console.warn('⚠️ Cannot open URL:', offer.redirectLink);
         setPendingSocialTask(null);
-        Alert.alert('Error', 'Cannot open this link. Please check your internet connection.');
+        setErrorPopupMessage('Cannot open this link. Please check your internet connection.');
+        setShowErrorPopup(true);
       }
     } catch (error) {
       console.error('Failed to open link:', error);
       setPendingSocialTask(null);
-      Alert.alert('Error', 'Failed to open link. Please try again.');
+      setErrorPopupMessage('Failed to open link. Please try again.');
+      setShowErrorPopup(true);
     }
   };
 
@@ -649,6 +656,12 @@ const OfferScreen: React.FC = () => {
           <Text style={styles.snackbarText}>{snackbarMessage}</Text>
         </View>
       )}
+      
+      <ErrorPopup
+        visible={showErrorPopup}
+        message={errorPopupMessage}
+        onClose={() => setShowErrorPopup(false)}
+      />
     </SafeAreaView>
   );
 };
