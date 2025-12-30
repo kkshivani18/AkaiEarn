@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { useUserStore } from "../../stores/userStore";
 import { useAuth } from "../../contexts/AuthContext";
@@ -25,33 +24,11 @@ import {
   useIsSignedIn,
   useSendUserOperation,
 } from "@coinbase/cdp-hooks";
-import { createPublicClient, encodeFunctionData, http, parseUnits } from "viem";
+import { encodeFunctionData } from "viem";
 import { abi } from "../../config/abi";
-import { base } from "viem/chains";
-
-// ERC20 ABI for balance and transfer
-const ERC20_ABI = [
-  {
-    name: "balanceOf",
-    type: "function",
-    stateMutability: "view",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-  {
-    name: "transfer",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [{ name: "", type: "bool" }],
-  },
-] as const;
+import { contractAddress } from "@/constants/theme";
 
 export default function ProfileScreen() {
-  const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
   const { name, iq, coins, balance, dollars, fetchUserData } = useUserStore();
   const { onLogout } = useAuth();
   const { currentUser } = useCurrentUser();
@@ -63,15 +40,11 @@ export default function ProfileScreen() {
   const [loadingStreak, setLoadingStreak] = useState<boolean>(true);
   const [creatingWallet, setCreatingWallet] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
-  const [ethBalance, setEthBalance] = useState<bigint | undefined>(undefined);
-  const [usdcBalance, setUsdcBalance] = useState<bigint | undefined>(undefined);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [callsId, setCallsId] = useState<string>();
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
-  console.log(smartAccount);
-  
-  const contractAddress = "0x9F1e7032cEF3Dc4ddA0Ed96bD75E44f0655A3239";
+
   const [errorMessage, setErrorMessage] = useState("");
 
   const displayName = name || "User";
@@ -86,42 +59,6 @@ export default function ProfileScreen() {
   const progress = Math.max(0, Math.min(1, points / walletUnlockTarget));
   const hasUnlockedWallet = points >= walletUnlockTarget;
   const canWithdraw = balance >= 1_00;
-
-  const client = createPublicClient({
-    chain: base,
-    transport: http(),
-  });
-
-  const getBalance = useCallback(async () => {
-    if (!smartAccount) return;
-
-    try {
-      // Get ETH balance
-      const ethBalance = await client.getBalance({
-        address: smartAccount as `0x${string}`,
-      });
-      setEthBalance(ethBalance);
-
-      // Get USDC balance
-      const usdcBalance = await client.readContract({
-        address: USDC_ADDRESS as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: [smartAccount as `0x${string}`],
-      });
-      setUsdcBalance(usdcBalance as bigint);
-      console.log("USDC Balance:", usdcBalance);
-      console.log("ETH Balance:", ethBalance);
-    } catch (error) {
-      console.error("Error fetching balances:", error);
-    }
-  }, [smartAccount]);
-
-  useEffect(() => {
-    getBalance();
-    const interval = setInterval(getBalance, 5000);
-    return () => clearInterval(interval);
-  }, [getBalance]);
 
   useEffect(() => {
     // check if user already has a wallet
@@ -151,51 +88,6 @@ export default function ProfileScreen() {
 
     fetchStreak();
   }, []);
-
-  const handleSendUserUSDC = async () => {
-    if (!smartAccount) {
-      Alert.alert("Error", "No Smart Account available.");
-      return;
-    }
-
-    setErrorMessage("");
-
-    try {
-      // Send 1 USDC to the faucet
-      const usdcAmount = parseUnits("1", 6); // USDC has 6 decimals
-
-      const transferData = encodeFunctionData({
-        abi: ERC20_ABI,
-        functionName: "transfer",
-        args: ["0x064e20CcC5e1634bD87422Fb8Cb88ca9025D3580", usdcAmount],
-      });
-
-      const result = await sendUserOperation({
-        evmSmartAccount: smartAccount as `0x${string}`,
-        network: "base",
-        calls: [
-          {
-            to: USDC_ADDRESS,
-            data: transferData,
-            value: 0n,
-          },
-        ],
-      });
-
-      if (result?.userOperationHash) {
-        getBalance();
-        Alert.alert("Transaction Success", "USDC sent successfully!");
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to send user operation";
-      setErrorMessage(message);
-      Alert.alert(
-        "Transaction Failed",
-        message + (message.endsWith(".") ? "" : ".")
-      );
-    }
-  };
 
   const handleCreateWallet = async () => {
     if (!hasUnlockedWallet) {
@@ -427,16 +319,6 @@ export default function ProfileScreen() {
               </View>
             </LinearGradient>
           </View>
-          <TouchableOpacity onPress={handleSendUserUSDC}>
-            <Text
-              style={[
-                styles.convertButton,
-                (!canWithdraw || withdrawing) && { opacity: 0.6 },
-              ]}
-            >
-              Send USDC
-            </Text>
-          </TouchableOpacity>
           {walletAddress ? (
             // Wallet already created - show balance transfer UI
             <View style={styles.walletBalanceCard}>

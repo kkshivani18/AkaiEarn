@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { Tabs } from "expo-router";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
@@ -20,7 +20,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
         const onPress = () => {
           const event = navigation.emit({
-            type: 'tabPress',
+            type: "tabPress",
             target: route.key,
             canPreventDefault: true,
           });
@@ -32,17 +32,18 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
         const onLongPress = () => {
           navigation.emit({
-            type: 'tabLongPress',
+            type: "tabLongPress",
             target: route.key,
           });
         };
 
         // Get icon name based on route
-        let iconName: keyof typeof Ionicons.glyphMap = 'home';
-        if (route.name === 'home') iconName = 'home';
-        else if (route.name === 'offer') iconName = 'list-sharp';
-        else if (route.name === 'rewards') iconName = 'gift-outline';
-        else if (route.name === 'profile') iconName = 'person-outline';
+        let iconName: keyof typeof Ionicons.glyphMap = "home";
+        if (route.name === "home") iconName = "home";
+        else if (route.name === "offer") iconName = "list-sharp";
+        else if (route.name === "rewards") iconName = "gift-outline";
+        else if (route.name === "wallet") iconName = "wallet-outline";
+        else if (route.name === "profile") iconName = "person-outline";
 
         return (
           <TouchableOpacity
@@ -56,10 +57,12 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             style={styles.tabButton}
           >
             {isFocused ? (
-              <View style={[
-                styles.activeTab,
-                { minWidth: 90, maxWidth: 160, alignSelf: 'center' } 
-            ]}>
+              <View
+                style={[
+                  styles.activeTab,
+                  { minWidth: 90, maxWidth: 160, alignSelf: "center" },
+                ]}
+              >
                 <Ionicons name={iconName} size={20} color="#000" />
                 <Text
                   style={styles.activeLabel}
@@ -91,7 +94,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -100,7 +103,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="offer"
         options={{
-          title: 'Offers',
+          title: "Offers",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list-outline" size={size} color={color} />
           ),
@@ -109,16 +112,25 @@ export default function TabLayout() {
       <Tabs.Screen
         name="rewards"
         options={{
-          title: 'Rewards',
+          title: "Rewards",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="gift-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
+        name="wallet"
+        options={{
+          title: "Wallet",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="wallet-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
@@ -130,9 +142,9 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#1a1b23',
-    borderTopColor: '#2a2b33',
+    flexDirection: "row",
+    backgroundColor: "#1a1b23",
+    borderTopColor: "#2a2b33",
     borderTopWidth: 1,
     height: 105,
     paddingBottom: 40,
@@ -142,24 +154,24 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   activeTab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFD700',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFD700",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 30,
     gap: 8,
-    flexShrink: 0, 
+    flexShrink: 0,
     marginLeft: 40,
-    marginRight: 40
+    marginRight: 40,
   },
   activeLabel: {
-    color: '#000',
+    color: "#000",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
