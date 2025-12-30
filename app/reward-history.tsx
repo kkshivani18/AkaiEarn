@@ -1,21 +1,12 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router, Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import {
-    ActivityIndicator,
-    Modal,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LabelHistHeaderSection, LabelHistMetricsCard } from './label_hist_metrics';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { logsAPI } from '../services/api';
-import { HistorySkeletonLoader } from '../components/SkeletonLoader';
+import { useUserStore } from '../stores/userStore';
 
 // Types
 interface LogItem {
@@ -25,125 +16,36 @@ interface LogItem {
   delta_iq: number;
   delta_coins: number;
   createdAt: string;
-  labelOffer: {
+  labelOffer?: {
     _id: string;
-    title: string; 
+    title: string;
     description: string;
     type: string;
-    rewards: {
+    rewards?: {
       coinsOnCorrect: number;
       iqDeltaOnCorrect: number;
       iqDeltaOnIncorrect: number;
     };
-    minimumIq: number;
-    imageLink: string;
-    creativeLink: string;
+    minimumIq?: number;
+    imageLink?: string;
+    creativeLink?: string;
   };
 }
 
-interface RewardStats {
-  totalTasks: number;
-  successfulTasks: number;
-  successRate: number;
-  totalCoinsEarned: number;
-  totalIQGained: number;
-  bestLabelTasks: number;
+interface MetricsData {
+  accuracy: number;
+  tasksDone: number;
+  coinsEarned: number;
+  currentIQ: number;
+  iqGainedThisWeek: number;
 }
 
-// Enhanced filter state interface
 interface FilterState {
-  dateRange: 'all' | 'today' | 'week' | 'month' | 'last30days';
-  taskTypes: string[];
+  dateRange: 'all' | 'today' | 'month' | 'last30days';
   statuses: string[];
 }
 
-// Icons
-const BackIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.icon}>
-    <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-  </Svg>
-);
-
-const FilterIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.icon}>
-    <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-  </Svg>
-);
-
-const SortIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.icon}>
-    <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-  </Svg>
-);
-
-const SuccessIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#10B981" style={styles.statusIcon}>
-    <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </Svg>
-);
-
-const FailureIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#EF4444" style={styles.statusIcon}>
-    <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </Svg>
-);
-
-const BestLabelIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#F59E0B" style={styles.statusIcon}>
-    <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-  </Svg>
-);
-
-const PendingIcon = () => (
-  <Svg fill="none" viewBox="0 0 24 24" stroke="#3B82F6" style={styles.statusIcon}>
-    <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </Svg>
-);
-
-// Statistics Card Component
-const RewardStatsCard: React.FC<{ stats: RewardStats }> = ({ stats }) => (
-  <View style={styles.statsContainer}>
-    <View style={styles.statsGrid}>
-      <BlurView intensity={40} tint="dark" style={styles.statCard}>
-        <Text style={styles.statValue}>{stats.totalTasks}</Text>
-        <Text style={styles.statLabel}>Total Tasks</Text>
-      </BlurView>
-      
-      <BlurView intensity={40} tint="dark" style={styles.statCard}>
-        <Text style={styles.statValue}>{stats.successRate}%</Text>
-        <Text style={styles.statLabel}>Success Rate</Text>
-      </BlurView>
-      
-      <BlurView intensity={40} tint="dark" style={styles.statCard}>
-        <Text style={styles.statValue}>{stats.totalCoinsEarned}</Text>
-        <Text style={styles.statLabel}>Coins Earned</Text>
-      </BlurView>
-      
-      <BlurView intensity={40} tint="dark" style={styles.statCard}>
-        <Text style={styles.statValue}>{stats.totalIQGained > 0 ? '+' : ''}{stats.totalIQGained}</Text>
-        <Text style={styles.statLabel}>IQ Gained</Text>
-      </BlurView>
-    </View>
-  </View>
-);
-
-// Individual History Item Component
-const RewardHistoryItem: React.FC<{ log: LogItem }> = ({ log }) => {
-  const getStatusIcon = () => {
-    switch (log.status) {
-      case 'success':
-        return <SuccessIcon />;
-      case 'failure':
-        return <FailureIcon />;
-      case 'best-label':
-        return <BestLabelIcon />;
-      case 'verification':
-        return <PendingIcon />;
-      default:
-        return <PendingIcon />;
-    }
-  };
-
+const HistoryLogItem: React.FC<{ log: LogItem }> = ({ log }) => {
   const getStatusColor = () => {
     switch (log.status) {
       case 'success':
@@ -162,9 +64,9 @@ const RewardHistoryItem: React.FC<{ log: LogItem }> = ({ log }) => {
   const getStatusText = () => {
     switch (log.status) {
       case 'success':
-        return 'Success';
+        return 'Approved';
       case 'failure':
-        return 'Failed';
+        return 'Rejected';
       case 'best-label':
         return 'Best Label';
       case 'verification':
@@ -179,419 +81,115 @@ const RewardHistoryItem: React.FC<{ log: LogItem }> = ({ log }) => {
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
+  const truncateText = (text: string, maxLength: number = 40) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const title = log.labelOffer?.title || log.labelOfferType || 'Unknown Task';
+  const description = log.labelOffer?.description || '';
+
   return (
-    <BlurView intensity={40} tint="dark" style={styles.historyItem}>
-      <View style={styles.historyItemHeader}>
-        <View style={styles.taskInfo}>
-          <Text style={styles.taskName}>
-            {log.labelOffer?.title || log.labelOffer?.description || log.labelOfferType || 'Unknown Task'}
-          </Text>
-          <Text style={styles.taskType}>{log.labelOfferType}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
-          {getStatusIcon()}
-          <Text style={[styles.statusText, { color: getStatusColor() }]}>
-            {getStatusText()}
-          </Text>
-        </View>
-      </View>
-      
-      <View style={styles.historyItemContent}>
-        <View style={styles.rewardsContainer}>
-          {/* Points Earned */}
-          <View style={styles.rewardItem}>
-            <Text style={[styles.rewardText, { 
-              color: (log.delta_coins || 0) > 0 ? '#10B981' : 
-                     (log.delta_coins || 0) < 0 ? '#EF4444' : '#A1A1AA' 
-            }]}> Points: {(log.delta_coins || 0) > 0 ? '+' : ''}{log.delta_coins || 0} 
-            </Text>
-          </View>
-          
-          {/* IQ Earned */}
-          <View style={styles.rewardItem}>
-            <Text style={[styles.rewardText, { 
-              color: (log.delta_iq || 0) > 0 ? '#10B981' : 
-                     (log.delta_iq || 0) < 0 ? '#EF4444' : '#A1A1AA' 
-            }]}> IQ : {(log.delta_iq || 0) > 0 ? '+' : ''}{log.delta_iq || 0} 
-            </Text>
-          </View>
-        </View>
+    <View style={styles.historyItem}>
+      {/* Left Icon */}
+      <Image 
+        source={require('../assets/app-images/label_hist_icon.png')} 
+        style={styles.historyIcon}
+        resizeMode="contain"
+      />
+
+      {/* Center Content */}
+      <View style={styles.historyContent}>
+        <Text style={styles.historyTitle}>{truncateText(title, 20)}</Text>
+        <Text style={styles.historyDescription} numberOfLines={2}>
+          {truncateText(description, 40)}
+        </Text>
         <Text style={styles.dateText}>{formatDate(log.createdAt)}</Text>
       </View>
-    </BlurView>
-  );
-};
 
-// Enhanced Filter Modal Component
-const ComprehensiveFilterModal: React.FC<{
-  visible: boolean;
-  onClose: () => void;
-  filters: FilterState;
-  onApplyFilters: (filters: FilterState) => void;
-  logs: LogItem[];
-}> = ({ visible, onClose, filters, onApplyFilters, logs }) => {
-  const [tempFilters, setTempFilters] = useState<FilterState>(filters);
-  
-  // Get unique task types from logs
-  const taskTypes = Array.from(new Set(logs.map(log => log.labelOfferType))).filter(Boolean);
-  
-  const dateRangeOptions = [
-    { key: 'all', label: 'All Time' },
-    { key: 'today', label: 'Today' },
-    { key: 'week', label: 'This Week' },
-    { key: 'month', label: 'This Month' },
-    { key: 'last30days', label: 'Last 30 Days' }
-  ];
-  
-  const statusOptions = [
-    { key: 'success', label: 'Success', color: '#3B82F6' },
-    { key: 'failure', label: 'Failed', color: '#3B82F6' },
-    { key: 'best-label', label: 'Best Label', color: '#3B82F6' },
-    { key: 'verification', label: 'Pending', color: '#3B82F6' }
-  ];
+      {/* Right Info */}
+      <View style={styles.historyRight}>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
+          <Text style={styles.statusText}>{getStatusText()}</Text>
+        </View>
 
-  const handleTaskTypeToggle = (taskType: string) => {
-    setTempFilters(prev => ({
-      ...prev,
-      taskTypes: prev.taskTypes.includes(taskType)
-        ? prev.taskTypes.filter(t => t !== taskType)
-        : [...prev.taskTypes, taskType]
-    }));
-  };
-
-  const handleStatusToggle = (status: string) => {
-    setTempFilters(prev => ({
-      ...prev,
-      statuses: prev.statuses.includes(status)
-        ? prev.statuses.filter(s => s !== status)
-        : [...prev.statuses, status]
-    }));
-  };
-
-  const clearAllFilters = () => {
-    setTempFilters({
-      dateRange: 'all',
-      taskTypes: [],
-      statuses: []
-    });
-  };
-
-  const applyFilters = () => {
-    onApplyFilters(tempFilters);
-    onClose();
-  };
-
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (tempFilters.dateRange !== 'all') count++;
-    count += tempFilters.taskTypes.length;
-    count += tempFilters.statuses.length;
-    return count;
-  };
-
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.filterModalOverlay}>
-        <BlurView intensity={90} tint="dark" style={styles.filterModalContent}>
-          {/* Header */}
-          <View style={styles.filterModalHeader}>
-            <Text style={styles.filterModalTitle}>Filters</Text>
-            <TouchableOpacity onPress={onClose} style={styles.filterCloseButton}>
-              <Svg fill="none" viewBox="0 0 24 24" stroke="white" style={styles.filterCloseIcon}>
-                <Path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </Svg>
-            </TouchableOpacity>
+        <View style={styles.rewardsRow}>
+          {/* Coins */}
+          <View style={styles.rewardItem}>
+            <Text style={[styles.rewardValue, { 
+              color: (log.delta_coins || 0) >= 0 ? '#10B981' : '#EF4444' 
+            }]}>
+              {(log.delta_coins || 0) >= 0 ? '+' : ''}{log.delta_coins || 0}
+            </Text>
+            <Image 
+              source={require('../assets/app-images/spin_coin.png')} 
+              style={styles.rewardIcon}
+              resizeMode="contain"
+            />
           </View>
-
-          <ScrollView style={styles.filterModalBody} showsVerticalScrollIndicator={false}>
-            {/* Date Range Section */}
-            <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Date Range</Text>
-              <View style={styles.filterOptionsGrid}>
-                {dateRangeOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option.key}
-                    style={[
-                      styles.dateRangeOption,
-                      tempFilters.dateRange === option.key && styles.dateRangeOptionSelected
-                    ]}
-                    onPress={() => setTempFilters(prev => ({ ...prev, dateRange: option.key as any }))
-                    }
-                  >
-                    <Text style={[
-                      styles.dateRangeOptionText,
-                      tempFilters.dateRange === option.key && styles.dateRangeOptionTextSelected
-                    ]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Task Type Section */}
-            <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>
-                Task Type ({tempFilters.taskTypes.length} selected)
-              </Text>
-              <View style={styles.filterCheckboxContainer}>
-                {taskTypes.map((taskType) => (
-                  <TouchableOpacity
-                    key={taskType}
-                    style={styles.filterCheckboxItem}
-                    onPress={() => handleTaskTypeToggle(taskType)}
-                  >
-                    <View style={[
-                      styles.checkbox,
-                      tempFilters.taskTypes.includes(taskType) && styles.checkboxSelected
-                    ]}>
-                      {tempFilters.taskTypes.includes(taskType) && (
-                        <Svg viewBox="0 0 24 24" fill="white" style={styles.checkIcon}>
-                          <Path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                        </Svg>
-                      )}
-                    </View>
-                    <Text style={styles.filterCheckboxText}>{taskType}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Status Section */}
-            <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>
-                Status ({tempFilters.statuses.length} selected)
-              </Text>
-              <View style={styles.filterCheckboxContainer}>
-                {statusOptions.map((status) => (
-                  <TouchableOpacity
-                    key={status.key}
-                    style={styles.filterCheckboxItem}
-                    onPress={() => handleStatusToggle(status.key)}
-                  >
-                    <View style={[
-                      styles.checkbox,
-                      tempFilters.statuses.includes(status.key) && styles.checkboxSelected,
-                      tempFilters.statuses.includes(status.key) && { backgroundColor: status.color }
-                    ]}>
-                      {tempFilters.statuses.includes(status.key) && (
-                        <Svg viewBox="0 0 24 24" fill="white" style={styles.checkIcon}>
-                          <Path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                        </Svg>
-                      )}
-                    </View>
-                    <Text style={styles.filterCheckboxText}>{status.label}</Text>
-                    {/* <View style={[styles.statusColorIndicator, { backgroundColor: status.color }]} /> */}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </ScrollView>
-
-          {/* Footer Actions */}
-          <View style={styles.filterModalFooter}>
-            <TouchableOpacity
-              style={styles.clearFiltersButton}
-              onPress={clearAllFilters}
-            >
-              <Text style={styles.clearFiltersText}>Clear All</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.applyFiltersButton}
-              onPress={applyFilters}
-            >
-              <Text style={styles.applyFiltersText}>
-                Apply Filters {getActiveFilterCount() > 0 && `(${getActiveFilterCount()})`}
-              </Text>
-            </TouchableOpacity>
+          
+          {/* IQ */}
+          <View style={styles.rewardItem}>
+            <Text style={[styles.rewardValue, { 
+              color: (log.delta_iq || 0) >= 0 ? '#10B981' : '#EF4444' 
+            }]}>
+              {(log.delta_iq || 0) >= 0 ? '+' : ''}{log.delta_iq || 0} IQ
+            </Text>
+            <Image 
+              source={require('../assets/app-images/iq_brain.png')} 
+              style={styles.rewardIcon}
+              resizeMode="contain"
+            />
           </View>
-        </BlurView>
+        </View>
       </View>
-    </Modal>
+    </View>
   );
 };
 
-// Main Screen Component
-export default function RewardHistoryScreen() {
+export default function LabelHistPage() {
   const { authState } = useAuth();
+  const { iq } = useUserStore();
+  const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<LogItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<RewardStats | null>(null);
-  
-  // Filter and sort states
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<string>('newest');
-
-  // Enhanced filter state
   const [filters, setFilters] = useState<FilterState>({
     dateRange: 'all',
-    taskTypes: [],
     statuses: []
   });
 
-  const [showSnackbar, setShowSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-
-  const showSnackbarMessage = (message: string) => {
-    setSnackbarMessage(message);
-    setShowSnackbar(true);
-    setTimeout(() => setShowSnackbar(false), 2000);
-  };
-
-  const calculateStats = (logs: LogItem[]): RewardStats => {
-    const totalTasks = logs.length;
-    const successfulTasks = logs.filter(log => 
-      log.status === 'success' || log.status === 'best-label'
-    ).length;
-    const successRate = totalTasks > 0 ? Math.round((successfulTasks / totalTasks) * 100) : 0;
-    
-    const totalCoinsEarned = logs.reduce((sum, log) => sum + (log.delta_coins || 0), 0);
-    const totalIQGained = logs.reduce((sum, log) => sum + (log.delta_iq || 0), 0);
-    const bestLabelTasks = logs.filter(log => log.status === 'best-label').length;
-    
-    return {
-      totalTasks,
-      successfulTasks,
-      successRate,
-      totalCoinsEarned,
-      totalIQGained,
-      bestLabelTasks
-    };
-  };
-
-  // Filter logs based on selected filter
-  const filterLogs = (logs: LogItem[], filter: string): LogItem[] => {
-    switch (filter) {
-      case 'success':
-        return logs.filter(log => log.status === 'success' || log.status === 'best-label');
-      case 'failure':
-        return logs.filter(log => log.status === 'failure');
-      case 'best-label':
-        return logs.filter(log => log.status === 'best-label');
-      case 'verification':
-        return logs.filter(log => log.status === 'verification');
-      default:
-        return logs;
-    }
-  };
-
-  // Sort logs based on selected sort option
-  const sortLogs = (logs: LogItem[], sort: string): LogItem[] => {
-    const sortedLogs = [...logs];
-    switch (sort) {
-      case 'newest':
-        return sortedLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      case 'oldest':
-        return sortedLogs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      case 'coins-high':
-        return sortedLogs.sort((a, b) => (b.delta_coins || 0) - (a.delta_coins || 0));
-      case 'coins-low':
-        return sortedLogs.sort((a, b) => (a.delta_coins || 0) - (b.delta_coins || 0));
-      case 'iq-high':
-        return sortedLogs.sort((a, b) => (b.delta_iq || 0) - (a.delta_iq || 0));
-      case 'iq-low':
-        return sortedLogs.sort((a, b) => (a.delta_iq || 0) - (b.delta_iq || 0));
-      default:
-        return sortedLogs;
-    }
-  };
-
-  // Apply filter and sort to logs
-  const applyFilterAndSort = () => {
-    let processedLogs = filterLogs(logs, selectedFilter);
-    processedLogs = sortLogs(processedLogs, selectedSort);
-    setFilteredLogs(processedLogs);
-    
-    // Update stats based on filtered logs (not all logs)
-    const filteredStats = calculateStats(processedLogs);
-    setStats(filteredStats);
-  };
-
-  const fetchUserLogs = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await logsAPI.getMyLogs();
-      
-      if (response.success && response.data) {
-        const sortedLogs = (response.data as LogItem[]).sort((a: LogItem, b: LogItem) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setLogs(sortedLogs);
-        setFilteredLogs(sortedLogs);
-        // Initial stats should show all logs (no filter applied initially)
-        setStats(calculateStats(sortedLogs));
-      } else {
-        setError('Failed to load reward history');
-      }
-    } catch (error) {
-      console.error('❌ Error fetching logs:', error);
-      showSnackbarMessage('Failed to load reward history'); 
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchMetrics();
+  }, []);
 
   useEffect(() => {
-    if (authState?.authenticated) {
-      fetchUserLogs();
-    }
-  }, [authState?.authenticated]);
+    applyFiltersAndSort();
+  }, [logs, filters, selectedSort]);
 
-  // Apply filter and sort when they change
-  useEffect(() => {
-    applyFilterAndSort();
-  }, [selectedFilter, selectedSort, logs]);
-
-  // Apply comprehensive filters
-  const applyComprehensiveFilters = () => {
-    let processedLogs = filterLogsByComprehensiveFilters(logs, filters);
-    processedLogs = sortLogs(processedLogs, selectedSort);
-    setFilteredLogs(processedLogs);
+  const applyFiltersAndSort = () => {
+    let processed = [...logs];
     
-    const filteredStats = calculateStats(processedLogs);
-    setStats(filteredStats);
-  };
-
-  const handleApplyFilters = (newFilters: FilterState) => {
-    setFilters(newFilters);
-  };
-
-  // Filter logs by comprehensive filters
-  const filterLogsByComprehensiveFilters = (logs: LogItem[], filters: FilterState): LogItem[] => {
-    let filtered = [...logs];
-    
-    // Date range filter
+    // Apply date filter
     if (filters.dateRange !== 'all') {
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       
-      filtered = filtered.filter(log => {
+      processed = processed.filter(log => {
         const logDate = new Date(log.createdAt);
         
         switch (filters.dateRange) {
           case 'today':
             return logDate >= startOfToday;
-          case 'week':
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            return logDate >= weekAgo;
           case 'month':
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
             return logDate >= monthStart;
@@ -604,152 +202,146 @@ export default function RewardHistoryScreen() {
       });
     }
     
-    // Task type filter
-    if (filters.taskTypes.length > 0) {
-      filtered = filtered.filter(log => filters.taskTypes.includes(log.labelOfferType));
-    }
-    
-    // Status filter
+    // Apply status filter
     if (filters.statuses.length > 0) {
-      filtered = filtered.filter(log => filters.statuses.includes(log.status));
+      processed = processed.filter(log => filters.statuses.includes(log.status));
     }
     
-    return filtered;
+    // Apply sort
+    switch (selectedSort) {
+      case 'newest':
+        processed.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'oldest':
+        processed.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
+      case 'coins-high':
+        processed.sort((a, b) => (b.delta_coins || 0) - (a.delta_coins || 0));
+        break;
+      case 'coins-low':
+        processed.sort((a, b) => (a.delta_coins || 0) - (b.delta_coins || 0));
+        break;
+      case 'iq-high':
+        processed.sort((a, b) => (b.delta_iq || 0) - (a.delta_iq || 0));
+        break;
+      case 'iq-low':
+        processed.sort((a, b) => (a.delta_iq || 0) - (b.delta_iq || 0));
+        break;
+    }
+    
+    setFilteredLogs(processed);
   };
 
-  // Loading and error states
-  if (loading) {
-    return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <StatusBar hidden={true} />
-        <View style={styles.container}>
-          <LinearGradient colors={['#0a101bff', '#060910ff', '#071014ff']} style={StyleSheet.absoluteFill} />
-          
-          <BlurView intensity={80} tint="dark" style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <BackIcon />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Labelling History</Text>
-            <View style={{width: 24}} />
-          </BlurView>
-          
-          <View style={styles.loadingContainer}>
-            <HistorySkeletonLoader count={5} />
-          </View>
-        </View>
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <StatusBar hidden={true} />
-        <View style={styles.container}>
-          <LinearGradient colors={['#2a0000', '#000000']} style={StyleSheet.absoluteFill} />
-          
-          <BlurView intensity={80} tint="dark" style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <BackIcon />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Labelling History</Text>
-            <View style={{width: 24}} />
-          </BlurView>
-          
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchUserLogs}>
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </>
-    );
-  }
+  const fetchMetrics = async () => {
+    try {
+      setLoading(true);
+      const response = await logsAPI.getMyLogs();
+      
+      if (response.success && response.data) {
+        const logsData = response.data as LogItem[];
+        
+        // Sort by newest first
+        const sortedLogs = logsData.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        
+        setLogs(sortedLogs);
+        
+        // Calc metrics
+        const totalTasks = sortedLogs.length;
+        const successfulTasks = sortedLogs.filter(log => 
+          log.status === 'success' || log.status === 'best-label'
+        ).length;
+        const accuracy = totalTasks > 0 ? Math.round((successfulTasks / totalTasks) * 100) : 0;
+        const coinsEarned = sortedLogs.reduce((sum, log) => sum + (log.delta_coins || 0), 0);
+        
+        // IQ gained this week
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const iqGainedThisWeek = sortedLogs
+          .filter(log => new Date(log.createdAt) >= oneWeekAgo)
+          .reduce((sum, log) => sum + (log.delta_iq || 0), 0);
+        
+        setMetrics({
+          accuracy,
+          tasksDone: totalTasks,
+          coinsEarned,
+          currentIQ: iq,
+          iqGainedThisWeek
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error fetching metrics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar hidden={true} />
-      <View style={styles.container}>
-        <LinearGradient colors={['#0a101bff', '#060910ff', '#071014ff']} style={StyleSheet.absoluteFill} />
-        
-        <BlurView intensity={80} tint="dark" style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <BackIcon />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Labelling History</Text>
-          <View style={{width: 24}} />
-        </BlurView>
-
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-        {stats && (
-          <View style={styles.statsContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Your Performance</Text>
-              <View style={styles.sectionButtons}>
-                <TouchableOpacity 
-                  style={[
-                    styles.sectionButton,
-                    (filters.dateRange !== 'all' || filters.taskTypes.length > 0 || filters.statuses.length > 0) && styles.sectionButtonActive
-                  ]} 
-                  onPress={() => setShowFilterModal(true)}
-                >
-                  <FilterIcon />
-                  {(filters.dateRange !== 'all' || filters.taskTypes.length > 0 || filters.statuses.length > 0) && (
-                    <View style={styles.filterBadge}>
-                      <Text style={styles.filterBadgeText}>
-                        {(filters.dateRange !== 'all' ? 1 : 0) + filters.taskTypes.length + filters.statuses.length}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.sectionButton} 
-                  onPress={() => setShowSortModal(true)}
-                >
-                  <SortIcon />
-                </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <LabelHistHeaderSection />
+      <ScrollView contentContainerStyle={styles.content}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFCD0A" />
+            <Text style={styles.loadingText}>Loading metrics</Text>
+          </View>
+        ) : (
+          <>
+            {/* Metrics Card */}
+            {metrics && (
+              <LabelHistMetricsCard
+                accuracy={metrics.accuracy}
+                tasksDone={metrics.tasksDone}
+                coinsEarned={metrics.coinsEarned}
+                currentIQ={metrics.currentIQ}
+                iqGainedThisWeek={metrics.iqGainedThisWeek}
+              />
+            )}
+            
+            {/* History Logs Section */}
+            {logs.length > 0 ? (
+              <View style={styles.historySection}>
+                <View style={styles.historyHeader}>
+                  <Text style={styles.sectionTitle}>Label Logs</Text>
+                  <View style={styles.headerButtons}>
+                    <TouchableOpacity 
+                      style={styles.filterButton}
+                      onPress={() => setShowFilterModal(true)}
+                    >
+                      <Ionicons name="filter" size={18} color="#FFCD0A" />
+                      <Text style={styles.buttonText}>Filter</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.sortButton}
+                      onPress={() => setShowSortModal(true)}
+                    >
+                      <Ionicons name="swap-vertical" size={18} color="#FFCD0A" />
+                      <Text style={styles.buttonText}>Sort</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {filteredLogs.length > 0 ? (
+                  filteredLogs.map((log) => (
+                    <HistoryLogItem key={log._id} log={log} />
+                  ))
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>No results found</Text>
+                    <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+                  </View>
+                )}
               </View>
-            </View>
-            <RewardStatsCard stats={stats} />
-          </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No activity yet</Text>
+                <Text style={styles.emptySubtext}>Complete tasks to see your history</Text>
+              </View>
+            )}
+          </>
         )}
-        
-        <View style={styles.historySection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Task History</Text>
-            <View style={{width: 80}} />
-          </View>
-          {filteredLogs.length === 0 ? (
-            <BlurView intensity={40} tint="dark" style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                {logs.length === 0 ? 'No tasks completed yet' : 'No tasks match your filter'}
-              </Text>
-              <Text style={styles.emptyStateSubtext}>
-                {logs.length === 0 ? 'Complete some tasks to see your reward history here!' : 'Try adjusting your filter or sort options'}
-              </Text>
-            </BlurView>
-          ) : (
-            filteredLogs.map((log) => (
-              <RewardHistoryItem key={log._id} log={log} />
-            ))
-          )}
-        </View>
-        </ScrollView>
-      </View>
-
-      {/* Comprehensive Filter Modal */}
-      <ComprehensiveFilterModal
-        visible={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
-        filters={filters}
-        onApplyFilters={handleApplyFilters}
-        logs={logs}
-      />
-
+      </ScrollView>
+      
       {/* Sort Modal */}
       <Modal
         visible={showSortModal}
@@ -758,12 +350,10 @@ export default function RewardHistoryScreen() {
         onRequestClose={() => setShowSortModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <BlurView intensity={80} tint="dark" style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sort Tasks</Text>
+          <View style={styles.sortModalContent}>
+            <Text style={styles.modalTitle}>Sort</Text>
             <View style={styles.sortOptions}>
               {[
-                { key: 'newest', label: 'Newest First' },
-                { key: 'oldest', label: 'Oldest First' },
                 { key: 'coins-high', label: 'Highest Coins' },
                 { key: 'coins-low', label: 'Lowest Coins' },
                 { key: 'iq-high', label: 'Highest IQ' },
@@ -789,490 +379,404 @@ export default function RewardHistoryScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowSortModal(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
-      {/* Snackbar */}
-      {showSnackbar && (
-        <View style={styles.snackbar}>
-          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.filterModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.filterBody}>
+              {/* Date Range */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Date Range</Text>
+                <View style={styles.dateRangeGrid}>
+                  {[
+                    { key: 'all', label: 'All Time' },
+                    { key: 'today', label: 'Today' },
+                    { key: 'month', label: 'This Month' },
+                    { key: 'last30days', label: 'Last 30 Days' }
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.key}
+                      style={[
+                        styles.dateRangeOption,
+                        filters.dateRange === option.key && styles.dateRangeOptionSelected
+                      ]}
+                      onPress={() => setFilters(prev => ({ ...prev, dateRange: option.key as any }))}
+                    >
+                      <Text style={[
+                        styles.dateRangeText,
+                        filters.dateRange === option.key && styles.dateRangeTextSelected
+                      ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              
+              {/* Status */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Status</Text>
+                <View style={styles.statusCheckboxes}>
+                  {[
+                    { key: 'success', label: 'Success' },
+                    { key: 'failure', label: 'Failed' },
+                    { key: 'verification', label: 'Pending' },
+                    { key: 'best-label', label: 'Best Label' }
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.key}
+                      style={styles.checkboxRow}
+                      onPress={() => {
+                        setFilters(prev => ({
+                          ...prev,
+                          statuses: prev.statuses.includes(option.key)
+                            ? prev.statuses.filter(s => s !== option.key)
+                            : [...prev.statuses, option.key]
+                        }));
+                      }}
+                    >
+                      <View style={[
+                        styles.checkbox,
+                        filters.statuses.includes(option.key) && styles.checkboxChecked
+                      ]}>
+                        {filters.statuses.includes(option.key) && (
+                          <Ionicons name="checkmark" size={16} color="#000" />
+                        )}
+                      </View>
+                      <Text style={styles.checkboxLabel}>{option.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+          </View>
         </View>
-      )}
-    </>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0a0b0f',
   },
-  header: {
-    paddingTop: 45,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
+  backBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: '#0a0b0f',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  icon: {
-    width: 20,
-    height: 20,
-  },
-  scrollContent: {
-    paddingTop: 120,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+  content: {
+    paddingVertical: 16,
+    paddingBottom: 32,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 32,
     alignItems: 'center',
-    paddingTop: 120,
+    justifyContent: 'center',
   },
   loadingText: {
-    color: 'white',
-    fontSize: 16,
-    marginTop: 16,
+    color: '#A1A1AA',
+    fontSize: 14,
+    marginTop: 12,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 120,
-    paddingHorizontal: 20,
-    color: '#EF4444',
-    fontSize: 16,
+  placeholder: {
+    color: '#A1A1AA',
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 20,
+    padding: 32,
   },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
+  // History Section
+  historySection: {
+    marginTop: 10,
+    paddingHorizontal: 16,
   },
-  retryButton: {
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  statsContainer: {
-    marginBottom: 30,
-  },
-  sectionHeader: {
+  historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  sectionButtons: {
+  headerButtons: {
     flexDirection: 'row',
     gap: 8,
   },
-  sectionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  sectionButtonActive: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
-  },
-  filterBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  statsGrid: {
+  filterButton: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: '#FFCD0A',
+    backgroundColor: 'rgba(255, 205, 10, 0.1)',
   },
-  statValue: {
-    fontSize: 24,
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFCD0A',
+    backgroundColor: 'rgba(255, 205, 10, 0.1)',
+  },
+  buttonText: {
+    color: '#FFCD0A',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#A1A1AA',
-    textAlign: 'center',
-  },
-  historySection: {
-    width: '100%',
   },
   historyItem: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    overflow: 'hidden',
-  },
-  historyItemHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    backgroundColor: '#1a1b1f',
+    borderRadius: 16,
+    padding: 12,
     marginBottom: 12,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  taskInfo: {
+  historyIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 10,
+  },
+  historyContent: {
     flex: 1,
-    marginRight: 12,
+    marginLeft: 5,
+    marginRight: 5,
   },
-  taskName: {
+  historyTitle: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    color: 'white',
     marginBottom: 4,
   },
-  taskType: {
-    fontSize: 12,
+  historyDescription: {
     color: '#A1A1AA',
+    fontSize: 13,
+    lineHeight: 14,
+  },
+  dateText: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 8,
+    // marginLeft: -60
+  },
+  historyRight: {
+    alignItems: 'flex-end',
   },
   statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusIcon: {
-    width: 16,
-    height: 16,
-    marginRight: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 4,
   },
   statusText: {
-    fontSize: 12,
+    color: '#fff',
+    fontSize: 11,
     fontWeight: '600',
   },
-  historyItemContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  timeText: {
+    color: '#A1A1AA',
+    fontSize: 11,
+    marginBottom: 8,
   },
-  rewardsContainer: {
-    flexDirection: 'row',
-    gap: 12, // Reduced gap for better spacing
+  rewardsRow: {
+    alignItems: 'flex-end',
+    gap: 4,
   },
   rewardItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 4,
   },
-  rewardIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  rewardText: {
+  rewardValue: {
     fontSize: 13,
     fontWeight: '600',
   },
-  dateText: {
-    fontSize: 12,
-    color: '#A1A1AA',
+  rewardIcon: {
+    width: 20,
+    height: 20,
   },
+  // Empty State
   emptyState: {
-    borderRadius: 16,
-    padding: 32,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    marginHorizontal: 16,
+    marginTop: 24,
+    backgroundColor: '#1a1b1f',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  emptyStateText: {
+  emptyText: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    color: 'white',
     marginBottom: 8,
   },
-  emptyStateSubtext: {
-    fontSize: 14,
+  emptySubtext: {
     color: '#A1A1AA',
+    fontSize: 14,
     textAlign: 'center',
   },
-  // Modal styles
+  // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    color: '#000',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  // Sort Modal
+  sortModalContent: {
+    backgroundColor: '#FFCD0A',
+    borderRadius: 20,
+    padding: 24,
+    width: '80%',
+    maxWidth: 300,
+  },
+  sortOptions: {
+    marginTop: 16,
+    gap: 12,
+  },
+  sortOption: {
+    backgroundColor: '#000',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  sortOptionSelected: {
+    borderColor: '#FFCD0A',
+    backgroundColor: '#1a1a1a',
+  },
+  sortOptionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  sortOptionTextSelected: {
+    color: '#FFCD0A',
+  },
+  // Filter Modal
+  filterModalContent: {
+    backgroundColor: '#FFCD0A',
     borderRadius: 20,
     padding: 24,
     width: '85%',
     maxWidth: 400,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    maxHeight: '70%',
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  filterModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-  },
-  filterModalContent: {
-    flex: 1,
-    marginTop: 60,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  filterModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  filterModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  filterCloseButton: {
-    padding: 4,
-  },
-  filterCloseIcon: {
-    width: 20,
-    height: 20,
-  },
-  filterModalBody: {
-    flex: 1,
-    paddingHorizontal: 20,
+  filterBody: {
+    marginTop: 10,
   },
   filterSection: {
-    marginVertical: 20,
+    marginBottom: 24,
   },
   filterSectionTitle: {
+    color: '#000',
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: 'bold',
     marginBottom: 12,
   },
-  
-  // Date range styles
-  filterOptionsGrid: {
+  dateRangeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
   dateRangeOption: {
+    backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
+    borderColor: '#000',
   },
   dateRangeOptionSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
+    backgroundColor: '#000',
+    borderColor: '#000',
   },
-  dateRangeOptionText: {
-    color: 'white',
+  dateRangeText: {
+    color: '#000',
     fontSize: 14,
-  },
-  dateRangeOptionTextSelected: {
-    color: '#3B82F6',
     fontWeight: '600',
   },
-  
-  // Checkbox styles
-  filterCheckboxContainer: {
+  dateRangeTextSelected: {
+    color: '#FFCD0A',
+  },
+  statusCheckboxes: {
     gap: 12,
   },
-  filterCheckboxItem: {
+  checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    gap: 12,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    marginRight: 12,
+    borderColor: '#000',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxSelected: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+  checkboxChecked: {
+    backgroundColor: '#FFCD0A',
+    borderColor: '#000',
   },
-  checkIcon: {
-    width: 12,
-    height: 12,
-  },
-  filterCheckboxText: {
-    flex: 1,
-    color: 'white',
-    fontSize: 14,
-  },
-  statusColorIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  
-  // Footer styles
-  filterModalFooter: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    gap: 12,
-  },
-  clearFiltersButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-  },
-  clearFiltersText: {
-    color: 'white',
+  checkboxLabel: {
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
-  },
-  applyFiltersButton: {
-    flex: 2,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#3B82F6',
-    alignItems: 'center',
-  },
-  applyFiltersText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  sortOptions: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  sortOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  sortOptionSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3B82F6',
-  },
-  sortOptionText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  sortOptionTextSelected: {
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-  modalCloseButton: {
-    backgroundColor: '#EF4444',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  snackbar: {
-    position: 'absolute',
-    bottom: 100,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  snackbarText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '500',
   },
 });
+
