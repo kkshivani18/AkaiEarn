@@ -236,7 +236,7 @@ const ProfileCompletionScreen: React.FC = () => {
 
       if (result.success && result.profileCompleted) {
         if (onProfileCompleted) {
-          onProfileCompleted();
+          await onProfileCompleted();
         }
         
         showSnackbarMessage('Profile Completed! You can now access all features.');

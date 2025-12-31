@@ -1,15 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Alert,
-  ScrollView,
-  Animated,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ScrollView, Animated, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,12 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { router } from "expo-router";
 import IQMeter from "../../components/IQMeter";
 import { configAPI, contractAPI } from "../../services/api";
-import {
-  useCurrentUser,
-  useCreateEvmSmartAccount,
-  useIsSignedIn,
-  useSendUserOperation,
-} from "@coinbase/cdp-hooks";
+import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn, useSendUserOperation } from "@coinbase/cdp-hooks";
 import { encodeFunctionData } from "viem";
 import { abi } from "../../config/abi";
 import { InfoPopup } from "../../components/popups/InfoPopup";

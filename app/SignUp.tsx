@@ -81,7 +81,11 @@ export const SignUp: React.FC<SignUpModalProps> = ({
       colors={['#0f172a', '#0b1220', '#07121a']}
       style={styles.container}
     >
-      <View style={styles.flexContainer}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flexContainer}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
         <View style={styles.screenContainer}>
           <View style={styles.imageSection}>
             <ImageBackground
@@ -94,85 +98,81 @@ export const SignUp: React.FC<SignUpModalProps> = ({
           <View style={styles.formPanel}>
             <Text style={styles.questTitle}>SIGN UP</Text>
             
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.keyboardView}
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
             >
-              <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-              >
-                <Text style={styles.stepLabel}>Enter Your Email Address</Text>
+              <Text style={styles.stepLabel}>Enter Your Email Address</Text>
+              <TextInput
+                style={styles.stepInput}
+                placeholder="xyz@gmail.com"
+                placeholderTextColor="#666"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={styles.stepLabel}>Enter Your Password</Text>
+              <View style={styles.passwordContainer}>
                 <TextInput
-                  style={styles.stepInput}
-                  placeholder="xyz@gmail.com"
+                  style={styles.passwordInput}
+                  placeholder="xxxxxxxxxxxx"
                   placeholderTextColor="#666"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
                 />
-
-                <Text style={styles.stepLabel}>Enter Your Password</Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="xxxxxxxxxxxx"
-                    placeholderTextColor="#666"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
+                <TouchableOpacity 
+                  style={styles.eyeIcon} 
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons 
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'} 
+                    size={22} 
+                    color="#333" 
                   />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon} 
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Ionicons 
-                      name={showPassword ? 'eye-outline' : 'eye-off-outline'} 
-                      size={22} 
-                      color="#333" 
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.stepLabel}>Confirm Password</Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="xxxxxxxxxxxx"
-                    placeholderTextColor="#666"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon} 
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    <Ionicons 
-                      name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} 
-                      size={22} 
-                      color="#333" 
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
-                  <Text style={styles.buttonText}>{loading ? 'CREATING ACCOUNT' : 'CONTINUE TO QUEST'}</Text>
                 </TouchableOpacity>
+              </View>
 
-                <View style={styles.footer}>
-                  <Text style={styles.footerText}>Already have a account ? </Text>
-                  <TouchableOpacity onPress={onSwitchToSignIn}>
-                    <Text style={styles.linkText}>Login Now</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </KeyboardAvoidingView>
+              <Text style={styles.stepLabel}>Confirm Password</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="xxxxxxxxxxxx"
+                  placeholderTextColor="#666"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity 
+                  style={styles.eyeIcon} 
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Ionicons 
+                    name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} 
+                    size={22} 
+                    color="#333" 
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+                <Text style={styles.buttonText}>{loading ? 'CREATING ACCOUNT' : 'CONTINUE TO QUEST'}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Already have a account ? </Text>
+                <TouchableOpacity onPress={onSwitchToSignIn}>
+                  <Text style={styles.linkText}>Login Now</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
       {showSnackbar && (
         <View style={styles.snackbar}>
           <Text style={styles.snackbarText}>{snackbarMessage}</Text>
@@ -185,6 +185,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
 const createStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0f172a',
   },
   flexContainer: {
     flex: 1,
@@ -193,23 +194,21 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   imageSection: {
-    flex: 1,
-    minHeight: '30%',
-    maxHeight: '35%',
+    height: '35%',
+    minHeight: 200,
   },
   backgroundImage: {
     width: '100%',
     height: '100%',
   },
   formPanel: {
+    flex: 1,
     backgroundColor: '#1F1F1F',
     borderTopLeftRadius: 50,
     borderTopRightRadius: 50,
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
-    minHeight: '65%',
-    maxHeight: '70%',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 20,
   },
   questTitle: {
     color: 'white',
@@ -218,11 +217,9 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  keyboardView: {
-    flex: 1,
-  },
   scrollContent: {
-    paddingBottom: 20,
+    flexGrow: 1,
+    paddingBottom: 40,
   },
   stepLabel: {
     color: 'white',

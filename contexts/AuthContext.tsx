@@ -294,12 +294,39 @@ export const AuthProvider = ({children}: any) => {
     try {
       const userData = await authAPI.getUser();
       try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
+      
+      const user = userData.user || userData;
+      
       setAuthState(prev => ({
         ...prev,
-        user: userData.user || userData,
-        profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? true
+        user: user,
+        profileCompleted: userData.profileCompleted ?? user?.profileCompleted ?? true
       }));
+      
+      useUserStore.getState().setUser({
+        id: user._id || user.id,
+        name: user.firstName || user.username || user.name || 'User',
+        email: user.email,
+        username: user.username || user.firstName || user.name,
+        iq: user.iq || 0,
+        coins: user.coins || 0,
+        inrBalance: user.inrBalance || 0,
+        walletAddress: userData.walletAddress || null,
+        streakCount: user.streakCount || 0,
+        longestStreak: user.longestStreak || 0,
+        lastStreakAt: user.lastStreakAt || null,
+        profileCompleted: userData.profileCompleted ?? user.profileCompleted ?? true,
+        occupation: user.occupation || null,
+        gender: user.gender || null,
+        dob: user.dob || null,
+      });
+      
+      console.log('✅ Profile completed - User data refreshed:', {
+        name: user.firstName || user.username || user.name,
+        profileCompleted: true
+      });
     } catch (e) {
+      console.error('❌ Error refreshing user data on profile completion:', e);
       // fallback: mark locally true
       setAuthState(prev => ({ ...prev, profileCompleted: true }));
     }
