@@ -1,15 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import {  useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  ActivityIndicator,
-  Alert,
-  Animated,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert, Animated, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCurrentUser, useSendUserOperation } from "@coinbase/cdp-hooks";
 import {
@@ -66,6 +57,16 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
   const [addressError, setAddressError] = useState("");
   const [amountError, setAmountError] = useState("");
   const { sendUserOperation } = useSendUserOperation();
+
+  // Swap modal states
+  const [isSwapDialogVisible, setIsSwapDialogVisible] = useState(false);
+  const [fromCurrency, setFromCurrency] = useState<string>("ETH");
+  const [toCurrency, setToCurrency] = useState<string>("USD");
+  const [fromAmount, setFromAmount] = useState("");
+  const [toAmount, setToAmount] = useState("");
+  const [isSwapping, setIsSwapping] = useState(false);
+  const [showFromDropdown, setShowFromDropdown] = useState(false);
+  const [showToDropdown, setShowToDropdown] = useState(false);
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
 
@@ -151,6 +152,43 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
     setTransferAmount("");
     setAddressError("");
     setAmountError("");
+  };
+
+  const handleSwapDialogClose = () => {
+    setIsSwapDialogVisible(false);
+    setFromAmount("");
+    setToAmount("");
+    setShowFromDropdown(false);
+    setShowToDropdown(false);
+  };
+
+  const handleSwapCurrencies = () => {
+    const tempCurrency = fromCurrency;
+    setFromCurrency(toCurrency);
+    setToCurrency(tempCurrency);
+    const tempAmount = fromAmount;
+    setFromAmount(toAmount);
+    setToAmount(tempAmount);
+  };
+
+  const handleSwapCrypto = async () => {
+    if (!fromAmount || parseFloat(fromAmount) <= 0) {
+      Alert.alert("Error", "Please enter a valid amount to swap");
+      return;
+    }
+    
+    setIsSwapping(true);
+    try {
+      // Simulate swap operation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      Alert.alert("Success", `Swapped ${fromAmount} ${fromCurrency} to ${toCurrency}`);
+      handleSwapDialogClose();
+    } catch (error) {
+      Alert.alert("Error", "Swap failed. Please try again.");
+    } finally {
+      setIsSwapping(false);
+    }
   };
 
   const handleSendUserUSDC = async () => {
@@ -263,7 +301,11 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
             <Text style={styles.actionText}>Receive</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            activeOpacity={0.7}
+            onPress={() => setIsSwapDialogVisible(true)}
+          >
             <Ionicons name="swap-horizontal" size={24} color="#fff" />
             <Text style={styles.actionText}>Swap</Text>
           </TouchableOpacity>
@@ -352,6 +394,164 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
             </LinearGradient>
           </TouchableOpacity>
         </View>
+      </Dialog>
+
+      {/* Swap Dialog */}
+      <Dialog
+        visible={isSwapDialogVisible}
+        onClose={handleSwapDialogClose}
+        title=""
+      >
+        <LinearGradient
+          colors={["#F4C95D", "#F9D98E", "#F4C95D"]}
+          style={styles.swapDialogGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <Text style={styles.swapDialogTitle}>Instant Exchange</Text>
+          <View style={styles.swapDialogContent}>
+          {/* From Section */}
+          <View style={styles.swapSection}>
+            <View style={styles.swapSectionHeader}>
+              <Text style={styles.swapLabel}>From</Text>
+              <Text style={styles.availableText}>Available 0.001 BTC</Text>
+            </View>
+            
+            <View style={styles.swapInputContainer}>
+              <TouchableOpacity 
+                style={styles.currencySelector}
+                onPress={() => {
+                  setShowFromDropdown(!showFromDropdown);
+                  setShowToDropdown(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.currencyIcon} />
+                <Text style={styles.currencyText}>{fromCurrency}</Text>
+                <Ionicons name="chevron-down" size={16} color="#fff" />
+              </TouchableOpacity>
+              
+              <TextInput
+                style={styles.swapAmountInput}
+                placeholder="0.058"
+                placeholderTextColor="#666"
+                value={fromAmount}
+                onChangeText={(text) => {
+                  const filtered = text.replace(/[^0-9.]/g, "");
+                  setFromAmount(filtered);
+                }}
+                keyboardType="decimal-pad"
+                editable={!isSwapping}
+              />
+            </View>
+
+            {/* From Currency Dropdown */}
+            {showFromDropdown && (
+              <View style={styles.dropdown}>
+                {["ETH", "USD", "INR"].map((curr) => (
+                  <TouchableOpacity
+                    key={curr}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setFromCurrency(curr);
+                      setShowFromDropdown(false);
+                    }}
+                  >
+                    <View style={styles.currencyIcon} />
+                    <Text style={styles.dropdownItemText}>{curr}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Swap Icon */}
+          <TouchableOpacity 
+            style={styles.swapIconButton}
+            onPress={handleSwapCurrencies}
+            activeOpacity={0.7}
+          >
+            <Image 
+              source={require('../../../assets/app-images/exchange_icon.png')}
+              style={styles.swapIconImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+
+          {/* To Section */}
+          <View style={styles.swapSection}>
+            <Text style={styles.swapLabel}>To</Text>
+            
+            <View style={styles.swapInputContainer}>
+              <TouchableOpacity 
+                style={styles.currencySelector}
+                onPress={() => {
+                  setShowToDropdown(!showToDropdown);
+                  setShowFromDropdown(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.currencyIcon} />
+                <Text style={styles.currencyText}>{toCurrency}</Text>
+                <Ionicons name="chevron-down" size={16} color="#fff" />
+              </TouchableOpacity>
+              
+              <TextInput
+                style={styles.swapAmountInput}
+                placeholder="0.025"
+                placeholderTextColor="#666"
+                value={toAmount}
+                onChangeText={(text) => {
+                  const filtered = text.replace(/[^0-9.]/g, "");
+                  setToAmount(filtered);
+                }}
+                keyboardType="decimal-pad"
+                editable={!isSwapping}
+              />
+            </View>
+
+            {/* To Currency Dropdown */}
+            {showToDropdown && (
+              <View style={styles.dropdown}>
+                {["ETH", "USD", "INR"].map((curr) => (
+                  <TouchableOpacity
+                    key={curr}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setToCurrency(curr);
+                      setShowToDropdown(false);
+                    }}
+                  >
+                    <View style={styles.currencyIcon} />
+                    <Text style={styles.dropdownItemText}>{curr}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+          </View>
+        </LinearGradient>
+
+          {/* Swap Button */}
+          <TouchableOpacity
+            style={[styles.swapButton, isSwapping && styles.swapButtonDisabled]}
+            onPress={handleSwapCrypto}
+            disabled={isSwapping}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={["#FFD25D", "#FFEBA3", "#FFEBA3", "#FFD25D"]}
+              style={styles.swapButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              {isSwapping ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text style={styles.swapButtonText}>Swap Crypto</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
       </Dialog>
     </>
   );
@@ -464,6 +664,136 @@ const styles = StyleSheet.create({
   transferButtonText: {
     color: "#000",
     fontSize: 16,
+    fontWeight: "700",
+  },
+  // Swap dialog styles
+  swapDialogGradient: {
+    borderRadius: 12,
+    padding: 24,
+    paddingBottom: 24,
+  },
+  swapDialogTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 16,
+  },
+  swapDialogContent: {
+    gap: 12,
+  },
+  swapSection: {
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
+    padding: 18,
+    paddingBottom: 20,
+    position: "relative",
+  },
+  swapSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  swapLabel: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  availableText: {
+    color: "#888",
+    fontSize: 12,
+  },
+  swapInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  currencySelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  currencyIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#FFD700",
+  },
+  currencyText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  swapAmountInput: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "right",
+    flex: 1,
+    paddingLeft: 16,
+  },
+  swapIconButton: {
+    alignSelf: "center",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: -15,
+    zIndex: 10,
+    overflow: "hidden",
+  },
+  swapIconImage: {
+    width: 38,
+    height: 38,
+  },
+  dropdown: {
+    backgroundColor: "#2a2a2a",
+    borderRadius: 12,
+    marginTop: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+  },
+  dropdownItemText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  swapButton: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 16,
+    marginHorizontal: 2,
+    marginBottom: 24,
+    width: 280
+  },
+  swapButtonDisabled: {
+    opacity: 0.6,
+  },
+  swapButtonGradient: {
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  swapButtonText: {
+    color: "#000",
+    fontSize: 18,
     fontWeight: "700",
   },
 });
