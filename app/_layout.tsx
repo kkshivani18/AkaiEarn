@@ -1,10 +1,12 @@
 import { CDPHooksProvider, Config } from "@coinbase/cdp-hooks";
 import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Provider as PaperProvider } from 'react-native-paper';
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
+import { SplashScreen } from './SplashScreen';
+import { OnboardingSplash } from './SplashScreen2';
 import "../globals";
 
 const cdpConfig: Config = {
@@ -14,10 +16,8 @@ const cdpConfig: Config = {
   customAuth: {
     getJwt: async () => {
       try {
-        // Get JWT from secure storage
         const token = await SecureStore.getItemAsync('authToken');
         console.log(token);
-        
         return token || undefined;
       } catch (error) {
         console.error('Failed to get JWT:', error);
@@ -32,17 +32,34 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const pathname = usePathname();
+  
+  const [showFirstSplash, setShowFirstSplash] = useState(true);
+  const [showSecondSplash, setShowSecondSplash] = useState(false);
+
+  // first splash screen timeout
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFirstSplash(false);
+      setShowSecondSplash(true);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // second splash completion
+  const handleSecondSplashComplete = () => {
+    setShowSecondSplash(false);
+  };
 
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
       if (event.url.startsWith('offerwall://')) {
         if (authState?.authenticated) {
-          router.replace('/(tabs)/offer');
+          router.replace('/(tabs)/home');
         }
       }
     };
 
-    // handle initial deep link 
     Linking.getInitialURL().then((url) => {
       if (url) {
         handleDeepLink({ url });
@@ -57,7 +74,12 @@ function RootLayoutNav() {
   }, [authState?.authenticated]);
 
   useEffect(() => {
-    // auth state to be determined
+    // no routing while showing splash screens
+    if (showFirstSplash || showSecondSplash) {
+      return;
+    }
+
+    // Auth state determined
     if (authState?.authenticated === null) {
       return;
     }
@@ -66,12 +88,12 @@ function RootLayoutNav() {
     const isOnIndex = !segments.length || pathname === '/' || pathname === '';
 
     if (!authState?.authenticated) {
-      // user is not authenticated
+      // User is not authenticated
       if (inAuthGroup) {
         router.replace('/');
       }
     } else {
-      // user is authenticated
+      // User is authenticated
       if (isOnIndex) {
         if (authState?.profileCompleted) {
           router.replace('/(tabs)/home');
@@ -80,19 +102,35 @@ function RootLayoutNav() {
         }
       }
     }
-  }, [authState?.authenticated, authState?.profileCompleted, segments, pathname]);
+  }, [
+    authState?.authenticated,
+    authState?.profileCompleted,
+    segments,
+    pathname,
+    showFirstSplash,
+    showSecondSplash,
+  ]);
+
+  // Show splash screens
+  if (showFirstSplash) {
+    return <SplashScreen />;
+  }
+
+  if (showSecondSplash) {
+    return <OnboardingSplash onContinue={handleSecondSplashComplete} />;
+  }
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }
 
 export default function RootLayout() {
   return (
-    <CDPHooksProvider config={cdpConfig} >
-    <PaperProvider>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </PaperProvider>
+    <CDPHooksProvider config={cdpConfig}>
+      <PaperProvider>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </PaperProvider>
     </CDPHooksProvider>
   );
 }

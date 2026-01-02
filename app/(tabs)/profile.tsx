@@ -1109,6 +1109,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: "center",
+    marginBottom: 50
   },
   logoutText: {
     color: "#EF4444",

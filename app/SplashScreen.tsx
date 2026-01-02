@@ -1,23 +1,46 @@
 import React from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View, Image } from 'react-native';
 
 export const SplashScreen: React.FC = () => {
   const [fadeAnim] = React.useState(new Animated.Value(0));
+  const [scaleAnim] = React.useState(new Animated.Value(0.8));
 
   React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        <Text style={styles.logo}>🎁</Text>
-        <Text style={styles.title}>Offer Wall</Text>
-        <Text style={styles.subtitle}>Your rewards await</Text>
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        {/* AE Icon */}
+        <Image
+          source={require('../assets/app-images/AE_splash_icon.png')}
+          style={styles.icon}
+          resizeMode="contain"
+        />
+        
+        {/* App Name */}
+        <Text style={styles.appName}>AkaiEarn</Text>
       </Animated.View>
     </View>
   );
@@ -26,26 +49,23 @@ export const SplashScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0a0b0f',
     justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  logo: {
-    fontSize: 80,
+  icon: {
+    width: 140,
+    height: 140,
     marginBottom: 20,
   },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#fff',
-    opacity: 0.9,
+  appName: {
+    fontSize: 42,
+    fontWeight: '700',
+    color: '#E5383B',
+    letterSpacing: -1,
   },
 });
