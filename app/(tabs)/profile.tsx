@@ -17,7 +17,7 @@ import { SuccessPopup } from "../../components/popups/SuccessPopup";
 import { contractAddress } from "@/constants/theme";
 
 export default function ProfileScreen() {
-  const { name, iq, coins, balance, dollars, fetchUserData } = useUserStore();
+  const { name, iq, coins, balance, dollars, fetchUserData, setUser } = useUserStore();
   const { onLogout } = useAuth();
   const { currentUser } = useCurrentUser();
   const { createEvmSmartAccount } = useCreateEvmSmartAccount();
@@ -44,11 +44,12 @@ export default function ProfileScreen() {
     message: "",
   });
   const [showAuthIssuePopup, setShowAuthIssuePopup] = useState(false);
+  const [cashoutHistory, setCashoutHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
 
   const [errorMessage, setErrorMessage] = useState("");
-
   const displayName = name || "User";
   const displayIq = typeof iq === "number" ? iq : 200;
   const points = typeof coins === "number" && coins > 0 ? coins : 0;
@@ -108,6 +109,26 @@ export default function ProfileScreen() {
     fetchLabelHistoryCount();
   }, []);
 
+  useEffect(() => {
+    const fetchCashoutHistory = async () => {
+      try {
+        setLoadingHistory(true);
+        const response = await contractAPI.getCashoutHistory();
+        if (response && response.success && Array.isArray(response.data)) {
+          setCashoutHistory(response.data.slice(0, 3));
+        }
+      } catch (error) {
+        console.error("Error fetching cashout history:", error);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    if (walletAddress) {
+      fetchCashoutHistory();
+    }
+  }, [walletAddress]);
+
   const handleCreateWallet = async () => {
     if (!hasUnlockedWallet) {
       setInfoPopupData({
@@ -138,6 +159,7 @@ export default function ProfileScreen() {
       if (result) {
         console.log("✅ Wallet created:", result);
         setWalletAddress(result);
+        setUser({ walletAddress: result });
 
         // Register user on-chain via backend
         try {
@@ -188,6 +210,14 @@ export default function ProfileScreen() {
       setShowErrorPopup(true);
       return;
     }
+
+    const currentBalance = typeof balance === 'number' ? balance : 0;
+    if (currentBalance < 100) {
+      setErrorPopupMessage("Insufficient App Rewards balance. Minimum withdrawal is $1.00.");
+      setShowErrorPopup(true);
+      return;
+    }
+
     try {
       const transferData = encodeFunctionData({
         abi: abi,
@@ -209,12 +239,18 @@ export default function ProfileScreen() {
       });
 
       if (result?.userOperationHash) {
+        // update
+        const currentBalance = typeof balance === 'number' ? balance : 0;
+        const currentDollars = typeof dollars === 'number' ? dollars : 0;
+        const amountUsd = currentBalance / 100;
+        
+        setUser({
+            balance: 0,
+            dollars: currentDollars + amountUsd
+        });
+
         setSuccessPopupMessage("USDC withdrawal initiated!");
         setShowSuccessPopup(true);
-
-        setTimeout(async () => {
-          await fetchUserData();
-        }, 2000);
       }
     } catch (err) {
       const message =
@@ -526,6 +562,58 @@ export default function ProfileScreen() {
             </View>
             <Ionicons name="chevron-forward" size={24} color="#71717A" />
           </TouchableOpacity>
+
+          <View style={styles.transactionCard}>
+            <View style={styles.transactionHeader}>
+              <Text style={styles.transactionTitle}>Transaction History</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>See All</Text>
+              </TouchableOpacity>
+            </View>
+
+            {loadingHistory ? (
+              <ActivityIndicator color="#FFB917" />
+            ) : cashoutHistory.length > 0 ? (
+              cashoutHistory.map((item, index) => {
+                const date = new Date(item.time);
+                const months = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
+                const dateStr = `${months[date.getMonth()]} ${date.getDate()}, ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.transactionItem,
+                      index === cashoutHistory.length - 1 && styles.lastItem,
+                    ]}
+                  >
+                    <Image
+                      source={require("../../assets/app-images/profile_wallet.png")}
+                      style={styles.transactionIcon}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.transactionInfo}>
+                      <Text style={styles.transactionDate}>{dateStr}</Text>
+                      <Text style={styles.transactionAmount}>
+                        + ${item.usdcAmount} Wallet Transfer
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <Text
+                style={{
+                  color: "#9CA3AF",
+                  textAlign: "center",
+                  padding: 10,
+                  fontSize: 14,
+                }}
+              >
+                No transactions yet
+              </Text>
+            )}
+          </View>
 
           <TouchableOpacity
             style={styles.logoutButton}
@@ -877,6 +965,56 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: "center",
+  },
+  transactionCard: {
+    backgroundColor: "#1a1b20",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  transactionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  transactionTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  seeAllText: {
+    color: "#FFB917",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  transactionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2C2C2E",
+  },
+  lastItem: {
+    borderBottomWidth: 0,
+  },
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionDate: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  transactionAmount: {
+    color: "#FFB917",
+    fontSize: 14,
+    fontWeight: "600",
   },
   walletButtonText: {
     color: "#FFFFFF",

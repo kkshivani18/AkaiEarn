@@ -11,6 +11,7 @@ import { couponsAPI, authAPI } from '../../../services/api';
 import SpinCouponModal from './spinCoupon';
 import { router } from 'expo-router';
 import { useUserStore } from '../../../stores/userStore';
+import { ErrorPopup } from '../../../components/popups/ErrorPopup';
 
 interface Coupon {
   _id: string;
@@ -24,6 +25,8 @@ interface Coupon {
 
 export default function SpinWheelPage() {
   const { updateCoins } = useUserStore();
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorPopupMessage, setErrorPopupMessage] = useState("");
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const spinRotation = useSharedValue(0);
@@ -138,7 +141,8 @@ export default function SpinWheelPage() {
 
   const handlePurchaseSpin = async () => {
     if (userCoins < 25) {
-      showSnackbarMessage('Insufficient coins. You need 25 coins to spin.');
+      setErrorPopupMessage('Insufficient coins. You need 25 coins to spin.');
+      setShowErrorPopup(true);
       return;
     }
 
@@ -421,9 +425,8 @@ export default function SpinWheelPage() {
         </Text>
         <TouchableOpacity 
           activeOpacity={0.85} 
-          style={[styles.spinAgainButton, userCoins < 25 && styles.spinAgainButtonDisabled]}
+          style={styles.spinAgainButton}
           onPress={handlePurchaseSpin}
-          disabled={userCoins < 25}
         >
           <Text style={styles.spinAgainText}>Spin again for 25 coins</Text>
           <Image
@@ -452,6 +455,11 @@ export default function SpinWheelPage() {
           router.push('/rewardComponents/couponComponents/couponPage');
         }}
         onClose={() => setShowWinModal(false)}
+      />
+      <ErrorPopup
+        visible={showErrorPopup}
+        message={errorPopupMessage}
+        onClose={() => setShowErrorPopup(false)}
       />
     </SafeAreaView>
   );

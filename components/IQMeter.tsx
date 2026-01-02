@@ -5,21 +5,20 @@ import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 const { width: screenWidth } = Dimensions.get('window');
 
 // --- Configuration ---
-const METER_SIZE = screenWidth * 0.8; // Increased from 0.6 to 0.8 for wider container
+// size of the meter 
+const METER_SIZE = screenWidth * 0.7;
 const METER_WIDTH = METER_SIZE / 2;
-const STROKE_WIDTH = 20;
+const STROKE_WIDTH = 18;
+// Slight outer border around the IQ arc
+const BORDER_STROKE_WIDTH = STROKE_WIDTH + 8;
 const MAX_IQ = 100;
 
 // --- IQ Ranges Configuration ---
 const DEFAULT_IQ_RANGES = [
-  { min: 1,  max: 10, colorHex: "#7dbee1ff" }, 
-  { min: 10, max: 40, colorHex: "#4fabddff" },
-    { min: 40, max: 70, colorHex: "#3e92c0ff" },  
-  { min: 70, max: 85, colorHex: "#2c87b8ff" }, 
-  { min: 85, max: 100, colorHex: "#1588c6ff" }, 
+  { min: 1,  max: 35, colorHex: "#D63CC6" }, 
+  { min: 35, max: 75, colorHex: "#70C8F4" },  
+  { min: 75, max: 100, colorHex: "#34E819" }, 
 ];
-
-// --- Helper Functions ---
 
 /**
  * Converts polar coordinates to Cartesian for SVG arc drawing.
@@ -45,13 +44,6 @@ const describeArc = (x: number, y: number, radius: number, startAngle: number, e
 /**
  * Determines the descriptive label based on the IQ score.
  */
-const getIqLabel = (iq: number) => {
-  if (iq < 10) return "Just Starting";
-  if (iq < 40) return "Beginner";
-  if (iq < 70) return "Average";
-  if (iq < 85) return "Above Average";
-  return "Expert";
-};
 
 interface IQMeterProps {
   iqValue?: number;
@@ -68,14 +60,14 @@ const IQMeter: React.FC<IQMeterProps> = ({ iqValue = 90 }) => {
     setRotation(targetRotation);
   }, [iqValue]);
   
-  const radius = (METER_SIZE - STROKE_WIDTH) / 2;
-  
+  const CAP_PADDING = 3; 
+  const radius = (METER_SIZE - BORDER_STROKE_WIDTH) / 2;
   // Full arc path (background - unfilled portion)
-  const fullArcPath = describeArc(METER_SIZE / 2, METER_SIZE / 2, radius, 0, 180);
+  const fullArcPath = describeArc(METER_SIZE / 2, METER_SIZE / 2, radius, 0  - CAP_PADDING, 180 + CAP_PADDING);
   
   // Calculate the filled arc based on IQ value (0-100 maps to 0-180 degrees)
   const filledAngle = Math.min(Math.max(iqValue, 0), MAX_IQ) / MAX_IQ * 180;
-  const filledArcPath = describeArc(METER_SIZE / 2, METER_SIZE / 2, radius, 0, filledAngle);
+  const filledArcPath = describeArc(METER_SIZE / 2, METER_SIZE / 2, radius, 0  - CAP_PADDING, filledAngle);
   
   // Determine which color to use based on the current IQ value
   const getCurrentColor = () => {
@@ -90,7 +82,7 @@ const IQMeter: React.FC<IQMeterProps> = ({ iqValue = 90 }) => {
   return (
     <View style={styles.container}>
       <View style={styles.meterContainer}>
-        <Svg width={METER_SIZE} height={METER_WIDTH} style={styles.svg}>
+        <Svg width={METER_SIZE} height={METER_WIDTH + 40} style={styles.svg}>
           <Defs>
             <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
               {/* Map over the IQ ranges to create the gradient stops */}
@@ -99,16 +91,25 @@ const IQMeter: React.FC<IQMeterProps> = ({ iqValue = 90 }) => {
               ))}
             </LinearGradient>
           </Defs>
-          
-          {/* Background arc (unfilled) */}
+          {/* Outer border that subtly encases the meter - NOW WITH ROUNDED ENDS */}
           <Path
             d={fullArcPath}
-            stroke="rgba(255, 255, 255, 0.1)"
-            strokeWidth={STROKE_WIDTH}
+            stroke="#3C3C3C"
+            strokeWidth={BORDER_STROKE_WIDTH}
+            strokeLinecap="round"
             fill="none"
           />
           
-          {/* Filled arc based on IQ value */}
+          {/* Background arc - NOW WITH ROUNDED ENDS */}
+          <Path
+            d={fullArcPath}
+            stroke="rgba(255, 255, 255, 0.08)"
+            strokeWidth={STROKE_WIDTH}
+            strokeLinecap="round"
+            fill="none"
+          />
+          
+          {/* Filled arc based on IQ value - ALREADY HAS ROUNDED ENDS */}
           <Path
             d={filledArcPath}
             stroke="url(#grad)"
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     top: 50
   },
   iqValue: {
-    fontSize: 46,
+    fontSize: 38,
     fontWeight: '800',
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',

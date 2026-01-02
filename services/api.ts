@@ -746,6 +746,12 @@ export const contractAPI = {
     const response = await api.post('/contract/withdrawUSDC');
     return response.data;
   },
+
+  // get cashout history
+  getCashoutHistory: async () => {
+    const response = await api.get('/contract/cashout-history');
+    return response.data;
+  },
 };
 
 export default api;

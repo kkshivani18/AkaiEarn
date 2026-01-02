@@ -1,13 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { Animated, StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
@@ -142,9 +134,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 36,
   },
-//   underlined: {
-//     textDecorationLine: 'underline',
-//   },
   subtitle: {
     fontSize: 14,
     color: '#999',

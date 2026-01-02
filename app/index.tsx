@@ -4,25 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Login } from './Login';
 import { SignUp } from './SignUp';
-import { SplashScreen } from './SplashScreen';
 import { useAuth } from '../contexts/AuthContext'
 import { router } from 'expo-router';
 
 export default function Index() {
-  const [showSplash, setShowSplash] = useState(true);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
 
   const { authState } = useAuth(); 
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-      console.log('Splash screen timed out, waiting for Auth state...');
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     console.log('Auth state:', authState);
@@ -37,42 +26,33 @@ export default function Index() {
       profileCompleted: authState?.profileCompleted
     });
 
-    setShowSplash(false);
-    setShowSignIn(false);
-    setShowSignUp(false);
-
     if (authState?.authenticated) {
-      if (authState?.profileCompleted) {
-        console.log('Navigating to tabs');
-        router.replace('/(tabs)/offer');
-      } else {
+      if (!authState?.profileCompleted) {
         console.log('Navigating to profile completion');
         router.replace('/profile-completion');
       }
     } else {
       console.log('Navigating to login/signup');
-      if (!showSplash) {
-        setShowSignIn(true);
-      }
+      setShowSignIn(true);
     }
-  }, [authState?.authenticated, authState?.profileCompleted, showSplash]); 
+  }, [authState?.authenticated, authState?.profileCompleted]); 
 
   const { onLogin, onRegister } = useAuth();
 
-  if (showSplash) {
-    return <SplashScreen />;
+  if (authState?.authenticated === null || authState?.authenticated === true) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E5383B" />
+      </View>
+    );
   }
-
-  if (showSplash || authState?.authenticated === null) {
-    return <SplashScreen />;
-}
 
   return (
     <View style={{ flex: 1 }}>
       {showSignIn && (
         <Login
           visible={true}
-          onClose={() => setShowSignIn(false)} 
+          onClose={() => {}} 
           onLogin={onLogin ? onLogin : () => Promise.resolve({ error: true, msg: "Login context not fully initialized." })} 
           onSwitchToSignUp={() => {
             setShowSignIn(false);
@@ -83,7 +63,7 @@ export default function Index() {
       {showSignUp && (
         <SignUp
           visible={true}
-          onClose={() => setShowSignUp(false)}
+          onClose={() => {}}
           onSignUp={onRegister ? onRegister : () => Promise.resolve({ error: true, msg: "Register context not fully initialized." })}
           onSwitchToSignIn={() => {
             setShowSignUp(false);
@@ -94,4 +74,13 @@ export default function Index() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0a0b0f',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 

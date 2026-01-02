@@ -74,6 +74,20 @@ export const useUserStore = create<UserState>((set, get) => ({
   ...initialState,
 
   setUser: (userData) => {
+    // use non-negative constraints
+    if (typeof userData.balance === 'number') {
+      if (userData.balance < 0) {
+        console.log(`[userStore] Warning: Attempted to set negative balance (${userData.balance}). Setting to 0.`);
+        userData.balance = 0;
+      }
+    }
+    if (typeof userData.coins === 'number') {
+      if (userData.coins < 0) {
+        console.log(`[userStore] Warning: Attempted to set negative coins (${userData.coins}). Setting to 0.`);
+        userData.coins = 0;
+      }
+    }
+
     set((state) => ({
       ...state,
       ...userData,

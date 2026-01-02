@@ -291,10 +291,6 @@ export const LootboxesSection: React.FC = () => {
         message={`Transaction submitted successfully!\n\nPoints spent: ${lootboxOpenedData.points}\nRemaining points: ${lootboxOpenedData.remaining}\n\nHash: ${lootboxOpenedData.hash}`}
         onContinue={() => {
           setShowLootboxOpenedPopup(false);
-          // Sync with backend after a short delay
-          setTimeout(async () => {
-            await fetchUserData();
-          }, 2000);
         }}
       />
 
