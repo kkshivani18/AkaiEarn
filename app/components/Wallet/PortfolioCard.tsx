@@ -1,8 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import {  useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert, Animated, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Animated, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCurrentUser, useSendUserOperation } from "@coinbase/cdp-hooks";
+import QRCode from "react-native-qrcode-svg";
+import * as Clipboard from "expo-clipboard";
+import { ErrorPopup } from "@/components/popups/ErrorPopup";
+import { SuccessPopup } from "@/components/popups/SuccessPopup";
+import { InfoPopup } from "@/components/popups/InfoPopup";
 import {
   createPublicClient,
   encodeFunctionData,
@@ -40,25 +45,16 @@ interface PortfolioCardProps {
   onTransferComplete: () => void;
 }
 
-export const PortfolioCard: React.FC<PortfolioCardProps> = ({
-  totalBalance,
-  currency,
-  onCurrencyToggle,
-  formatCurrency,
-  isLoadingPrices,
-  usdcBalance,
-  onTransferComplete,
-}) => {
+export const PortfolioCard: React.FC<PortfolioCardProps> = ({ totalBalance, currency, onCurrencyToggle, formatCurrency, isLoadingPrices, usdcBalance, onTransferComplete }) => {
   const { currentUser } = useCurrentUser();
   const [isDialogVisible, setIsDialogVisible] = useState(false);
+  const [isReceiveDialogVisible, setIsReceiveDialogVisible] = useState(false);
   const [recipientAddress, setRecipientAddress] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [addressError, setAddressError] = useState("");
   const [amountError, setAmountError] = useState("");
   const { sendUserOperation } = useSendUserOperation();
-
-  // Swap modal states
   const [isSwapDialogVisible, setIsSwapDialogVisible] = useState(false);
   const [fromCurrency, setFromCurrency] = useState<string>("ETH");
   const [toCurrency, setToCurrency] = useState<string>("USD");
@@ -67,6 +63,8 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
   const [isSwapping, setIsSwapping] = useState(false);
   const [showFromDropdown, setShowFromDropdown] = useState(false);
   const [showToDropdown, setShowToDropdown] = useState(false);
+  const [errorPopup, setErrorPopup] = useState({ visible: false, message: "" });
+  const [successPopup, setSuccessPopup] = useState({ visible: false, message: "" });
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
 
@@ -173,27 +171,34 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
 
   const handleSwapCrypto = async () => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) {
-      Alert.alert("Error", "Please enter a valid amount to swap");
+      setErrorPopup({ visible: true, message: "Please enter a valid amount to swap" });
       return;
     }
     
     setIsSwapping(true);
     try {
-      // Simulate swap operation
+      // swap operation
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      Alert.alert("Success", `Swapped ${fromAmount} ${fromCurrency} to ${toCurrency}`);
+      setSuccessPopup({ visible: true, message: `Swapped ${fromAmount} ${fromCurrency} to ${toCurrency}` });
       handleSwapDialogClose();
     } catch (error) {
-      Alert.alert("Error", "Swap failed. Please try again.");
+      setErrorPopup({ visible: true, message: "Swap failed. Please try again." });
     } finally {
       setIsSwapping(false);
     }
   };
 
+  const handleCopyAddress = async () => {
+    if (smartAccount) {
+      await Clipboard.setStringAsync(smartAccount);
+      setSuccessPopup({ visible: true, message: "Address copied to clipboard!" });
+    }
+  };
+
   const handleSendUserUSDC = async () => {
     if (!smartAccount) {
-      Alert.alert("Error", "No Smart Account available.");
+      setErrorPopup({ visible: true, message: "No Smart Account available." });
       return;
     }
     const isAddressValid = validateAddress(recipientAddress);
@@ -232,17 +237,17 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
         setTransferAmount("");
         setAddressError("");
         setAmountError("");
-        Alert.alert("Transaction Success", "USDC sent successfully!");
+        setSuccessPopup({ visible: true, message: "USDC sent successfully!" });
       }
     } catch (err) {
       console.error("Transfer error:", err);
       setAmountError("Transfer failed. Please try again.");
       const message =
         err instanceof Error ? err.message : "Failed to send user operation";
-      Alert.alert(
-        "Transaction Failed",
-        message + (message.endsWith(".") ? "" : ".")
-      );
+      setErrorPopup({
+        visible: true,
+        message: message + (message.endsWith(".") ? "" : ".")
+      });
     } finally {
       setIsTransferring(false);
     }
@@ -296,7 +301,11 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
             <Text style={styles.actionText}>Send</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            activeOpacity={0.7}
+            onPress={() => setIsReceiveDialogVisible(true)}
+          >
             <Ionicons name="qr-code" size={24} color="#fff" />
             <Text style={styles.actionText}>Receive</Text>
           </TouchableOpacity>
@@ -428,7 +437,7 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
               >
                 <View style={styles.currencyIcon} />
                 <Text style={styles.currencyText}>{fromCurrency}</Text>
-                <Ionicons name="chevron-down" size={16} color="#fff" />
+                <Ionicons name="chevron-down" size={16} color="#000000" />
               </TouchableOpacity>
               
               <TextInput
@@ -493,7 +502,7 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
               >
                 <View style={styles.currencyIcon} />
                 <Text style={styles.currencyText}>{toCurrency}</Text>
-                <Ionicons name="chevron-down" size={16} color="#fff" />
+                <Ionicons name="chevron-down" size={16} color="#000000" />
               </TouchableOpacity>
               
               <TextInput
@@ -553,6 +562,56 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
             </LinearGradient>
           </TouchableOpacity>
       </Dialog>
+
+      {/* Receive Dialog */}
+      <Dialog
+        visible={isReceiveDialogVisible}
+        onClose={() => setIsReceiveDialogVisible(false)}
+        title=""
+      >
+        <View style={styles.receiveDialogContent}>
+          {/* QR Code */}
+          <View style={styles.qrContainer}>
+            {smartAccount ? (
+              <QRCode
+                value={smartAccount}
+                size={200}
+                backgroundColor="white"
+                color="black"
+              />
+            ) : (
+              <View style={styles.qrPlaceholder}>
+                <Text style={styles.qrPlaceholderText}>No wallet address</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.receiveTitle}>Use this address to receive</Text>
+          <Text style={styles.receiveSubtitle}>tokens and collectibles</Text>
+
+          <TouchableOpacity
+            style={styles.copyAddressButton}
+            onPress={handleCopyAddress}
+            activeOpacity={0.8}
+            disabled={!smartAccount}
+          >
+            <Text style={styles.copyAddressText}>Copy Address</Text>
+            <Ionicons name="copy-outline" size={20} color="#FFCD0A" />
+          </TouchableOpacity>
+        </View>
+      </Dialog>
+
+      {/* Popups */}
+      <ErrorPopup
+        visible={errorPopup.visible}
+        message={errorPopup.message}
+        onClose={() => setErrorPopup({ visible: false, message: "" })}
+      />
+
+      <SuccessPopup
+        visible={successPopup.visible}
+        message={successPopup.message}
+        onContinue={() => setSuccessPopup({ visible: false, message: "" })}
+      />
     </>
   );
 };
@@ -712,21 +771,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
+    backgroundColor: "#FFEDB7",
+    paddingHorizontal: 4,
+    paddingVertical: 5,
+    borderRadius: 15,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.15)",
   },
   currencyIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderRadius: 12,
-    backgroundColor: "#FFD700",
+    backgroundColor: "#000000",
   },
   currencyText: {
-    color: "#fff",
+    color: "#000000",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -745,7 +804,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    marginVertical: -15,
+    marginVertical: -30,
     zIndex: 10,
     overflow: "hidden",
   },
@@ -795,5 +854,58 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 18,
     fontWeight: "700",
+  },
+  receiveDialogContent: {
+    alignItems: "center",
+    paddingVertical: 5,
+    paddingHorizontal: 20,
+  },
+  receiveTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  receiveSubtitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  qrContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  qrPlaceholder: {
+    width: 200,
+    height: 200,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  qrPlaceholderText: {
+    color: "#666",
+    fontSize: 14,
+  },
+  copyAddressButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#000000",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#000000",
+  },
+  copyAddressText: {
+    color: "#FFCD0A",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

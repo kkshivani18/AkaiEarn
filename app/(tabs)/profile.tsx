@@ -7,7 +7,7 @@ import { useUserStore } from "../../stores/userStore";
 import { useAuth } from "../../contexts/AuthContext";
 import { router } from "expo-router";
 import IQMeter from "../../components/IQMeter";
-import { configAPI, contractAPI } from "../../services/api";
+import { configAPI, contractAPI, logsAPI } from "../../services/api";
 import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn, useSendUserOperation } from "@coinbase/cdp-hooks";
 import { encodeFunctionData } from "viem";
 import { abi } from "../../config/abi";
@@ -26,6 +26,7 @@ export default function ProfileScreen() {
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [longestStreak, setLongestStreak] = useState<number>(0);
   const [loadingStreak, setLoadingStreak] = useState<boolean>(true);
+  const [labelHistoryCount, setLabelHistoryCount] = useState<number>(0);
   const [creatingWallet, setCreatingWallet] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -87,6 +88,24 @@ export default function ProfileScreen() {
     };
 
     fetchStreak();
+
+    const fetchLabelHistoryCount = async () => {
+      try {
+        const response = await logsAPI.getMyLogs();
+        if (response && response.success && response.data) {
+          setLabelHistoryCount(response.data.length);
+        } else if (response && Array.isArray(response)) {
+          setLabelHistoryCount(response.length);
+        } else {
+          setLabelHistoryCount(0);
+        }
+      } catch (error) {
+        console.error("Error fetching label history:", error);
+        setLabelHistoryCount(0);
+      }
+    };
+
+    fetchLabelHistoryCount();
   }, []);
 
   const handleCreateWallet = async () => {
@@ -258,7 +277,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.content}>
         <Text style={styles.title}>Profile</Text>
 
@@ -495,7 +514,7 @@ export default function ProfileScreen() {
             <View style={styles.labelHistoryLeft}>
               <View style={styles.labelHistoryCircle}>
                 <View style={styles.circularProgress}>
-                  <Text style={styles.labelHistoryCount}>12</Text>
+                  <Text style={styles.labelHistoryCount}>{labelHistoryCount}</Text>
                 </View>
               </View>
               <View style={styles.labelHistoryTextContainer}>

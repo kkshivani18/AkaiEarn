@@ -418,7 +418,7 @@ const OfferScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <OfferSkeletonLoader />
       </SafeAreaView>
     );
@@ -469,7 +469,7 @@ const OfferScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <HeaderSection/>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         

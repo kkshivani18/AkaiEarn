@@ -44,7 +44,7 @@ export default function RewardScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <OfferSkeletonLoader />
       </SafeAreaView>
     );
@@ -67,7 +67,7 @@ export default function RewardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <RewardHeaderSection/>
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
