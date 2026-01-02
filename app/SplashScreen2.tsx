@@ -19,10 +19,7 @@ export const OnboardingSplash: React.FC<{ onContinue: () => void }> = ({
   const textFadeAnim = useRef(new Animated.Value(0)).current;
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Animate everything
   useEffect(() => {
-    // Step 1: Show pixelated background (stays visible)
-    // Step 2: Fade in coins on top after 1 second
     setTimeout(() => {
       Animated.timing(coinsFadeAnim, {
         toValue: 1,
@@ -31,7 +28,6 @@ export const OnboardingSplash: React.FC<{ onContinue: () => void }> = ({
       }).start();
     }, 1000);
 
-    // Step 3: Fade in text
     setTimeout(() => {
       Animated.timing(textFadeAnim, {
         toValue: 1,
