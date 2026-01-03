@@ -481,7 +481,7 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ totalBalance, curr
             activeOpacity={0.7}
           >
             <Image 
-              source={require('../../../assets/app-images/exchange_icon.png')}
+              source={{uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/walletScreen/exchange_icon.png'}}
               style={styles.swapIconImage}
               resizeMode="contain"
             />

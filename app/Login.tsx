@@ -270,7 +270,7 @@ export const Login: React.FC<SignInModalProps> = ({
           <View style={styles.screenContainer}>
             <View style={styles.imageSection}>
               <ImageBackground
-                source={require('../assets/app-images/onboarding_page_img.png')}
+                source={{uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/onboarding/onboarding_page_img.png'}}
                 style={styles.backgroundImage}
                 resizeMode="cover"
               />

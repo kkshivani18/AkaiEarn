@@ -43,7 +43,7 @@ export const OnboardingSplash: React.FC<{ onContinue: () => void }> = ({
     <View style={styles.container}>
       <View style={styles.imageContainer}>
         <Image
-          source={require('../assets/app-images/pixelated_effect.png')}
+          source={{uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/splashscreen-images/pixelated_effect.png'}}
           style={styles.backgroundImage1}
           resizeMode="cover"
         />
@@ -63,7 +63,7 @@ export const OnboardingSplash: React.FC<{ onContinue: () => void }> = ({
         ]}
       >
         <Image
-          source={require('../assets/app-images/coins_fall_effect.png')}
+          source={{uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/splashscreen-images/coins_fall_effect.png'}}
           style={styles.backgroundImage2}
           resizeMode="cover"
         />

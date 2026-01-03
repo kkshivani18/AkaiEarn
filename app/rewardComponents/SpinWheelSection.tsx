@@ -55,7 +55,7 @@ export const SpinWheelSection: React.FC<SpinWheelSectionProps> = ({ onSpinPress 
       
       <View style={styles.imageContainer} pointerEvents="none">
         <Image
-          source={require('../../assets/app-images/spinwheel.png')}
+          source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/spinwheel/spinwheel.png' }}
           style={styles.wheelImage}
           resizeMode="contain"
         />

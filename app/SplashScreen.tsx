@@ -35,7 +35,7 @@ export const SplashScreen: React.FC = () => {
       >
         {/* AE Icon */}
         <Image
-          source={require('../assets/app-images/AE_splash_icon.png')}
+          source={{uri:'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/splashscreen-images/AE_splash_icon.png'}}
           style={styles.icon}
           resizeMode="contain"
         />

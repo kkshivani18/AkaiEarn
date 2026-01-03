@@ -48,7 +48,7 @@ const ProgressCard = ({ currentIQ, iqGainedThisWeek }: { currentIQ: number, iqGa
             <Text style={styles.iqWeekly}> (+ {iqGainedThisWeek} this week)</Text>
           )}
         </View>
-        <Image source={require('../../assets/app-images/iq_brain.png')} style={styles.progressBrainIcon} resizeMode="contain" />
+        <Image source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/iq_brain.png' }} style={styles.progressBrainIcon} resizeMode="contain" />
       </View>
       
       <View style={styles.progressBarContainer}>
@@ -91,7 +91,7 @@ const TaskCard = ({ task, onPress, locked, scale, opacity }: { task: OfferTask, 
               <View style={styles.rewardPill}>
                 <Text style={styles.plusSign}>+</Text>
                 <Text style={styles.rewardValue}>{task.iqGain}</Text>
-                <Image source={require('../../assets/app-images/iq_brain.png')} style={styles.pillIcon} resizeMode="contain" />
+                <Image source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/iq_brain.png' }} style={styles.pillIcon} resizeMode="contain" />
               </View>
             </View>
 

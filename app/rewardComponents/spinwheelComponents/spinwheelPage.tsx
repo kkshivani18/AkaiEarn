@@ -431,7 +431,7 @@ export default function SpinWheelPage() {
         >
           <Text style={styles.spinAgainText}>Spin again for 25 coins</Text>
           <Image
-            source={require('../../../assets/app-images/spin_coin.png')}
+            source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/spin_coin.png' }}
             style={{ width: 25, height: 25, left:-5 }}
             resizeMode="contain"
           />

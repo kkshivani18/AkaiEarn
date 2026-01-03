@@ -55,7 +55,7 @@ export const LootboxSection: React.FC<LootboxSectionProps> = ({ onClaimPress }) 
       
       <View style={styles.imageContainer} pointerEvents="none">
         <Image
-          source={require('../../assets/app-images/lootbox_chest.png')}
+          source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/lootbox_chest.png' }}
           style={styles.chestImage}
           resizeMode="contain"
         />

@@ -24,7 +24,7 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onLearnMorePress }) =>
       activeOpacity={0.8}
     >
       <Image
-        source={require('../../assets/app-images/docs.png')}
+        source={{uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/homeScreen/docs.png'}}
         style={styles.image}
         resizeMode="cover"
       />

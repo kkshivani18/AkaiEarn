@@ -100,7 +100,7 @@ const HistoryLogItem: React.FC<{ log: LogItem }> = ({ log }) => {
     <View style={styles.historyItem}>
       {/* Left Icon */}
       <Image 
-        source={require('../assets/app-images/label_hist_icon.png')} 
+        source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/labeling-history/label_hist_icon.png' }} 
         style={styles.historyIcon}
         resizeMode="contain"
       />
@@ -129,7 +129,7 @@ const HistoryLogItem: React.FC<{ log: LogItem }> = ({ log }) => {
               {(log.delta_coins || 0) >= 0 ? '+' : ''}{log.delta_coins || 0}
             </Text>
             <Image 
-              source={require('../assets/app-images/spin_coin.png')} 
+              source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/labeling-history/lb_hist_acc.png'}} 
               style={styles.rewardIcon}
               resizeMode="contain"
             />
@@ -143,7 +143,7 @@ const HistoryLogItem: React.FC<{ log: LogItem }> = ({ log }) => {
               {(log.delta_iq || 0) >= 0 ? '+' : ''}{log.delta_iq || 0} IQ
             </Text>
             <Image 
-              source={require('../assets/app-images/iq_brain.png')} 
+              source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/iq_brain.png' }}
               style={styles.rewardIcon}
               resizeMode="contain"
             />

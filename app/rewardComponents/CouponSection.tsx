@@ -54,7 +54,7 @@ export const CouponSection: React.FC<ViewHistorySectionProps> = ({ onViewHistory
       
       <View style={styles.imageContainer} pointerEvents="none">
         <Image
-          source={require('../../assets/app-images/coupons_wallet.png')}
+          source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/coupons/coupons_wallet.png' }}
           style={styles.wheelImage}
           resizeMode="contain"
         />

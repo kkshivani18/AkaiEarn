@@ -307,7 +307,7 @@ export default function WalletScreen() {
         symbol: "ETH",
         amount: formatTokenAmount(ethAmount),
         usdValue: formatCurrency(ethUsdValue),
-        icon: require("../../assets/app-images/eth.png"),
+        icon: {uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/walletScreen/eth.png'},
       },
       {
         id: "usdc",
@@ -315,7 +315,7 @@ export default function WalletScreen() {
         symbol: "USDC",
         amount: formatTokenAmount(usdcAmount, 2),
         usdValue: formatCurrency(usdcUsdValue),
-        icon: require("../../assets/app-images/usdc.png"),
+        icon: {uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/walletScreen/usdc.png'},
       },
     ],
     [

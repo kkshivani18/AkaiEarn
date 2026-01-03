@@ -230,7 +230,7 @@ export const ReferralSection: React.FC<ReferralSectionProps> = ({
 
       <View style={styles.imageContainer} pointerEvents="none">
         <Image
-          source={require('../../assets/app-images/referral_pandas.png')}
+          source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/referrals/referral_pandas.png' }}
           style={styles.pandasImage}
           resizeMode="contain"
         />

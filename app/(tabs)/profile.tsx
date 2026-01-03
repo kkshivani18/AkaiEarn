@@ -425,7 +425,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.statItem}>
                 <Image
-                  source={require("../../assets/app-images/points_crystal.png")}
+                  source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/points_crystal.png' }}
                   style={styles.statIcon}
                   resizeMode="contain"
                 />
@@ -437,7 +437,7 @@ export default function ProfileScreen() {
               <View style={styles.divider} />
               <View style={styles.statItem}>
                 <Image
-                  source={require("../../assets/app-images/app_rewards_cash.png")}
+                  source={{ uri : 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/app_rewards_cash.png' }}
                   style={styles.statIcon}
                   resizeMode="contain"
                 />
@@ -458,7 +458,7 @@ export default function ProfileScreen() {
                   <Text style={styles.balanceTitle}>App Rewards</Text>
                   <View style={styles.balanceValueRow}>
                     <Image
-                      source={require("../../assets/app-images/app_rewards_cash.png")}
+                      source={{ uri : 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/app_rewards_cash.png' }}
                       style={styles.balanceIcon}
                       resizeMode="contain"
                     />
@@ -468,7 +468,7 @@ export default function ProfileScreen() {
                   </View>
                 </View>
                 <Image
-                  source={require("../../assets/app-images/convert_arrows.png")}
+                  source={{uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/convert_arrows.png' }}
                   style={styles.arrowIcon}
                   resizeMode="contain"
                 />
@@ -476,7 +476,7 @@ export default function ProfileScreen() {
                   <Text style={styles.balanceTitle}>Wallet Balance</Text>
                   <View style={styles.balanceValueRow}>
                     <Image
-                      source={require("../../assets/app-images/profile_wallet.png")}
+                      source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/profile_wallet.png' }}
                       style={styles.balanceIcon}
                       resizeMode="contain"
                     />
@@ -569,7 +569,7 @@ export default function ProfileScreen() {
                     </Text>
                     <View style={styles.walletIcon}>
                       <Image
-                        source={require("../../assets/app-images/profile_wallet.png")}
+                        source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/profile_wallet.png' }}
                         style={styles.walletImage}
                         resizeMode="contain"
                       />
@@ -606,13 +606,13 @@ export default function ProfileScreen() {
 
             <TouchableOpacity style={styles.bigWinCard} activeOpacity={0.85}>
               <Image
-                source={require("../../assets/app-images/big_win.png")}
+                source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/big_win.png' }}
                 style={styles.bigWinText}
                 resizeMode="contain"
               />
               <Text style={styles.startEarningText}>START EARNING</Text>
               <Image
-                source={require("../../assets/app-images/big_win_chest.png")}
+                source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/big_win_chest.png' }}
                 style={styles.chestImage}
                 resizeMode="contain"
               />
@@ -674,7 +674,7 @@ export default function ProfileScreen() {
                     ]}
                   >
                     <Image
-                      source={require("../../assets/app-images/profile_wallet.png")}
+                      source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/profile_wallet.png' }}
                       style={styles.transactionIcon}
                       resizeMode="contain"
                     />

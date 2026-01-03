@@ -13,7 +13,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ onEarnMorePress 
         <View style={styles.container}>
             <View style={styles.imageContainer}>
                 <Image
-                source={require('../../assets/app-images/welcome.png')} 
+                source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/homeScreen/welcome.png'}} 
                 style={styles.welcomeImage}
                 resizeMode="cover"
                 />

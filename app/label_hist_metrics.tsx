@@ -20,7 +20,7 @@ interface MetricsCardProps {
 // Image Components
 const AccuracyIcon = () => (
   <Image 
-    source={require('../assets/app-images/lb_hist_acc.png')} 
+    source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/labeling-history/lb_hist_acc.png'}} 
     style={{ width: 35, height: 35 }}
     resizeMode="contain"
   />
@@ -28,7 +28,7 @@ const AccuracyIcon = () => (
 
 const TaskIcon = () => (
   <Image 
-    source={require('../assets/app-images/lb_hist_tasks.png')} 
+    source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/labeling-history/lb_hist_tasks.png'}} 
     style={{ width: 35, height: 35 }}
     resizeMode="contain"
   />
@@ -36,7 +36,7 @@ const TaskIcon = () => (
 
 const CoinIcon = () => (
   <Image 
-    source={require('../assets/app-images/spin_coin.png')} 
+    source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/spin_coin.png' }} 
     style={{ width: 35, height: 35 }}
     resizeMode="contain"
   />
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   greeting: {
     color: '#fff',
     fontSize: 24,
-    fontFamily: FONTS.body.bold,
+    fontFamily: FONTS.heading.bold,
     marginBottom: 8,
   },
   statsContainer: {

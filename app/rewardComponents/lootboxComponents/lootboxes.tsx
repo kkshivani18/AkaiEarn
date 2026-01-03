@@ -10,7 +10,7 @@ import { abi } from '../../../config/abi';
 import { ErrorPopup } from '../../../components/popups/ErrorPopup';
 import { InfoPopup } from '../../../components/popups/InfoPopup';
 import { SuccessPopup } from '../../../components/popups/SuccessPopup';
-import { FONTS } from "../../../constants/fonts";
+import { FONTS } from '../../../constants/fonts';
 
 interface LootboxCardProps {
   title: string;
@@ -104,10 +104,10 @@ export const LootboxesSection: React.FC = () => {
   const contractAddress = '0x9f1e7032cef3dc4dda0ed96bd75e44f0655a3239';
   
   const liveItems = [
-    { id: 'gold-1', borderColor: '#FFB917', chest: require('../../../assets/app-images/golden_box.png'), reward: '+ 50 Rewards' },
-    { id: 'br-1', borderColor: '#84DE49', chest: require('../../../assets/app-images/bronze_box.png'), reward: '+ 50 Rewards' },
-    { id: 'sil-1', borderColor: '#49ACCE', chest: require('../../../assets/app-images/silver_box.png'), reward: '+ 50 Rewards' },
-    { id: 'gold-2', borderColor: '#FFB917', chest: require('../../../assets/app-images/golden_box.png'), reward: '+ 50 Rewards' },
+    { id: 'gold-1', borderColor: '#FFB917', chest: { uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/golden_box.png' }, reward: '+ 50 Rewards' },
+    { id: 'br-1', borderColor: '#84DE49', chest: { uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/bronze_box.png' }, reward: '+ 50 Rewards' },
+    { id: 'sil-1', borderColor: '#49ACCE', chest: { uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/silver_box.png' }, reward: '+ 50 Rewards' },
+    { id: 'gold-2', borderColor: '#FFB917', chest: { uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/golden_box.png' }, reward: '+ 50 Rewards' },
   ];
 
   const handleOpenLootbox = async (boxType: string, points: number) => {
@@ -177,7 +177,7 @@ export const LootboxesSection: React.FC = () => {
         title="BRONZE BOX"
         prizeRange="$0.15 - $0.2"
         pointsText="Open for 100 Pts"
-        imageSource={require('../../../assets/app-images/bronze_box.png')}
+        imageSource={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/bronze_box.png' }}
         borderColor="#84DE49"
         tintColor="rgba(132, 222, 73, 0.20)"
         buttonColors={['#6DBF32', '#94EE56', '#6DBF32']}
@@ -192,7 +192,7 @@ export const LootboxesSection: React.FC = () => {
         title="SILVER BOX"
         prizeRange="$0.37 - $0.5"
         pointsText="Open for 200 Pts"
-        imageSource={require('../../../assets/app-images/silver_box.png')}
+        imageSource={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/silver_box.png' }}
         borderColor="#49ACCE"
         tintColor="rgba(73, 172, 206, 0.20)"
         buttonColors={['#49ACCE', '#6BD6F7']}
@@ -206,7 +206,7 @@ export const LootboxesSection: React.FC = () => {
         title="GOLDEN BOX"
         prizeRange="$1.12 - $1.5"
         pointsText="Open for 500 Pts"
-        imageSource={require('../../../assets/app-images/golden_box.png')}
+        imageSource={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/golden_box.png' }}
         borderColor="#FFB917"
         tintColor="rgba(255, 185, 23, 0.20)"
         buttonColors={['#FFCD0A', '#FFB917']}
@@ -217,7 +217,7 @@ export const LootboxesSection: React.FC = () => {
         disabled={openingBox === 'golden'}
       />
 
-      <Text style={{color: "#FFFFFF", alignSelf: 'center', marginTop: 4, fontSize: 16, fontFamily: FONTS.body.semiBold}}>Provably Fair & Odds</Text>
+      <Text style={{color: "#FFFFFF", alignSelf: 'center', marginTop: 4, fontSize: 16, fontFamily: FONTS.body.medium}}>Provably Fair & Odds</Text>
       
       <TouchableOpacity 
         activeOpacity={0.85} 
@@ -225,14 +225,14 @@ export const LootboxesSection: React.FC = () => {
         onPress={() => router.push('/rewardComponents/lootboxComponents/lootboxHistory')}
       >
         <Image
-          source={require('../../../assets/app-images/lootbox_hist.png')}
+          source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/rewardScreen/lootboxes/lootbox_hist.png' }}
           style={styles.historyButtonImage}
           resizeMode="contain"
         />
       </TouchableOpacity>
       <View style={styles.liveSection}>
         <View style={styles.liveHeader}>
-          <Text style={[styles.liveTitle, {fontFamily: FONTS.body.semiBold}]}>Live LootBoxes Opening</Text>
+          <Text style={styles.liveTitle}>Live LootBoxes Opening</Text>
           <TouchableOpacity onPress={() => setLiveExpanded(v => !v)} style={styles.liveToggle} activeOpacity={0.8}>
             <Ionicons name={liveExpanded ? 'chevron-up' : 'chevron-down'} size={18} color="#A1A1AA" />
           </TouchableOpacity>
@@ -248,7 +248,7 @@ export const LootboxesSection: React.FC = () => {
                   <Image source={item.chest} style={styles.liveChest} resizeMode="contain" />
                   <View style={{alignItems: 'center'}}>
                     <Text style={[styles.liveRewardText, {lineHeight: 18}]}>+ 50</Text>
-                    <Text style={[styles.liveRewardText, {fontSize: 12}, {fontFamily: FONTS.body.semiBold}]}>Rewards</Text>
+                    <Text style={[styles.liveRewardText, {fontSize: 12, fontFamily: FONTS.body.medium}]}>Rewards</Text>
                   </View>
                 </View>
               </View>
@@ -340,16 +340,16 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 17,
-    fontFamily: FONTS.body.semiBold,
+    fontFamily: FONTS.heading.bold,
     color: '#FFFFFF',
     marginBottom: 2,
     marginTop: -30,
   },
   cardSubtitle: {
     fontSize: 16,
-    fontFamily: FONTS.body.semiBold,
     color: '#FFFFFF',
     marginBottom: 8,
+    fontFamily: FONTS.body.bold,
   },
   buttonContainer: {
     position: 'relative',
@@ -380,8 +380,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   openButtonText: {
-    fontSize: 14,
-    fontFamily: FONTS.body.semiBold,
+    fontSize: 12,
+    fontFamily: FONTS.body.medium,
     color: '#000000',
   },
   historyButton: {
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   liveTitle: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontFamily: FONTS.body.semiBold,
+    fontFamily: FONTS.body.medium,
   },
   liveToggle: {
     width: 28,
@@ -453,8 +453,7 @@ const styles = StyleSheet.create({
   liveRewardText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontFamily: FONTS.body.semiBold,
+    fontFamily: FONTS.body.medium,
     left: -30,
   },
 });
-
