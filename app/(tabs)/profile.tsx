@@ -418,7 +418,7 @@ export default function ProfileScreen() {
                       style={{ marginRight: 8 }}
                     />
                     <Text style={styles.convertButtonText}>
-                      {withdrawing ? "Transferring..." : "Transfer to Wallet"}
+                      {withdrawing ? "Transferring..." : "Claim Reward to Wallet"}
                     </Text>
                   </>
                 ) : (
