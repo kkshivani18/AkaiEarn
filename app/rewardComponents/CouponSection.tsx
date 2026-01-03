@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { FONTS } from '../../constants/fonts';
 
 interface ViewHistorySectionProps {
   onViewHistory?: () => void;
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     color: '#000000',
   },
   imageContainer: {

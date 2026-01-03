@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { authAPI, referralAPI } from '../../services/api';
+import { FONTS } from '../../constants/fonts';
 
 interface ReferralSectionProps {
   referralCode?: string;
@@ -272,7 +273,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     color: '#2D2D2D',
     marginBottom: 4,
   },
@@ -280,6 +281,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#3A3A3A',
     marginBottom: 10,
+    fontFamily: FONTS.body.regular,
   },
   codeCard: {
     width: 130,
@@ -382,6 +384,6 @@ const styles = StyleSheet.create({
   snackbarText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.medium,
   },
 });

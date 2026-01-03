@@ -1,15 +1,7 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  ImageBackground,
-} from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { FONTS } from "../../constants/fonts";
 
 const { width } = Dimensions.get('window');
 
@@ -118,7 +110,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 25,
-    fontWeight: '900',
+    fontFamily: FONTS.body.bold,
     color: '#FFFFFF',
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -140,7 +132,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 20,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 24,
@@ -163,7 +155,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '900',
+    fontFamily: FONTS.body.bold,
     color: '#FFFFFF',
     letterSpacing: 0.5,
     textTransform: 'uppercase',

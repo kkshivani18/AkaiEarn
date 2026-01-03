@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '../../../stores/userStore';
 import { ActivityIndicator } from 'react-native';
 import { couponsAPI } from '../../../services/api';
+import { FONTS } from "../../../constants/fonts";
 
 const CouponHeaderSection = () => {
   const { iq, coins } = useUserStore();
@@ -100,7 +101,7 @@ export default function CouponPage() {
         {loading ? (
           <ActivityIndicator size="large" color="#A78BFA" />
         ) : coupons.length === 0 ? (
-          <Text style={{ color: '#A1A1AA', fontSize: 14 }}>No coupons yet</Text>
+          <Text style={{ color: '#A1A1AA', fontSize: 14, fontFamily: FONTS.body.semiBold }}>No coupons yet</Text>
         ) : (
           coupons.map((c) => (
             <LinearGradient
@@ -189,19 +190,19 @@ const styles = StyleSheet.create({
   companyText: {
     color: '#1F2937',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 2,
   },
   discountText: {
     color: '#1F2937',
     fontSize: 16,
-    // fontWeight: 'bold',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 4,
   },
   couponText: {
     color: '#1F2937',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
   },
   expiryBadge: {
     backgroundColor: '#FFCD0A',
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
   expiryText: {
     color: '#1F2937',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FONTS.body.semiBold,
   },
   copyButton: {
     flexDirection: 'row',
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
   copyButtonText: {
     color: '#EF4444',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.semiBold,
   },
   bannerImage: {
     width: 90,
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
   snackbarText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
   },
 });
 
@@ -282,7 +283,7 @@ const headerStyles = StyleSheet.create({
   greeting: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 8,
   },
   statsContainer: {
@@ -312,7 +313,7 @@ const headerStyles = StyleSheet.create({
   statText: {
     color: '#1F2937',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   backBar: {
     // paddingHorizontal: 16,

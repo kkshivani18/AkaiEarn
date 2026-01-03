@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } fr
 import * as Clipboard from 'expo-clipboard';
 import { useEvmAddress, useCurrentUser, useCreateEvmSmartAccount,useIsSignedIn } from "@coinbase/cdp-hooks";
 import { useAuth } from '@/contexts/AuthContext';
+import { FONTS } from "../constants/fonts";
 
 interface WalletInfoProps {
   style?: any;
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     color: '#495057',
     marginBottom: 8,
   },
@@ -136,9 +137,8 @@ const styles = StyleSheet.create({
   },
   address: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
     color: '#212529',
-    fontFamily: 'monospace',
   },
   createButton: {
     backgroundColor: '#0052FF', // CDP blue
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -161,6 +161,6 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     textAlign: 'center',
     marginTop: 8,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
   },
 });

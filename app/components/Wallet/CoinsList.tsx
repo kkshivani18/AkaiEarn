@@ -1,12 +1,6 @@
 import { useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Animated,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from "react-native";
+import { FONTS } from "../../../constants/fonts";
 
 interface CoinData {
   id: string;
@@ -121,16 +115,17 @@ const styles = StyleSheet.create({
   coinName: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   coinAmount: {
     color: "#888",
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
   },
   coinValue: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
 });
 

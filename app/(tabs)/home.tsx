@@ -10,6 +10,7 @@ import { HeaderSection } from '../components/HeaderSection';
 import { HomeSkeletonLoader } from '../components/HomeSkeletonLoader';
 import { SocialTasks } from '../components/SocialTasks';
 import { WelcomeSection } from '../components/WelcomeSection';
+import { FONTS } from '../../constants/fonts';
 
 export default function HomeScreen() {
   const { authState } = useAuth();
@@ -48,7 +49,7 @@ export default function HomeScreen() {
 
   const handleEarnMorePress = () => {
     console.log('Earn More pressed');
-    router.push('/(tabs)/offer');
+    router.push('../../(tabs)/offer');
   };
 
   if (loading) {
@@ -101,17 +102,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     marginBottom: 12,
   },
   socialSectionTitle: {
     color: '#fff',
     fontSize: 18,
-    // fontWeight: 'bold',
+    fontFamily: FONTS.heading.semiBold,
     marginBottom: 12,
   },
   placeholder: {
     color: '#888',
     fontSize: 14,
+    fontFamily: FONTS.body.regular,
   },
 });

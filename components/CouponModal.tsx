@@ -1,21 +1,11 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef } from 'react';
-import {
-    Alert,
-    Animated,
-    Image,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { Alert, Animated, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Coupon } from '../types/Offer'
+import { FONTS } from "../constants/fonts";
 
-// --- Icon Component ---
 const CopyIcon = () => (
   <Svg style={styles.icon} fill="none" viewBox="0 0 24 24" stroke="white">
     <Path 
@@ -180,7 +170,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
   },
   topSection: {
     alignItems: 'center',
@@ -204,16 +194,17 @@ const styles = StyleSheet.create({
   },
   logoPlaceholder: {
     fontSize: 40,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: 'white',
   },
   companyName: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: 'white',
   },
   offerType: {
     fontSize: 16,
+    fontFamily: FONTS.body.bold,
     color: 'rgba(255,255,255,0.7)',
     marginTop: 4,
   },
@@ -249,12 +240,13 @@ const styles = StyleSheet.create({
   },
   codeLabel: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.7)',
+    fontFamily: FONTS.body.bold,
+    color: 'rgba(255,255,255,0.7)', 
     marginBottom: 8,
   },
   couponCode: {
     fontSize: 48,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: 'white',
     letterSpacing: 2,
     marginBottom: 24,
@@ -270,7 +262,7 @@ const styles = StyleSheet.create({
   copyButtonText: {
     color: 'white',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginLeft: 12,
   },
   buttonShadow: {
@@ -289,6 +281,7 @@ const styles = StyleSheet.create({
   },
   expiryDate: {
     fontSize: 14,
+    fontFamily: FONTS.body.bold,
     color: 'rgba(255,255,255,0.6)',
     marginTop: 24,
   },

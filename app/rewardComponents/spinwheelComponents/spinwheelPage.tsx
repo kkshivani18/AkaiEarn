@@ -12,6 +12,7 @@ import SpinCouponModal from './spinCoupon';
 import { router } from 'expo-router';
 import { useUserStore } from '../../../stores/userStore';
 import { ErrorPopup } from '../../../components/popups/ErrorPopup';
+import { FONTS } from "../../../constants/fonts";
 
 interface Coupon {
   _id: string;
@@ -371,7 +372,7 @@ export default function SpinWheelPage() {
                       x={logoX}
                       y={logoY - (logoRadius + 12)}
                       fontSize="14"
-                      fontWeight="800"
+                      fontFamily={FONTS.body.bold}
                       fill="#FFFFFF"
                       textAnchor="middle"
                       transform={`rotate(${angleDeg}, ${logoX}, ${logoY})`}
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 30,
   },
   centerButtonWrapper: {
@@ -509,30 +510,29 @@ const styles = StyleSheet.create({
   centerButtonTextS: {
     color: '#1F2937',
     fontSize: 19,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     letterSpacing: 0.5,
   },
   centerButtonTextN: {
     color: '#1F2937',
     fontSize: 19,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     letterSpacing: 0.5,
     left: 8
   },
   centerButtonTextDisabled: {
     color: '#A1A1AA',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONTS.body.semiBold,
     letterSpacing: 0.5,
     textAlign: 'center',
   },
   centerButtonTimerText: {
     color: '#A1A1AA',
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     letterSpacing: 1,
     textAlign: 'center',
-    fontFamily: 'monospace',
     marginTop: 4,
   },
   topPointerWrapper: {
@@ -552,19 +552,19 @@ const styles = StyleSheet.create({
   upToText: {
     color: '#1F2937',
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: FONTS.body.medium,
     marginBottom: 2,
   },
   discountText: {
     color: '#1F2937',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginBottom: 4,
   },
   couponText: {
     color: '#1F2937',
     fontSize: 10,
-    fontWeight: '500',
+    fontFamily: FONTS.body.medium,
   },
   copyButton: {
     flexDirection: 'row',
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   copyButtonText: {
     color: '#EF4444',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
   },
   bannerImage: {
     width: 118,
@@ -595,6 +595,7 @@ const styles = StyleSheet.create({
   noteText: {
     color: '#A1A1AA',
     fontSize: 12,
+    fontFamily: FONTS.body.medium,
     textAlign: 'center',
     marginTop: 16,
     marginBottom: 12,
@@ -616,11 +617,12 @@ const styles = StyleSheet.create({
   spinAgainText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONTS.body.semiBold,
   },
   coinBalanceText: {
     color: '#A1A1AA',
     fontSize: 12,
+    fontFamily: FONTS.body.medium,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -641,6 +643,6 @@ const styles = StyleSheet.create({
   snackbarText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.medium,
   },
 });

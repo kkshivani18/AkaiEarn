@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { FONTS } from "../constants/fonts";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
   },
   iqValue: {
     fontSize: 38,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   },
   iqLabel: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: FONTS.body.bold,
     color: '#A1A1AA',
     marginBottom: 4,
     textAlign: 'center',

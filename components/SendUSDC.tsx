@@ -1,16 +1,9 @@
 import { useCurrentUser, useSendUserOperation } from "@coinbase/cdp-hooks";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { createPublicClient, encodeFunctionData, http, parseUnits } from "viem";
 import { base } from "viem/chains";
+import { FONTS } from "../constants/fonts";
 
 interface SendUSDCProps {
   style?: any;
@@ -323,11 +316,12 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 14,
     color: "#6c757d",
+    fontFamily: FONTS.body.semiBold,
     marginRight: 8,
   },
   balanceValue: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     color: "#0052FF",
   },
   warningContainer: {
@@ -341,6 +335,7 @@ const styles = StyleSheet.create({
   warningText: {
     fontSize: 12,
     color: "#856404",
+    fontFamily: FONTS.body.semiBold,
     textAlign: "center",
   },
   inputContainer: {
@@ -349,7 +344,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     color: "#495057",
     marginBottom: 8,
   },
@@ -359,6 +354,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    fontFamily: FONTS.body.semiBold,
     color: "#212529",
     backgroundColor: "#ffffff",
   },
@@ -373,7 +369,7 @@ const styles = StyleSheet.create({
   },
   maxButtonText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     color: "#495057",
   },
   sendButton: {
@@ -390,7 +386,7 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   statusContainer: {
     marginTop: 12,
@@ -401,15 +397,16 @@ const styles = StyleSheet.create({
   successText: {
     color: "#28a745",
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: FONTS.body.semiBold,
   },
   errorText: {
     color: "#dc3545",
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: FONTS.body.semiBold,
   },
   noWalletText: {
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
     color: "#6c757d",
     textAlign: "center",
     padding: 20,

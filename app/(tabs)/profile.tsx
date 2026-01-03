@@ -15,6 +15,7 @@ import { InfoPopup } from "../../components/popups/InfoPopup";
 import { ErrorPopup } from "../../components/popups/ErrorPopup";
 import { SuccessPopup } from "../../components/popups/SuccessPopup";
 import { contractAddress } from "@/constants/theme";
+import { FONTS } from "../../constants/fonts";
 
 export default function ProfileScreen() {
   const { name, iq, coins, balance, dollars, fetchUserData, setUser } = useUserStore();
@@ -608,6 +609,7 @@ export default function ProfileScreen() {
                   textAlign: "center",
                   padding: 10,
                   fontSize: 14,
+                  fontFamily: FONTS.body.regular,
                 }}
               >
                 No transactions yet
@@ -715,7 +717,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#FFFFFF",
     fontSize: 22,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,
     marginBottom: 16,
   },
   card: {
@@ -748,7 +750,7 @@ const styles = StyleSheet.create({
   helloText: {
     color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,
     marginBottom: 6,
   },
   iqBadge: {
@@ -761,7 +763,7 @@ const styles = StyleSheet.create({
   iqBadgeText: {
     color: "#1F2937",
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: FONTS.body.bold,
   },
   statsBar: {
     borderRadius: 12,
@@ -798,13 +800,13 @@ const styles = StyleSheet.create({
   statLabel: {
     color: "#1F2937",
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,  
     left: -10,
   },
   statValue: {
     color: "#1F2937",
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: FONTS.body.bold,
     left: -10,
   },
   walletCard: {
@@ -820,7 +822,7 @@ const styles = StyleSheet.create({
   walletTitle: {
     color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.semiBold,
     marginBottom: 12,
     textAlign: "center",
     textShadowColor: "rgba(0, 0, 0, 0.75)",
@@ -838,7 +840,7 @@ const styles = StyleSheet.create({
   createWalletText: {
     color: "#1F2937",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -864,7 +866,7 @@ const styles = StyleSheet.create({
   },
   balanceTitle: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     color: "#1F2937",
     marginBottom: 8,
   },
@@ -880,7 +882,7 @@ const styles = StyleSheet.create({
   },
   balanceValue: {
     fontSize: 24,
-    fontWeight: "800",
+    fontFamily: FONTS.body.bold,
     color: "#1F2937",
   },
   arrowIcon: {
@@ -901,7 +903,7 @@ const styles = StyleSheet.create({
   },
   convertButtonText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,
     color: "#1F2937",
     marginRight: 4,
   },
@@ -915,7 +917,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#1F2937",
     textAlign: "center",
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     marginTop: 8,
   },
   progressBarContainer: {
@@ -943,7 +945,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#FFA400",
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: FONTS.body.bold,  
     zIndex: 2,
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: -1, height: 1 },
@@ -981,12 +983,12 @@ const styles = StyleSheet.create({
   transactionTitle: {
     color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: FONTS.heading.semiBold,
   },
   seeAllText: {
     color: "#FFB917",
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: FONTS.body.semiBold,
   },
   transactionItem: {
     flexDirection: "row",
@@ -1010,16 +1012,17 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     marginBottom: 4,
+    fontFamily: FONTS.body.semiBold,
   },
   transactionAmount: {
     color: "#FFB917",
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   walletButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,
   },
   featuresRow: {
     flexDirection: "row",
@@ -1035,7 +1038,7 @@ const styles = StyleSheet.create({
   iqLevelTitle: {
     color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,   
     marginBottom: 20,
   },
 
@@ -1099,13 +1102,13 @@ const styles = StyleSheet.create({
   iqLevelLabel: {
     color: "#A1A1AA",
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 4,
   },
   iqLevelValue: {
     color: "#FFFFFF",
     fontSize: 48,
-    fontWeight: "800",
+    fontFamily: FONTS.body.bold,      
   },
   labelHistoryCard: {
     backgroundColor: "#27282E",
@@ -1145,7 +1148,7 @@ const styles = StyleSheet.create({
   labelHistoryCount: {
     color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: FONTS.body.bold,      
     transform: [{ rotate: "45deg" }],
   },
   labelHistoryTextContainer: {
@@ -1154,13 +1157,13 @@ const styles = StyleSheet.create({
   labelHistoryTitle: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.semiBold,
     marginBottom: 4,
   },
   labelHistorySubtitle: {
     color: "#A1A1AA",
     fontSize: 13,
-    fontWeight: "500",
+    fontFamily: FONTS.body.semiBold,
   },
   streaksCard: {
     flex: 1,
@@ -1183,7 +1186,7 @@ const styles = StyleSheet.create({
   streaksTitle: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,   
     marginBottom: 15,
     marginTop: -7,
   },
@@ -1199,7 +1202,7 @@ const styles = StyleSheet.create({
   streakLabel: {
     color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 4,
     opacity: 0.9,
     marginTop: -5,
@@ -1207,7 +1210,7 @@ const styles = StyleSheet.create({
   streakValue: {
     color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: FONTS.body.bold,      
   },
   bigWinCard: {
     flex: 1,
@@ -1228,7 +1231,7 @@ const styles = StyleSheet.create({
   startEarningText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: FONTS.heading.bold,   
     marginBottom: 3,
     bottom: -4,
   },
@@ -1252,6 +1255,6 @@ const styles = StyleSheet.create({
   logoutText: {
     color: "#EF4444",
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: FONTS.heading.bold,   
   },
 });

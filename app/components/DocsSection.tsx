@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FONTS } from '../../constants/fonts';
 
 interface DocsSectionProps {
   onLearnMorePress?: () => void;
@@ -56,12 +57,13 @@ const styles = StyleSheet.create({
   title: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: '600',
+    fontFamily: FONTS.heading.semiBold,
     marginBottom: 4,
   },
   subtitle: {
     color: '#fff',
     fontSize: 14,
     opacity: 0.9,
+    fontFamily: FONTS.body.regular,
   },
 });

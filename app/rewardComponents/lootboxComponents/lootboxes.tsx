@@ -10,6 +10,7 @@ import { abi } from '../../../config/abi';
 import { ErrorPopup } from '../../../components/popups/ErrorPopup';
 import { InfoPopup } from '../../../components/popups/InfoPopup';
 import { SuccessPopup } from '../../../components/popups/SuccessPopup';
+import { FONTS } from "../../../constants/fonts";
 
 interface LootboxCardProps {
   title: string;
@@ -216,7 +217,7 @@ export const LootboxesSection: React.FC = () => {
         disabled={openingBox === 'golden'}
       />
 
-      <Text style={{color: "#FFFFFF", alignSelf: 'center', marginTop: 4, fontSize: 16}}>Provably Fair & Odds</Text>
+      <Text style={{color: "#FFFFFF", alignSelf: 'center', marginTop: 4, fontSize: 16, fontFamily: FONTS.body.semiBold}}>Provably Fair & Odds</Text>
       
       <TouchableOpacity 
         activeOpacity={0.85} 
@@ -231,7 +232,7 @@ export const LootboxesSection: React.FC = () => {
       </TouchableOpacity>
       <View style={styles.liveSection}>
         <View style={styles.liveHeader}>
-          <Text style={styles.liveTitle}>Live LootBoxes Opening</Text>
+          <Text style={[styles.liveTitle, {fontFamily: FONTS.body.semiBold}]}>Live LootBoxes Opening</Text>
           <TouchableOpacity onPress={() => setLiveExpanded(v => !v)} style={styles.liveToggle} activeOpacity={0.8}>
             <Ionicons name={liveExpanded ? 'chevron-up' : 'chevron-down'} size={18} color="#A1A1AA" />
           </TouchableOpacity>
@@ -247,7 +248,7 @@ export const LootboxesSection: React.FC = () => {
                   <Image source={item.chest} style={styles.liveChest} resizeMode="contain" />
                   <View style={{alignItems: 'center'}}>
                     <Text style={[styles.liveRewardText, {lineHeight: 18}]}>+ 50</Text>
-                    <Text style={[styles.liveRewardText, {fontSize: 12}]}>Rewards</Text>
+                    <Text style={[styles.liveRewardText, {fontSize: 12}, {fontFamily: FONTS.body.semiBold}]}>Rewards</Text>
                   </View>
                 </View>
               </View>
@@ -339,16 +340,16 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 17,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.semiBold,
     color: '#FFFFFF',
     marginBottom: 2,
     marginTop: -30,
   },
   cardSubtitle: {
     fontSize: 16,
+    fontFamily: FONTS.body.semiBold,
     color: '#FFFFFF',
     marginBottom: 8,
-    fontWeight: 'bold',
   },
   buttonContainer: {
     position: 'relative',
@@ -380,7 +381,7 @@ const styles = StyleSheet.create({
   },
   openButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     color: '#000000',
   },
   historyButton: {
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
   liveTitle: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   liveToggle: {
     width: 28,
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
   liveRewardText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     left: -30,
   },
 });

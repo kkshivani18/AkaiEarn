@@ -4,23 +4,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import React from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI, referralAPI } from '../services/api';
+import { FONTS } from "../constants/fonts";
 
 const ProfileCompletionScreen: React.FC = () => {
   const [currentStep, setCurrentStep] = React.useState<number>(1);
@@ -297,6 +286,7 @@ const ProfileCompletionScreen: React.FC = () => {
       padding: 14,
       borderRadius: 8,
       fontSize: 15,
+      fontFamily: FONTS.body.semiBold,
       marginBottom: 16,
     },
     inputAndroid: { 
@@ -305,6 +295,7 @@ const ProfileCompletionScreen: React.FC = () => {
       padding: 14,
       borderRadius: 8,
       fontSize: 15,
+      fontFamily: FONTS.body.semiBold,
       marginBottom: 16,
     },
     placeholder: { color: '#666' },
@@ -608,7 +599,7 @@ const styles = StyleSheet.create({
   questTitle: {
     color: 'white',
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -641,7 +632,7 @@ const styles = StyleSheet.create({
   progressText: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     minWidth: 80,
   },
   stepContent: {
@@ -650,7 +641,7 @@ const styles = StyleSheet.create({
   stepLabel: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 8,
     marginTop: 4,
   },
@@ -660,6 +651,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -721,7 +713,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
   },
   // New referral verification styles
   referralContainer: {
@@ -737,6 +729,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
   },
   inputValid: {
     borderColor: '#10B981',
@@ -765,7 +758,7 @@ const styles = StyleSheet.create({
   verifyButtonText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,  
   },
   verificationMessage: {
     flexDirection: 'row',
@@ -790,6 +783,7 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontSize: 12,
     marginLeft: 6,
+    fontFamily: FONTS.body.semiBold,
   },
   verificationMessageTextValid: {
     color: '#10B981',
@@ -814,7 +808,7 @@ const styles = StyleSheet.create({
   snackbarText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
   },
 });
 

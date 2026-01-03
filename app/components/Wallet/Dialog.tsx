@@ -1,16 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Animated,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback, Animated, Dimensions } from "react-native";
 import { BlurView } from "expo-blur";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { FONTS } from "../../../constants/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -153,7 +145,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#fff",
     fontSize: 20,
-    fontWeight: "700",
+    fontFamily: FONTS.body.semiBold,
     flex: 1,
   },
   closeButton: {

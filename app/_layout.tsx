@@ -7,6 +7,8 @@ import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 import { SplashScreen } from './SplashScreen';
 import { OnboardingSplash } from './SplashScreen2';
+import { useFonts } from 'expo-font';
+import { FONT_ASSETS } from '../constants/fonts';
 import "../globals";
 
 const cdpConfig: Config = {
@@ -124,6 +126,12 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
+
+  if (!fontsLoaded) {
+    return null; 
+  }
+
   return (
     <CDPHooksProvider config={cdpConfig}>
       <PaperProvider>

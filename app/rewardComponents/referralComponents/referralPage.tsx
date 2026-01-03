@@ -7,6 +7,7 @@ import { ReferralSection } from '../ReferralSection';
 import { router } from 'expo-router';
 import { authAPI, referralAPI } from '../../../services/api';
 import * as Clipboard from 'expo-clipboard';
+import { FONTS } from "../../../constants/fonts";
 
 export default function InviteRewardsScreen() {
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -277,18 +278,19 @@ const styles = StyleSheet.create({
   statLabel: {
     color: '#A1A1AA',
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
     marginVertical: 4,
     fontWeight: '500',
   },
   statValue: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
   },
   greeting: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginTop: 20,
     paddingHorizontal: 16,
   },
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginBottom: 4,
   },
   titleUnderline: {
@@ -335,7 +337,7 @@ const styles = StyleSheet.create({
   userAvatarText: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
   },
   recruitInfo: {
     flex: 1,
@@ -343,12 +345,13 @@ const styles = StyleSheet.create({
   recruitName: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 4,
   },
   recruitStatus: {
     color: '#A1A1AA',
     fontSize: 13,
+    fontFamily: FONTS.body.semiBold,
   },
   pendingStatus: {
     flexDirection: 'row',
@@ -369,11 +372,12 @@ const styles = StyleSheet.create({
   pointsText: {
     color: '#4CAF50',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   waitingText: {
     color: '#A1A1AA',
     fontSize: 13,
+    fontFamily: FONTS.body.semiBold,
   },
   backBar: {
     paddingHorizontal: 16,
@@ -399,6 +403,7 @@ const styles = StyleSheet.create({
     color: '#A1A1AA',
     marginLeft: 8,
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
   },
   noRecruitsContainer: {
     alignItems: 'center',
@@ -406,13 +411,14 @@ const styles = StyleSheet.create({
   },
   noRecruitsText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: '#A1A1AA',
     marginTop: 12,
     marginBottom: 6,
   },
   noRecruitsSubtext: {
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
     color: '#666',
     textAlign: 'center',
     lineHeight: 20,

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useUserStore } from '../../stores/userStore';
+import { FONTS } from '../../constants/fonts';
 
 interface HeaderSectionProps {
   onNotificationPress?: () => void;
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
   statText: {
     color: '#1F2937',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   rightSection: {
     flexDirection: 'row',

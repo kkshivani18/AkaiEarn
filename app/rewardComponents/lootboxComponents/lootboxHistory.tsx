@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, RefreshCo
 import { LinearGradient } from 'expo-linear-gradient';
 import { lootBoxAPI } from '../../../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { FONTS } from "../../../constants/fonts";
 
 interface LootboxHistoryItem {
   pointsSpent: number;
@@ -192,10 +193,11 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#A1A1AA',
     fontSize: 16,
+    fontFamily: FONTS.body.semiBold,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: '#FFFFFF',
     paddingHorizontal: 20,
     paddingBottom: 20,
@@ -218,12 +220,13 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#EF4444',
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     textAlign: 'center',
   },
   errorSubtext: {
     color: '#71717A',
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
   },
   emptyContainer: {
     flex: 1,
@@ -235,11 +238,12 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#A1A1AA',
     fontSize: 20,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   emptySubtext: {
     color: '#71717A',
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
   },
   historyCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -267,11 +271,12 @@ const styles = StyleSheet.create({
   },
   boxTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: '#FFFFFF',
   },
   dateText: {
     fontSize: 13,
+    fontFamily: FONTS.body.semiBold,
     color: '#A1A1AA',
   },
   rewardSection: {
@@ -280,12 +285,12 @@ const styles = StyleSheet.create({
   },
   winText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: '#10B981',
   },
   pointsText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     color: '#EF4444',
   },
 });

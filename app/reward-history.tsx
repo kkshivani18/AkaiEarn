@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { logsAPI } from '../services/api';
 import { useUserStore } from '../stores/userStore';
+import { FONTS } from "../constants/fonts";
 
 // Types
 interface LogItem {
@@ -503,11 +504,13 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#A1A1AA',
     fontSize: 14,
+    fontFamily: FONTS.body.regular,
     marginTop: 12,
   },
   placeholder: {
     color: '#A1A1AA',
     fontSize: 14,
+    fontFamily: FONTS.body.regular,   
     textAlign: 'center',
     padding: 32,
   },
@@ -551,12 +554,12 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFCD0A',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   sectionTitle: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
   },
   historyItem: {
     flexDirection: 'row',
@@ -581,18 +584,20 @@ const styles = StyleSheet.create({
   historyTitle: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 4,
   },
   historyDescription: {
     color: '#A1A1AA',
     fontSize: 13,
     lineHeight: 14,
+    fontFamily: FONTS.body.regular,
   },
   dateText: {
     color: '#888',
     fontSize: 12,
     marginTop: 8,
+    fontFamily: FONTS.body.regular,
     // marginLeft: -60
   },
   historyRight: {
@@ -607,11 +612,12 @@ const styles = StyleSheet.create({
   statusText: {
     color: '#fff',
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   timeText: {
     color: '#A1A1AA',
     fontSize: 11,
+    fontFamily: FONTS.body.regular,
     marginBottom: 8,
   },
   rewardsRow: {
@@ -625,7 +631,7 @@ const styles = StyleSheet.create({
   },
   rewardValue: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   rewardIcon: {
     width: 20,
@@ -646,12 +652,13 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 8,
   },
   emptySubtext: {
     color: '#A1A1AA',
     fontSize: 14,
+    fontFamily: FONTS.body.regular,
     textAlign: 'center',
   },
   // Modal Styles
@@ -670,7 +677,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     color: '#000',
     fontSize: 22,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
   },
   // Sort Modal
   sortModalContent: {
@@ -699,7 +706,7 @@ const styles = StyleSheet.create({
   sortOptionText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     textAlign: 'center',
   },
   sortOptionTextSelected: {
@@ -723,7 +730,7 @@ const styles = StyleSheet.create({
   filterSectionTitle: {
     color: '#000',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginBottom: 12,
   },
   dateRangeGrid: {
@@ -746,7 +753,7 @@ const styles = StyleSheet.create({
   dateRangeText: {
     color: '#000',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   dateRangeTextSelected: {
     color: '#FFCD0A',
@@ -776,7 +783,7 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     color: '#000',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
 });
 

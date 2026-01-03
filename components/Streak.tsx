@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
+import { FONTS } from "../constants/fonts";
 
 interface StreakData {
   currentStreak: number;
@@ -106,15 +107,19 @@ const styles = StyleSheet.create({
   },
   smallFireIcon: {
     fontSize: 20,
+    fontFamily: FONTS.body.bold,
   },
   smallNumber: {
     fontSize: 18,
+    fontFamily: FONTS.body.bold,
   },
   smallLabel: {
     fontSize: 8,
+    fontFamily: FONTS.body.semiBold,
   },
   smallDetail: {
     fontSize: 7,
+    fontFamily: FONTS.body.semiBold,
   },
   
   mediumContainer: {
@@ -123,15 +128,19 @@ const styles = StyleSheet.create({
   },
   mediumFireIcon: {
     fontSize: 28,
+    fontFamily: FONTS.body.bold,
   },
   mediumNumber: {
     fontSize: 24,
+    fontFamily: FONTS.body.bold,
   },
   mediumLabel: {
     fontSize: 9,
+    fontFamily: FONTS.body.semiBold,
   },
   mediumDetail: {
     fontSize: 8,
+    fontFamily: FONTS.body.semiBold,
   },
   
   largeContainer: {
@@ -140,15 +149,19 @@ const styles = StyleSheet.create({
   },
   largeFireIcon: {
     fontSize: 36,
+    fontFamily: FONTS.body.bold,
   },
   largeNumber: {
     fontSize: 32,
+    fontFamily: FONTS.body.bold,
   },
   largeLabel: {
     fontSize: 10,
+    fontFamily: FONTS.body.semiBold,
   },
   largeDetail: {
     fontSize: 9,
+    fontFamily: FONTS.body.semiBold,
   },
 });
 

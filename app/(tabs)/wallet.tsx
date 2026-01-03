@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text,ScrollView,StyleSheet,TouchableOpacity, } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HeaderSection } from "../components/HeaderSection";
 import { useCurrentUser } from "@coinbase/cdp-hooks";
@@ -15,6 +9,7 @@ import { USDC_ADDRESS } from "@/constants/theme";
 import { PortfolioCard } from "../components/Wallet/PortfolioCard";
 import { CoinsList } from "../components/Wallet/CoinsList";
 import { ActivityList } from "../components/Wallet/ActivityList";
+import { FONTS } from '../../constants/fonts';
 
 // ERC20 ABI for balance and transfer
 const ERC20_ABI = [
@@ -433,7 +428,7 @@ const styles = StyleSheet.create({
   tabText: {
     color: "#666",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   activeTabText: {
     color: "#fff",

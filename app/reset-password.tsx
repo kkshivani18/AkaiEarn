@@ -1,20 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { authAPI } from '../services/api';
+import { FONTS } from "../constants/fonts";
 
 export default function ResetPasswordScreen() {
   const params = useLocalSearchParams();
@@ -108,7 +99,7 @@ export default function ResetPasswordScreen() {
               This password reset link is invalid or expired. Please request a new password reset.
             </Text>
             <TouchableOpacity style={styles.button} onPress={handleBackToLogin}>
-              <Text style={styles.buttonText}>Back to Login</Text>
+              <Text style={[styles.buttonText, { fontFamily: FONTS.body.bold }]}>Back to Login</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -136,7 +127,7 @@ export default function ResetPasswordScreen() {
             {/* Form */}
             <View style={styles.form}>
               <Text style={styles.title}>Set New Password</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.subtitle, { fontFamily: FONTS.body.semiBold }]}>
                 Enter your new password below. Make sure it's at least 6 characters long.
               </Text>
 
@@ -235,7 +226,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: 'white',
   },
   form: {
@@ -245,13 +236,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: 'white',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: FONTS.body.regular,
     color: '#94a3b8',
     textAlign: 'center',
     marginBottom: 40,
@@ -288,7 +280,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   linkButton: {
     alignItems: 'center',
@@ -300,13 +292,14 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: '#EF4444',
     textAlign: 'center',
     marginBottom: 16,
   },
   errorMessage: {
     fontSize: 16,
+    fontFamily: FONTS.body.regular,
     color: '#94a3b8',
     textAlign: 'center',
     marginBottom: 32,

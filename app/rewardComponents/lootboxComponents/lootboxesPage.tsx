@@ -5,6 +5,7 @@ import { LootboxHeaderSection } from './lootboxHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LootboxesSection } from './lootboxes';
+import { FONTS } from "../../../constants/fonts";
 
 export default function LootboxesPage() {
   return (

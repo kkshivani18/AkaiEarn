@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme, ImageBackground } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+import { FONTS } from "../constants/fonts";
 
 interface SignInModalProps {
   visible: boolean;
@@ -513,7 +514,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   questTitle: {
     color: 'white',
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -526,7 +527,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   stepLabel: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 8,
     marginTop: 4,
   },
@@ -536,6 +537,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 16,
   },
   passwordContainer: {
@@ -549,6 +551,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     flex: 1,
     padding: 14,
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
     color: '#333',
   },
   eyeIcon: {
@@ -562,7 +565,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   forgotPasswordText: {
     color: '#FFD700',
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
   },
   button: {
     backgroundColor: '#007AFF',
@@ -574,7 +577,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
   },
   divider: {
     flexDirection: 'row',
@@ -590,6 +593,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     marginHorizontal: 12,
     color: 'white',
     fontSize: 12,
+    fontFamily: FONTS.body.semiBold,
   },
   googleButton: {
     flexDirection: 'row',
@@ -606,7 +610,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   googleButtonText: {
     color: '#333',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   footer: {
     flexDirection: 'row',
@@ -616,11 +620,12 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   footerText: {
     color: '#888',
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
   },
   linkText: {
     color: '#FFD700',
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   // Modal styles
   modalOverlay: {
@@ -645,7 +650,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     color: isDark ? 'white' : '#1f2937',
   },
   modalCloseButton: {
@@ -654,6 +659,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   modalDescription: {
     fontSize: 14,
     color: isDark ? '#9ca3af' : '#6b7280',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 20,
     lineHeight: 20,
   },
@@ -662,6 +668,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#e5e7eb',
@@ -679,7 +686,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   modalButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   // snackbar styles
   snackbar: {
@@ -698,7 +705,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   snackbarText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
   },
 });
 

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { FONTS } from "../constants/fonts";
 
 interface SignUpModalProps {
   visible: boolean;
@@ -213,7 +214,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   questTitle: {
     color: 'white',
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -224,7 +225,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   stepLabel: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 8,
     marginTop: 4,
   },
@@ -234,6 +235,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 16,
   },
   passwordContainer: {
@@ -247,6 +249,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     flex: 1,
     padding: 14,
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
     color: '#333',
   },
   eyeIcon: {
@@ -262,7 +265,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
   },
   footer: {
     flexDirection: 'row',
@@ -272,11 +275,12 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   footerText: {
     color: '#888',
     fontSize: 15,
+    fontFamily: FONTS.body.semiBold,
   },
   linkText: {
     color: '#FFD700',
+    fontFamily: FONTS.body.semiBold,
     fontSize: 15,
-    fontWeight: '600',
   },
   // snackbar styles
   snackbar: {
@@ -295,6 +299,6 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   snackbarText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
   },
 });

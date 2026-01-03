@@ -9,6 +9,7 @@ import { offersAPI, authAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { ErrorPopup } from '../components/popups/ErrorPopup';
 import { InfoPopup } from '../components/popups/InfoPopup';
+import { FONTS } from "../constants/fonts";
 
 const CreativeTaskScreen: React.FC = () => {
   const params = useLocalSearchParams();
@@ -568,8 +569,8 @@ const styles = StyleSheet.create({
   },
   backButton: { padding: 8, marginRight: 12 },
   headerInfo: { flex: 1 },
-  headerTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  headerReward: { color: '#94a3b8', fontSize: 14, marginTop: 2 },
+  headerTitle: { color: 'white', fontSize: 18, fontFamily: FONTS.body.bold },
+  headerReward: { color: '#94a3b8', fontSize: 14, fontFamily: FONTS.body.medium, marginTop: 2 },
   headerRight: { width: 40, alignItems: 'center' },
   completedBadge: { padding: 4 },
   webViewContainer: { flex: 1, position: 'relative' },
@@ -592,12 +593,14 @@ const styles = StyleSheet.create({
     color: 'white', 
     marginTop: 12, 
     fontSize: 16,
+    fontFamily: FONTS.body.medium,
     textAlign: 'center',
   },
   loadingSubtext: {
     color: '#94a3b8',
     marginTop: 8,
     fontSize: 14,
+    fontFamily: FONTS.body.medium,
     textAlign: 'center',
   },
   footer: {
@@ -609,7 +612,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
-  footerText: { color: 'white', marginLeft: 8, fontSize: 14 },
+  footerText: { color: 'white', marginLeft: 8, fontSize: 14, fontFamily: FONTS.body.medium },
   testButton: {
     backgroundColor: '#FF6B35',
     paddingHorizontal: 20,
@@ -620,7 +623,7 @@ const styles = StyleSheet.create({
   testButtonText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     textAlign: 'center',
   },
   debugFooter: {
@@ -635,6 +638,7 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 10,
     textAlign: 'center',
+    fontFamily: FONTS.body.medium,
   },
 });
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Animated, StyleSheet, Text, View, Image } from 'react-native';
+import { FONTS } from '../constants/fonts';
 
 export const SplashScreen: React.FC = () => {
   const [fadeAnim] = React.useState(new Animated.Value(0));
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 42,
-    fontWeight: '700',
+    fontFamily: FONTS.heading.bold,
     color: '#E5383B',
     letterSpacing: -1,
   },

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FONTS } from '../../constants/fonts';
 
 interface WelcomeSectionProps {
   onEarnMorePress?: () => void;
@@ -87,6 +88,6 @@ const styles = StyleSheet.create({
   earnMoreText: {
     color: '#fff',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
   },
 });

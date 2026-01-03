@@ -10,6 +10,7 @@ import { SpinWheelSection } from '../rewardComponents/SpinWheelSection';
 import { ReferralSection } from '../rewardComponents/ReferralSection';
 import { OfferSkeletonLoader } from '../../components/SkeletonLoader';
 import { CouponSection } from '../rewardComponents/CouponSection';
+import { FONTS } from '../../constants/fonts';
 
 export default function RewardScreen() {
   const { authState } = useAuth();
@@ -101,12 +102,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  socialSectionTitle: {
-    color: '#fff',
-    fontSize: 18,
-    // fontWeight: 'bold',
     marginBottom: 12,
   },
   placeholder: {

@@ -7,7 +7,7 @@ import QRCode from "react-native-qrcode-svg";
 import * as Clipboard from "expo-clipboard";
 import { ErrorPopup } from "@/components/popups/ErrorPopup";
 import { SuccessPopup } from "@/components/popups/SuccessPopup";
-import { InfoPopup } from "@/components/popups/InfoPopup";
+import { FONTS } from "../../../constants/fonts";
 import {
   createPublicClient,
   encodeFunctionData,
@@ -640,12 +640,12 @@ const styles = StyleSheet.create({
   currencySymbol: {
     color: "#fff",
     fontSize: 20,
-    fontWeight: "bold",
+    fontFamily: FONTS.body.semiBold,
   },
   balanceAmount: {
     color: "#fff",
     fontSize: 48,
-    fontWeight: "bold",
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 12,
   },
   actionsContainer: {
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
   actionText: {
     color: "#fff",
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   // Dialog styles
   dialogContent: {
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     color: "#fff",
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     marginBottom: 4,
   },
   input: {
@@ -693,6 +693,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     color: "#fff",
     fontSize: 16,
+    fontFamily: FONTS.body.regular,
   },
   inputError: {
     borderColor: "#ff4444",
@@ -700,11 +701,13 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#ff4444",
     fontSize: 12,
+    fontFamily: FONTS.body.semiBold,
     marginTop: 4,
   },
   balanceHint: {
     color: "#888",
     fontSize: 12,
+    fontFamily: FONTS.body.semiBold,
     marginTop: 4,
   },
   transferButton: {
@@ -723,7 +726,7 @@ const styles = StyleSheet.create({
   transferButtonText: {
     color: "#000",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FONTS.body.semiBold,
   },
   // Swap dialog styles
   swapDialogGradient: {
@@ -733,7 +736,7 @@ const styles = StyleSheet.create({
   },
   swapDialogTitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontFamily: FONTS.body.semiBold,
     color: "#000",
     marginBottom: 16,
   },
@@ -756,11 +759,12 @@ const styles = StyleSheet.create({
   swapLabel: {
     color: "#fff",
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   availableText: {
     color: "#888",
     fontSize: 12,
+    fontFamily: FONTS.body.semiBold,
   },
   swapInputContainer: {
     flexDirection: "row",
@@ -787,12 +791,12 @@ const styles = StyleSheet.create({
   currencyText: {
     color: "#000000",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   swapAmountInput: {
     color: "#fff",
     fontSize: 20,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     textAlign: "right",
     flex: 1,
     paddingLeft: 16,
@@ -832,7 +836,7 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.body.semiBold,
   },
   swapButton: {
     borderRadius: 16,
@@ -853,7 +857,7 @@ const styles = StyleSheet.create({
   swapButtonText: {
     color: "#000",
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: FONTS.body.semiBold,
   },
   receiveDialogContent: {
     alignItems: "center",
@@ -863,13 +867,13 @@ const styles = StyleSheet.create({
   receiveTitle: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     textAlign: "center",
   },
   receiveSubtitle: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
     textAlign: "center",
     marginBottom: 24,
   },
@@ -890,6 +894,7 @@ const styles = StyleSheet.create({
   qrPlaceholderText: {
     color: "#666",
     fontSize: 14,
+    fontFamily: FONTS.body.semiBold,
   },
   copyAddressButton: {
     flexDirection: "row",
@@ -906,6 +911,6 @@ const styles = StyleSheet.create({
   copyAddressText: {
     color: "#FFCD0A",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
 });

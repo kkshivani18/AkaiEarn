@@ -2,20 +2,9 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Svg, {
-  Circle,
-  ClipPath,
-  Defs,
-  FeDropShadow,
-  Filter,
-  G,
-  Path,
-  RadialGradient,
-  Stop,
-  Image as SvgImage,
-  Text as SvgText,
-} from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, FeDropShadow, Filter, G, Path, RadialGradient, Stop, Image as SvgImage, Text as SvgText } from 'react-native-svg';
 import { couponsAPI } from '../services/api';
+import { FONTS } from "../constants/fonts";
 
 interface Segment {
   color: string;
@@ -174,7 +163,7 @@ const WheelSVG: React.FC<{
             x={logoX}
             y={logoY + 4}
             fontSize="12"
-            fontWeight="700"
+            fontFamily={FONTS.body.semiBold}
             fill="#ffffff"
             textAnchor="middle"
           >
@@ -574,7 +563,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     marginBottom: 10,
     textAlign: 'center',
     color: '#007AFF', 
@@ -584,6 +573,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: FONTS.body.semiBold,
     color: '#a1a1aa',
     marginBottom: 30,
     textAlign: 'center',
@@ -670,7 +660,7 @@ const styles = StyleSheet.create({
   spinButtonText: {
     color: 'white',
     fontSize: 13,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     letterSpacing: 1,
   },
   resultContainer: {
@@ -680,7 +670,7 @@ const styles = StyleSheet.create({
   },
   resultText: {
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     textAlign: 'center',
     color: 'white',
   },
@@ -698,11 +688,12 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 16,
+    fontFamily: FONTS.body.semiBold,  
     color: '#9ca3af',
   },
   timerText: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
     color: '#1DA1F2',
     textShadowColor: 'rgba(239, 68, 68, 0.5)',
     textShadowOffset: { width: 0, height: 0 },
@@ -710,7 +701,7 @@ const styles = StyleSheet.create({
   },
   readyText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,  
     color: 'white',
     marginLeft: -50,
     // textShadowColor: 'white',

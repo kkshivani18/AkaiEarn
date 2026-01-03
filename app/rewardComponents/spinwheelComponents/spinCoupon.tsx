@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FONTS } from "../../../constants/fonts";
 
 type SpinCouponModalProps = {
   visible: boolean;
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   headerText: {
     color: '#FFFFFF',
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     letterSpacing: 1,
   },
   logoRow: {
@@ -125,12 +126,12 @@ const styles = StyleSheet.create({
   titleText: {
     color: '#1F2937',
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
   },
   subtitleText: {
     color: '#1F2937',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.semiBold,
     marginTop: 6,
     textAlign: 'center',
   },
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
   codeText: {
     color: '#EF4444',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
   },
   copyButton: {
     backgroundColor: '#673AB7',
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   copyButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
   },
   redeemButton: {
     backgroundColor: '#AA4CF0',
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
   redeemButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     letterSpacing: 0.5,
   },
   closeButton: {
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#1F2937',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
 });
 

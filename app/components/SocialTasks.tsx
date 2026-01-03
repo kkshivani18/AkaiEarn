@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { socialAPI } from '../../services/api';
 import { useUserStore } from '../../stores/userStore';
+import { FONTS } from '../../constants/fonts';
 
 type SocialOffer = {
   _id: string;
@@ -283,6 +284,7 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     marginTop: 12,
+    fontFamily: FONTS.body.regular,
   },
   socialTaskCard: {
     flexDirection: 'row',
@@ -357,7 +359,7 @@ const styles = StyleSheet.create({
   completedText: {
     color: '#4CAF50',
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   processingBadge: {
     paddingHorizontal: 8,

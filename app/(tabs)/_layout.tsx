@@ -3,6 +3,7 @@ import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FONTS } from '../../constants/fonts';
 
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
@@ -168,10 +169,11 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginLeft: 55,
     marginRight: 55,
+    marginBottom: 10,
   },
   activeLabel: {
     color: "#000",
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: FONTS.heading.bold,
   },
 });

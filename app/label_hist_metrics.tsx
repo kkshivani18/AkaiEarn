@@ -4,6 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 import { router } from 'expo-router';
 import { useUserStore } from '../stores/userStore';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FONTS } from "../constants/fonts";
 
 interface HeaderSectionProps {
 }
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
   greeting: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginBottom: 8,
   },
   statsContainer: {
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
   statText: {
     color: '#1F2937',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   rightSection: {
     flexDirection: 'row',
@@ -232,17 +233,17 @@ const styles = StyleSheet.create({
   iqTitle: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   iqValue: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
   },
   iqWeekly: {
     color: '#10B981',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   progressBarContainer: {
     flexDirection: 'row',
@@ -278,13 +279,13 @@ const styles = StyleSheet.create({
   metricValue: {
     color: '#fff',
     fontSize: 17,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginTop: 1,
   },
   metricLabel: {
     color: '#A1A1AA',
     fontSize: 12,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.semiBold,
     marginTop: -4,
   },
 });

@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useUserStore } from '../../../stores/userStore';
+import { FONTS } from "../../../constants/fonts";
 
 interface HeaderSectionProps {
 }
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
   greeting: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.body.bold,
     marginBottom: 8,
   },
   statsContainer: {
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
   statText: {
     color: '#1F2937',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   rightSection: {
     flexDirection: 'row',

@@ -12,6 +12,7 @@ import { offersAPI, logsAPI } from '../../services/api';
 import { HeaderSection } from '../offerComponents/offerHeader';
 import { useUserStore } from '../../stores/userStore';
 import { ErrorPopup } from '../../components/popups/ErrorPopup';
+import { FONTS } from '../../constants/fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ITEM_WIDTH = SCREEN_WIDTH * 0.87;
@@ -437,13 +438,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     left: 12,
-  },
-  seeAllText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
   emptyState: {
     padding: 32,
@@ -452,6 +448,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#888',
     fontSize: 14,
+    fontFamily: FONTS.body.regular,
   },
   
   // Progress Card 
@@ -467,7 +464,7 @@ const styles = StyleSheet.create({
   progressLabel: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     marginBottom: -4,
   },
   progressHeaderRow: {
@@ -485,12 +482,12 @@ const styles = StyleSheet.create({
   iqTitle: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
   },
   iqWeekly: {
     color: '#22C55E',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginLeft: 4,
   },
   progressBrainIcon: {
@@ -563,13 +560,14 @@ const styles = StyleSheet.create({
   taskCardTitle: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     flex: 1,
     marginRight: 8,
   },
   taskCardDescription: {
     color: '#AAA',
     fontSize: 12,
+    fontFamily: FONTS.body.regular,
     flex: 1,
     marginRight: 8,
     lineHeight: 16,
@@ -577,12 +575,13 @@ const styles = StyleSheet.create({
   taskCardMinIQ: {
     color: '#888',
     fontSize: 12,
+    fontFamily: FONTS.body.regular,
     marginTop: 4,
   },
   lockMessage: {
     color: '#ff6b6b',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
     marginTop: 4,
   },
   lockedText: {
@@ -609,13 +608,13 @@ const styles = StyleSheet.create({
   },
   sign: {
     fontSize: 13,
-    fontWeight: '900',
+    fontFamily: FONTS.heading.bold,
     marginRight: 2,
   },
   rewardValue: {
     color: '#00000',
     fontSize: 13,
-    fontWeight: '800',
+    fontFamily: FONTS.body.bold,
     marginRight: 4,
     borderColor: '#000000'
   },
@@ -627,7 +626,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     fontSize: 10,
     marginRight: 2,
-    fontWeight: '700',
+    fontFamily: FONTS.body.bold,
   },
   // Snackbar
   snackbar: {
@@ -646,7 +645,7 @@ const styles = StyleSheet.create({
   snackbarText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.body.medium,
   },
   // Pagination Dots
   paginationContainer: {

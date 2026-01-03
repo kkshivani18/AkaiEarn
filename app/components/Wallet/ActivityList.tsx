@@ -1,15 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Animated,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Animated } from "react-native";
 import { formatUnits } from "viem";
+import { FONTS } from "../../../constants/fonts";
 
 interface Transaction {
   txHash: string;
@@ -181,6 +175,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666",
     fontSize: 16,
+    fontFamily: FONTS.body.semiBold,
     textAlign: "center",
     paddingVertical: 40,
   },
@@ -221,11 +216,12 @@ const styles = StyleSheet.create({
   transactionType: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   transactionAddress: {
     color: "#888",
     fontSize: 12,
+    fontFamily: FONTS.body.semiBold,
   },
   transactionRight: {
     alignItems: "flex-end",
@@ -233,7 +229,7 @@ const styles = StyleSheet.create({
   },
   transactionAmount: {
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONTS.body.semiBold,
   },
   transactionAmountSent: {
     color: "#ef4444",
@@ -244,5 +240,6 @@ const styles = StyleSheet.create({
   transactionBlock: {
     color: "#666",
     fontSize: 11,
+    fontFamily: FONTS.body.semiBold,
   },
 });

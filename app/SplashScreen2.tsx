@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FONTS } from "../constants/fonts";
 
 const { width, height } = Dimensions.get('window');
 
@@ -128,14 +129,15 @@ const styles = StyleSheet.create({
   },
   mainHeading: {
     marginTop: -5,
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: FONTS.heading.bold,
     color: '#FFD700',
     textAlign: 'center',
     lineHeight: 36,
   },
   subtitle: {
     fontSize: 14,
+    fontFamily: FONTS.heading.semiBold,
     color: '#999',
     textAlign: 'center',
     marginTop: 12,
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONTS.heading.bold,
     letterSpacing: 1.5,
   },
 });
