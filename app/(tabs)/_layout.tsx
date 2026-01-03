@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginLeft: 55,
     marginRight: 55,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   activeLabel: {
     color: "#000",

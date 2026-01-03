@@ -9,13 +9,24 @@ import { router } from "expo-router";
 import IQMeter from "../../components/IQMeter";
 import { configAPI, contractAPI, logsAPI } from "../../services/api";
 import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn, useSendUserOperation } from "@coinbase/cdp-hooks";
-import { encodeFunctionData } from "viem";
+import { createPublicClient, encodeFunctionData, formatUnits, http } from "viem";
+import { base } from "viem/chains";
 import { abi } from "../../config/abi";
 import { InfoPopup } from "../../components/popups/InfoPopup";
 import { ErrorPopup } from "../../components/popups/ErrorPopup";
 import { SuccessPopup } from "../../components/popups/SuccessPopup";
-import { contractAddress } from "@/constants/theme";
+import { contractAddress, USDC_ADDRESS } from "@/constants/theme";
 import { FONTS } from "../../constants/fonts";
+
+const ERC20_ABI = [
+  {
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
 
 export default function ProfileScreen() {
   const { name, iq, coins, balance, dollars, fetchUserData, setUser } = useUserStore();
@@ -50,13 +61,30 @@ export default function ProfileScreen() {
 
   const smartAccount = currentUser?.evmSmartAccountObjects?.[0]?.address;
 
+  const [usdcBalance, setUsdcBalance] = useState<bigint | undefined>(undefined);
+  const [ethBalance, setEthBalance] = useState<bigint | undefined>(undefined);
+  const [ethPrice, setEthPrice] = useState<number>(0);
+  const [usdcPrice, setUsdcPrice] = useState<number>(1);
+
+  const client = createPublicClient({
+    chain: base,
+    transport: http(),
+  });
+
   const [errorMessage, setErrorMessage] = useState("");
   const displayName = name || "User";
   const displayIq = typeof iq === "number" ? iq : 200;
   const points = typeof coins === "number" && coins > 0 ? coins : 0;
 
   const appRewardsUsd = typeof balance === "number" ? balance / 1_00 : 0;
-  const walletBalanceUsd = typeof dollars === "number" ? dollars : 0;
+  
+  const ethAmount = ethBalance ? parseFloat(formatUnits(ethBalance, 18)) : 0;
+  const usdcAmount = usdcBalance ? parseFloat(formatUnits(usdcBalance, 6)) : 0;
+  const totalBalance = (ethAmount * ethPrice) + (usdcAmount * usdcPrice);
+  
+  const walletBalanceUsd = (ethBalance !== undefined || usdcBalance !== undefined)
+    ? totalBalance
+    : (typeof dollars === "number" ? dollars : 0);
 
   const walletUnlockTarget = 200;
   const progress = Math.max(0, Math.min(1, points / walletUnlockTarget));
@@ -127,6 +155,63 @@ export default function ProfileScreen() {
 
     if (walletAddress) {
       fetchCashoutHistory();
+    }
+  }, [walletAddress]);
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const [ethResponse, usdcResponse] = await Promise.all([
+          fetch(`https://api.coinbase.com/v2/prices/ETH-USD/spot`),
+          fetch(`https://api.coinbase.com/v2/prices/USDC-USD/spot`),
+        ]);
+
+        const ethData = await ethResponse.json();
+        const usdcData = await usdcResponse.json();
+
+        if (ethData?.data?.amount) {
+          setEthPrice(parseFloat(ethData.data.amount));
+        }
+
+        if (usdcData?.data?.amount) {
+          setUsdcPrice(parseFloat(usdcData.data.amount));
+        }
+      } catch (error) {
+        console.error("Error fetching prices:", error);
+      }
+    };
+
+    fetchPrices();
+    // Refresh prices every 30 seconds
+    const interval = setInterval(fetchPrices, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!walletAddress) return;
+      try {
+        const [ethBal, usdcBal] = await Promise.all([
+          client.getBalance({ address: walletAddress as `0x${string}` }),
+          client.readContract({
+            address: USDC_ADDRESS as `0x${string}`,
+            abi: ERC20_ABI,
+            functionName: "balanceOf",
+            args: [walletAddress as `0x${string}`],
+          })
+        ]);
+        
+        setEthBalance(ethBal);
+        setUsdcBalance(usdcBal as bigint);
+      } catch (error) {
+        console.error("Error fetching balances:", error);
+      }
+    };
+
+    if (walletAddress) {
+      fetchBalance();
+      const interval = setInterval(fetchBalance, 10000);
+      return () => clearInterval(interval);
     }
   }, [walletAddress]);
 
@@ -865,7 +950,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   balanceTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: FONTS.body.semiBold,
     color: "#1F2937",
     marginBottom: 8,

@@ -322,6 +322,7 @@ const styles = StyleSheet.create({
   emptySubtext: {
     color: '#666',
     fontSize: 13,
+    fontFamily: FONTS.body.medium,
     marginTop: 4,
   },
   flatListContent: {
@@ -350,12 +351,13 @@ const styles = StyleSheet.create({
   taskTitle: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     marginBottom: 6,
   },
   taskDescription: {
     color: '#888',
     fontSize: 14,
+    fontFamily: FONTS.body.medium,
     marginBottom: 8,
   },
   taskFooter: {
@@ -363,7 +365,8 @@ const styles = StyleSheet.create({
   },
   minIqText: {
     color: '#A1A1AA',
-    fontSize: 12,
+    fontSize: 12, 
+    fontFamily: FONTS.body.medium,
     marginBottom: 8,
   },
   rewardContainer: {
@@ -374,7 +377,7 @@ const styles = StyleSheet.create({
   rewardText: {
     color: '#4CAF50',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.bold,
   },
   iqBadge: {
     backgroundColor: '#333',
@@ -385,7 +388,7 @@ const styles = StyleSheet.create({
   iqText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.body.bold,
   },
   dotsContainer: {
     flexDirection: 'row',

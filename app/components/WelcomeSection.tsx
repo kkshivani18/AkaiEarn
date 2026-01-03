@@ -64,13 +64,14 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     color: '#fff',
     fontSize: 23,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     marginBottom: 8,
   },
   welcomeSubtitle: {
     color: '#A1A1AA',
     fontSize: 14,
-    marginBottom: 16,
+    marginBottom: 16, 
+    fontFamily: FONTS.heading.semiBold,
   },
   earnMoreButton: {
     flexDirection: 'row',

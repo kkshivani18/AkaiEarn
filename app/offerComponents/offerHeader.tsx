@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   greeting: {
     color: '#fff',
     fontSize: 24,
-    fontFamily: FONTS.body.semiBold,
+    fontFamily: FONTS.heading.semiBold,
     marginBottom: 8,
   },
   statsContainer: {

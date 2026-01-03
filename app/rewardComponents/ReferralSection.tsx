@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: FONTS.heading.bold,
     color: '#2D2D2D',
     marginBottom: 4,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   learnButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONTS.heading.semiBold,
     color: '#000000',
   },
   imageContainer: {

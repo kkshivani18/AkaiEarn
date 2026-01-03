@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontFamily: FONTS.heading.bold,
     color: '#FFFFFF',
     marginBottom: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
+    fontFamily: FONTS.heading.semiBold,
     color: '#FFFFFF',
     marginBottom: 12,
     lineHeight: 16,

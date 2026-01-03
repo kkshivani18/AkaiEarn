@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   greeting: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FONTS.heading.bold,
     marginBottom: 8,
   },
   statsContainer: {

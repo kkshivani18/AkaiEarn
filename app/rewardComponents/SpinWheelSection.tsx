@@ -94,8 +94,8 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontFamily: FONTS.heading.semiBold,
     color: '#FFFFFF',
     marginBottom: 6,
     textAlign: 'center',
@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
+    fontFamily: FONTS.heading.semiBold,
     color: '#FFFFFF',
     marginBottom: 12,
     lineHeight: 16,

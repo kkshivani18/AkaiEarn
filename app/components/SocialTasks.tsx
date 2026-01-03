@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   socialTaskTitle: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: FONTS.heading.semiBold,
     marginBottom: 4,
   },
   socialTaskTitleCompleted: {
@@ -334,17 +334,17 @@ const styles = StyleSheet.create({
   rewardPrefix: {
     color: '#4CAF50',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.body.semiBold,
   },
   rewardAmount: {
     color: '#4CAF50',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 14,  
+    fontFamily: FONTS.body.semiBold,
   },
   rewardLabel: {
     color: '#4CAF50',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.heading.semiBold,
   },
   completedBadge: {
     flexDirection: 'row',
