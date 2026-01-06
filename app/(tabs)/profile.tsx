@@ -364,6 +364,10 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleBigWin = () => {
+    router.push('/rewardComponents/lootboxComponents/lootboxes');
+  };
+
   const AnimatedSection = ({
     children,
     delay = 0,
@@ -604,13 +608,12 @@ export default function ProfileScreen() {
               </View>
             </LinearGradient>
 
-            <TouchableOpacity style={styles.bigWinCard} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.bigWinCard} activeOpacity={0.85} onPress={handleBigWin}>
               <Image
                 source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/big_win.png' }}
                 style={styles.bigWinText}
                 resizeMode="contain"
               />
-              <Text style={styles.startEarningText}>START EARNING</Text>
               <Image
                 source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/profileScreen/big_win_chest.png' }}
                 style={styles.chestImage}
@@ -1312,6 +1315,7 @@ const styles = StyleSheet.create({
     height: 55,
     marginBottom: 8,
     right: 40,
+    top: 5
   },
   startEarningText: {
     color: "#FFFFFF",
@@ -1325,7 +1329,7 @@ const styles = StyleSheet.create({
     height: 110,
     position: "absolute",
     right: -15,
-    top: -35,
+    top: -15,
   },
   logoutButton: {
     marginTop: 4,

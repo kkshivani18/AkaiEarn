@@ -84,26 +84,27 @@ const TaskCard = ({ task, onPress, locked, scale, opacity }: { task: OfferTask, 
           </View>
           
           <View style={styles.taskDetailsContainer}>
-            <View style={styles.taskRow}>
+            <View style={[styles.taskRow, styles.taskRowFirst]}>
               <Text style={[styles.taskCardTitle, locked && styles.lockedText]} numberOfLines={1}>
                 {task.title}
               </Text>
-              <View style={styles.rewardPill}>
-                <Text style={styles.plusSign}>+</Text>
+                <View style={styles.signContainer}>
+                  <Text style={styles.plusSign}>+</Text>
+                  <Text style={styles.minusSign}>-</Text>
+                </View>
                 <Text style={styles.rewardValue}>{task.iqGain}</Text>
                 <Image source={{ uri: 'https://akaiearn-app-images.s3.ap-south-1.amazonaws.com/common/iq_brain.png' }} style={styles.pillIcon} resizeMode="contain" />
-              </View>
             </View>
 
             <View style={styles.taskRow}>
-              <Text style={[styles.taskCardDescription, locked && styles.lockedText]} numberOfLines={2}>
+              <Text style={[styles.taskCardDescription, styles.taskDescriptionWithSpacing, locked && styles.lockedText]} numberOfLines={2}>
                 {task.description}
               </Text>
-              <View style={styles.rewardPill}>
-                <Text style={styles.plusSign}>+</Text>
+                <View style={styles.signContainer}>
+                  <Text style={styles.plusSignPoints}>+</Text>
+                </View>
                 <Text style={styles.rewardValue}>{task.reward}</Text>
                 <Image source={require('../../assets/app-images/points_crystal.png')} style={styles.pillIcon} resizeMode="contain" />
-              </View>
             </View>
             
             {locked ? (
@@ -417,7 +418,6 @@ const styles = StyleSheet.create({
   },
   scrollWrapper: {
     flex: 1,
-    backgroundColor: '#2C2B30',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden', 
@@ -517,11 +517,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#333',
     overflow: 'hidden',
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 0,
-    elevation: 8,
     marginBottom: 10,
   },
   taskCardLocked: {
@@ -555,7 +550,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 5,
+  },
+  taskRowFirst: {
+    marginBottom: -6,
+  },
+  taskDescriptionWithSpacing: {
+    marginTop: 4,
   },
   taskCardTitle: {
     color: '#fff',
@@ -612,7 +613,7 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   rewardValue: {
-    color: '#00000',
+    color: '#FFFFFF',
     fontSize: 13,
     fontFamily: FONTS.body.bold,
     marginRight: 4,
@@ -622,11 +623,32 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
   },
-  plusSign: {
-    color: '#1F2937',
-    fontSize: 10,
+  signContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
     marginRight: 2,
+    marginTop: 2,
+  },
+  plusSign: {
+    color: '#38E990',
+    fontSize: 15,
+    lineHeight: 8,
     fontFamily: FONTS.body.bold,
+    height: 8,
+  },
+  minusSign: {
+    color: '#E5383B',
+    fontSize: 15,
+    lineHeight: 8,
+    fontFamily: FONTS.body.bold,
+    height: 8,
+  },
+  plusSignPoints: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    lineHeight: 8,
+    fontFamily: FONTS.body.bold,
+    height: 8,
   },
   // Snackbar
   snackbar: {
