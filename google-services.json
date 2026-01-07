@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "676449185840",
+    "project_id": "offerwall-b9cbf",
+    "storage_bucket": "offerwall-b9cbf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:676449185840:android:ceaa373500edf3fe6f7df5",
+        "android_client_info": {
+          "package_name": "com.akaispace.offerwall"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOdsCxPJ6_wuv7AaVI8xxJdT3RfTPsySs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

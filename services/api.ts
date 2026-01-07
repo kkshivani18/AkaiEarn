@@ -563,6 +563,16 @@ export const authAPI = {
     const response = await api.post('/auth/reset-password', { token, password });
     return response.data;
   },
+
+  // Update FCM token for push notifications
+  updateFcmToken: async (fcmToken: string) => {
+    try {
+      const response = await api.post('/auth/fcm-token', { fcmToken });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
 };
 
 // Referral API

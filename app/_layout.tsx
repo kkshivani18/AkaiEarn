@@ -9,6 +9,7 @@ import { SplashScreen } from './SplashScreen';
 import { OnboardingSplash } from './SplashScreen2';
 import { useFonts } from 'expo-font';
 import { FONT_ASSETS } from '../constants/fonts';
+import NotificationService from '../services/NotificationService';
 import "../globals";
 
 const cdpConfig: Config = {
@@ -52,6 +53,23 @@ function RootLayoutNav() {
   const handleSecondSplashComplete = () => {
     setShowSecondSplash(false);
   };
+
+  // Initialize push notifications
+  useEffect(() => {
+    const initNotifications = async () => {
+      try {
+        await NotificationService.requestUserPermission();
+        await NotificationService.createChannels();
+        NotificationService.initialize();
+        NotificationService.handleNotificationPress();
+        console.log('✅ Push notifications initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize notifications:', error);
+      }
+    };
+
+    initNotifications();
+  }, []);
 
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
