@@ -1,21 +1,25 @@
-import { AntDesign, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
 import { FONTS } from "../constants/fonts";
+import { useUserStore } from '../stores/userStore';
 
 interface SignUpModalProps {
   visible: boolean;
   onClose: () => void;
   onSwitchToSignIn: () => void; 
+  onSignUp?: (email: string, password: string) => Promise<any>;
+  onGoogleLogin?: (idToken: string) => Promise<any>;
 }
 
 export const SignUp: React.FC<SignUpModalProps> = ({
   visible,
   onClose,
   onSwitchToSignIn,
+  onSignUp,
+  onGoogleLogin,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -26,7 +30,8 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { onRegister, onGoogleLogin } = useAuth();
+  const fallbackRegister = useUserStore(s => s.register);
+  const fallbackGoogleLogin = useUserStore(s => s.loginWithGoogle);
   const router = useRouter();
 
   // snackbar state
@@ -50,7 +55,8 @@ export const SignUp: React.FC<SignUpModalProps> = ({
       return;
     }
     
-    if (!onRegister) {
+    const registerFn = onSignUp ?? fallbackRegister;
+    if (!registerFn) {
       showSnackbarMessage('Registration function not yet loaded. Try again in a moment.');
       return;
     }
@@ -58,7 +64,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
     setLoading(true);
     
     try {
-      const result = await onRegister(email, password); 
+      const result = await registerFn(email, password); 
       console.log('SignUp result:', result);
       if (result?.success) { 
         onClose();

@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text,ScrollView,StyleSheet,TouchableOpacity, } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { HeaderSection } from "../components/HeaderSection";
+import { USDC_ADDRESS } from "@/constants/theme";
 import { useCurrentUser } from "@coinbase/cdp-hooks";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { createPublicClient, formatUnits, http, parseAbiItem } from "viem";
 import { base } from "viem/chains";
-import { USDC_ADDRESS } from "@/constants/theme";
-import { PortfolioCard } from "../components/Wallet/PortfolioCard";
-import { CoinsList } from "../components/Wallet/CoinsList";
-import { ActivityList } from "../components/Wallet/ActivityList";
 import { FONTS } from '../../constants/fonts';
+import { HeaderSection } from "../components/HeaderSection";
+import { ActivityList } from "../components/Wallet/ActivityList";
+import { CoinsList } from "../components/Wallet/CoinsList";
+import { PortfolioCard } from "../components/Wallet/PortfolioCard";
 
 // ERC20 ABI for balance and transfer
 const ERC20_ABI = [
