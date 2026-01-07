@@ -567,7 +567,7 @@ export const authAPI = {
   // Update FCM token for push notifications
   updateFcmToken: async (fcmToken: string) => {
     try {
-      const response = await api.post('/auth/fcm-token', { fcmToken });
+      const response = await api.post('/auth/update-fcm-token', { fcmToken });
       return response.data;
     } catch (error: any) {
       throw error;

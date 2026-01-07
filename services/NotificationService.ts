@@ -53,22 +53,6 @@ class NotificationService {
     }
   }
 
-  // Listen for token refresh
-  static onTokenRefresh(callback: (token: string) => void) {
-    return messaging().onTokenRefresh(async (token) => {
-      console.log('FCM Token refreshed:', token);
-      callback(token);
-      
-      // Send refreshed token to backend
-      try {
-        await authAPI.updateFcmToken(token);
-        console.log('✅ Refreshed FCM token sent to backend');
-      } catch (error) {
-        console.error('❌ Failed to send refreshed FCM token:', error);
-      }
-    });
-  }
-
   static async createChannels() {
     //channel for admin promos
     await notifee.createChannel({
@@ -94,7 +78,6 @@ class NotificationService {
     // Bulk Update
     if (data?.type === 'update') {
       console.log('Silent update trigger received');
-      // Trigger your API call here: await MyApiService.syncData();
       return; 
     }
 
@@ -178,10 +161,18 @@ class NotificationService {
     // foreground listener
     messaging().onMessage(NotificationService.displayForegroundNotification);
     
-    // background listener 
-    messaging().setBackgroundMessageHandler(async remoteMessage => {
-      console.log('Message handled in the background!', remoteMessage);
-      // only for data only msgs
+    // init notification tap handler
+    NotificationService.handleNotificationPress();
+    
+    // init token refresh listener
+    messaging().onTokenRefresh(async (newToken) => {
+      console.log('FCM Token refreshed:', newToken);
+      try {
+        await authAPI.updateFcmToken(newToken);
+        console.log('✅ Refreshed FCM token sent to backend');
+      } catch (error) {
+        console.error('❌ Failed to send refreshed FCM token:', error);
+      }
     });
   }
 }
