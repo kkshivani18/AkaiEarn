@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ImageBackground, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, ImageBackground, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { FONTS } from "../constants/fonts";
 import { authAPI } from '../services/api';
 import { useUserStore } from '../stores/userStore';
@@ -12,17 +12,11 @@ import { useUserStore } from '../stores/userStore';
 interface SignInModalProps {
   visible: boolean;
   onClose: () => void;
-  onSwitchToSignUp?: () => void;
-  onLogin?: (email: string, password: string) => Promise<any>;
-  onGoogleLogin?: (idToken: string) => Promise<any>;
 }
 
 export const Login: React.FC<SignInModalProps> = ({
   visible,
   onClose,
-  onSwitchToSignUp,
-  onLogin,
-  onGoogleLogin,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -41,6 +35,7 @@ export const Login: React.FC<SignInModalProps> = ({
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const fallbackLogin = useUserStore(s => s.login);
   const fallbackGoogleLogin = useUserStore(s => s.loginWithGoogle);
+  const setAuthMode = useUserStore(s => s.setAuthMode);
   const params = useLocalSearchParams();
 
   useEffect(() => {
@@ -74,56 +69,61 @@ export const Login: React.FC<SignInModalProps> = ({
   WebBrowser.maybeCompleteAuthSession();
 
   const handleGoogleSignIn = async () => {
-  try {
-    console.log('Checking Play Services...');
-    await GoogleSignin.hasPlayServices();
-    
-    console.log('Starting Google Sign-In...');
-    const result = await GoogleSignin.signIn();
-    
-    console.log('Sign-In Result:', JSON.stringify(result, null, 2));
-    
-    const idToken = result.data?.idToken;
-    
-    console.log('ID Token:', idToken ? 'Received' : 'NOT RECEIVED');
-    console.log('ID Token length:', idToken?.length);
+    try {
+      console.log('Checking Play Services...');
+      await GoogleSignin.hasPlayServices();
+      
+      console.log('Starting Google Sign-In...');
+      const result = await GoogleSignin.signIn();
+      
+      const idToken = result.data?.idToken;
 
-    if (!idToken) {
-      console.error('No ID token in result:', result);
-      showSnackbarMessage('No ID token received from Google');
-      return;
+      if (!idToken) {
+        console.error('No ID token in result:', result);
+        Alert.alert('Sign In Failed', 'No ID token received from Google. Please try again.');
+        return;
+      }
+
+      console.log('Google Sign-In successful, authenticating with backend...');
+      const authResult = await fallbackGoogleLogin(idToken);
+
+      if (authResult?.success) {
+        console.log('Backend authentication successful');
+        onClose();
+      } else {
+        // Critical auth error - use Alert
+        Alert.alert(
+          'Sign In Failed',
+          authResult?.msg || 'Authentication failed. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error: any) {
+      console.error('Google Sign-In Error:', error);
+      
+      // Handle Google-specific errors
+      if (error.code === 'SIGN_IN_CANCELLED') {
+        // User cancelled - don't show error, just return silently
+        return;
+      } else if (error.code === 'IN_PROGRESS') {
+        // Already in progress - don't show error
+        return;
+      } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
+        Alert.alert(
+          'Google Play Services Required',
+          'Google Play Services is not available. Please update or install it to continue.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        // Other errors - show Alert
+        Alert.alert(
+          'Sign In Failed',
+          error.message || 'Google sign-in failed. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
     }
-
-    console.log('Google Sign-In successful, authenticating with backend...');
-
-    // Send to your backend
-    const authResult = await (onGoogleLogin ?? fallbackGoogleLogin)?.(idToken);
-
-    if (authResult?.success) {
-      console.log('Backend authentication successful');
-      onClose();
-      const needsProfile = authResult?.user?.profileCompleted === false;
-      router.replace(needsProfile ? '/profile-completion' : '/(tabs)/offer');
-    } else {
-      console.error('Backend authentication failed:', authResult);
-      showSnackbarMessage(authResult?.msg || 'Authentication failed');
-    }
-  } catch (error: any) {
-    console.error('Google Sign-In Error:', error);
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
-
-    if (error.code === 'SIGN_IN_CANCELLED') {
-      showSnackbarMessage('Sign-In cancelled');
-    } else if (error.code === 'IN_PROGRESS') {
-      showSnackbarMessage('Sign-In already in progress');
-    } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
-      showSnackbarMessage('Play Services not available');
-    } else {
-      showSnackbarMessage('Google Sign-In failed: ' + (error.message || 'Unknown error'));
-    }
-  }
-};
+  };
 
   // snackbar state
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -136,44 +136,41 @@ export const Login: React.FC<SignInModalProps> = ({
   };
 
   const handleLogin = async (): Promise<void> => {
+    // Client-side validation (snackbar for quick feedback)
     if (!email || !password) {
       showSnackbarMessage('Please fill in all fields');
       return;
-    }
-
-    const loginFn = onLogin ?? fallbackLogin;
-    if (!loginFn) {
-         showSnackbarMessage('Login function not yet loaded. Try again in a moment.');
-         return;
     }
     
     setLoading(true);
     
     try {
-      const result = await loginFn(email, password); 
+      const result = await fallbackLogin(email, password); 
       if (result?.success) {
         onClose();
-        // check if profile is completed
-        const profileCompleted = result?.user?.profileCompleted || result?.profileCompleted;
-        
-        if (!profileCompleted) {
-          // profile not completed, redirect to profile completion
-          router.replace('/profile-completion');
-        } else {
-          // profile completed, redirect to main app
-          router.replace('/(tabs)/offer');
-        }
+        // Routing handled by _layout.tsx based on auth state
       } else {
-        showSnackbarMessage(result?.msg || result?.error || 'Invalid credentials');
+        // Critical auth error - use Alert
+        Alert.alert(
+          'Sign In Failed',
+          result?.msg || 'Unable to sign in. Please check your credentials and try again.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error) {
-      showSnackbarMessage((error as Error).message || 'An unexpected error occurred');
+      // Unexpected error - use Alert
+      Alert.alert(
+        'Error',
+        (error as Error).message || 'Something went wrong. Please try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
+    // Client-side validation (snackbar)
     if (!forgotPasswordEmail) {
       showSnackbarMessage('Please enter your email address');
       return;
@@ -190,15 +187,21 @@ export const Login: React.FC<SignInModalProps> = ({
       const data = await authAPI.forgotPassword(forgotPasswordEmail);
 
       if (data.success) {
+        // Success - use snackbar
         showSnackbarMessage('Reset link sent! Check your email.');
         setShowForgotPassword(false);
         setForgotPasswordEmail('');
       } else {
-        showSnackbarMessage(data.message || 'Failed to send reset email');
+        // API error - use Alert
+        Alert.alert(
+          'Error',
+          data.message || 'Failed to send reset email. Please try again.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error: any) {
-      // console.error('Forgot password error:', error);
-      let errorMessage = 'Network error. Please try again.';
+      // Network/API error - use Alert
+      let errorMessage = 'Network error. Please check your connection and try again.';
       
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -206,13 +209,14 @@ export const Login: React.FC<SignInModalProps> = ({
         errorMessage = error.message;
       }
       
-      showSnackbarMessage(errorMessage);
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setForgotPasswordLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
+    // Client-side validation (snackbar)
     if (!newPassword || !confirmPassword) {
       showSnackbarMessage('Please fill in all fields');
       return;
@@ -234,6 +238,7 @@ export const Login: React.FC<SignInModalProps> = ({
       const data = await authAPI.resetPassword(resetToken, newPassword);
 
       if (data.success) {
+        // Success - use snackbar
         showSnackbarMessage('Password reset successful! You can now log in.');
         setTimeout(() => {
           setShowResetPassword(false);
@@ -243,10 +248,15 @@ export const Login: React.FC<SignInModalProps> = ({
           router.replace('/Login');
         }, 2000);
       } else {
-        showSnackbarMessage(data.message || 'Failed to reset password');
+        // API error - use Alert
+        Alert.alert(
+          'Error',
+          data.message || 'Failed to reset password. Please try again.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error: any) {
-      // console.error('Reset password error:', error);
+      // Network/API error - use Alert
       let errorMessage = 'Failed to reset password. Please try again.';
       
       if (error.response?.data?.message) {
@@ -255,7 +265,7 @@ export const Login: React.FC<SignInModalProps> = ({
         errorMessage = error.message;
       }
       
-      showSnackbarMessage(errorMessage);
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setResetPasswordLoading(false);
     }
@@ -357,7 +367,7 @@ export const Login: React.FC<SignInModalProps> = ({
 
                   <View style={styles.footer}>
                     <Text style={styles.footerText}>New To AkaiEarn ? </Text>
-                    <TouchableOpacity onPress={() => onSwitchToSignUp?.()}>
+                    <TouchableOpacity onPress={() => setAuthMode('signup')}>
                       <Text style={styles.linkText}>Register Now</Text>
                     </TouchableOpacity>
                   </View>

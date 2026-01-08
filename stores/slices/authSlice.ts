@@ -1,11 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import { StateCreator } from 'zustand';
 import { authAPI } from '../../services/api';
+import { TOKEN_KEY, USER_KEY, USER_STATE_KEY } from '../storageKeys';
 import { mapUserFromApi } from '../user.mappers';
 import { ApiUser, AuthResult } from '../userTypes';
-
-const TOKEN_KEY = 'authToken';
-const USER_KEY = 'userData';
 
 export type AuthSlice = {
   authenticated: boolean;
@@ -13,6 +11,7 @@ export type AuthSlice = {
   authLoading: boolean;
   authError: string | null;
   profileCompleted: boolean;
+  authMode: 'login' | 'signup';
 
   hydrateAuth: () => Promise<void>;
   login: (email: string, password: string) => Promise<AuthResult>;
@@ -20,6 +19,7 @@ export type AuthSlice = {
   loginWithGoogle: (idToken: string) => Promise<AuthResult>;
   onProfileCompleted: () => Promise<void>;
   logout: () => void;
+  setAuthMode: (mode: 'login' | 'signup') => void;
 };
 
 export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, _store) => ({
@@ -28,6 +28,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
   authLoading: false,
   authError: null,
   profileCompleted: false,
+  authMode: 'login',
 
   hydrateAuth: async () => {
     set({ authLoading: true, authError: null });
@@ -169,7 +170,6 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
         profileCompleted: (userData as any).profileCompleted ?? mapped.profileCompleted ?? true,
         walletCreated: (userData as any).walletAddress !== null && (userData as any).walletAddress !== undefined,
       });
-      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData)).catch(() => {});
     } catch (e) {
       set((state: any) => ({ ...state, profileCompleted: true }));
     }
@@ -183,8 +183,12 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
       authLoading: false,
       authError: null,
     }));
-    SecureStore.deleteItemAsync('userState').catch(() => {});
+    SecureStore.deleteItemAsync(USER_STATE_KEY).catch(() => {});
     SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
     SecureStore.deleteItemAsync(USER_KEY).catch(() => {});
+  },
+
+  setAuthMode: (mode: 'login' | 'signup') => {
+    set({ authMode: mode });
   },
 });

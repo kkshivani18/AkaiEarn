@@ -20,17 +20,22 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const loadData = async () => {
+      // Don't fetch if already loading to prevent race conditions
+      if (loading) {
+        return;
+      }
+
       if (authenticated) {
         if (!hasInitialFetch || shouldRefetch()) {
           await fetchUserData();
-        } else {
-          console.log('using cached data');
         }
       }
     };
 
     loadData();
-  }, [authenticated, fetchUserData, shouldRefetch, hasInitialFetch]);
+    // Only depend on authenticated - fetchUserData is stable, hasInitialFetch changes shouldn't retrigger
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated]);
   const handleNotificationPress = () => {
     console.log('Notification pressed');
   };

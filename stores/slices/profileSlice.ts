@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { StateCreator } from 'zustand';
 import { authAPI } from '../../services/api';
+import { USER_KEY } from '../storageKeys';
 import { mapUserFromApi } from '../user.mappers';
 import { ApiUser } from '../userTypes';
 
@@ -59,6 +60,13 @@ export const createProfileSlice: StateCreator<any, [], [], ProfileSlice> = (set,
   hasInitialFetch: false,
 
   fetchUserData: async () => {
+    const currentState = get();
+    // Prevent multiple simultaneous fetches
+    if (currentState.loading) {
+      console.log('[fetchUserData] Already loading, skipping duplicate fetch');
+      return;
+    }
+
     try {
       set({ loading: true });
 
@@ -67,22 +75,31 @@ export const createProfileSlice: StateCreator<any, [], [], ProfileSlice> = (set,
 
       if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
         const mappedUserData = mapUserFromApi(userData as ApiUser);
-        set({
+        
+        // Ensure loading is explicitly set to false and not overridden
+        set((state: any) => ({
+          ...state,
           ...mappedUserData,
           authenticated: true,
-        });
+          loading: false, // Explicitly set loading to false
+          hasInitialFetch: true,
+        }));
 
         try {
-          await SecureStore.setItemAsync('userData', JSON.stringify(userData));
-          await SecureStore.setItemAsync('userState', JSON.stringify(mappedUserData));
+          await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
         } catch (e) {
           console.warn('Could not persist user state:', e);
         }
+      } else {
+        // Invalid user data - mark as fetched to prevent infinite loops
+        console.warn('⚠️ Invalid user data received, marking as fetched to prevent loops');
+        set({ loading: false, hasInitialFetch: true });
       }
     } catch (error) {
       console.error('❌ Failed to fetch user data:', error);
-    } finally {
-      set({ loading: false });
+      // Mark as fetched even on error to prevent infinite retry loops
+      // The loading state will be false, allowing the UI to render
+      set({ loading: false, hasInitialFetch: true });
     }
   },
 
@@ -100,6 +117,8 @@ export const createProfileSlice: StateCreator<any, [], [], ProfileSlice> = (set,
       ...state,
       ...userData,
       lastFetched: Date.now(),
+      // If hasInitialFetch is not explicitly provided, set it to true when setting user data
+      hasInitialFetch: userData.hasInitialFetch !== undefined ? userData.hasInitialFetch : true,
     }));
   },
 

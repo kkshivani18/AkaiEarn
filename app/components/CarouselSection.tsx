@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View, ViewToken } from 'react-native';
-import { useAuth } from '../../contexts/AuthContext';
 import { offersAPI } from '../../services/api';
+import { useUserStore } from '../../stores/userStore';
 import { FONTS } from '../../constants/fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -33,7 +33,8 @@ export const CarouselSection: React.FC<CarouselSectionProps> = ({
   onTaskPress,
   autoScroll = true
 }) => {
-  const { authState } = useAuth();
+  const authenticated = useUserStore(s => s.authenticated);
+  const hasInitialFetch = useUserStore(s => s.hasInitialFetch);
   const [tasks, setTasks] = useState<CarouselTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -120,10 +121,11 @@ export const CarouselSection: React.FC<CarouselSectionProps> = ({
   };
 
   useEffect(() => {
-    if (authState?.authenticated) {
+    // Wait for initial fetch to complete before fetching tasks
+    if (authenticated && hasInitialFetch) {
       fetchTasks();
     }
-  }, [authState?.authenticated, offerType]);
+  }, [authenticated, hasInitialFetch, offerType]);
 
   useEffect(() => {
     if (!autoScroll || tasks.length <= 1) {

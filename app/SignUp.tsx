@@ -1,25 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { Alert, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { FONTS } from "../constants/fonts";
 import { useUserStore } from '../stores/userStore';
 
 interface SignUpModalProps {
   visible: boolean;
   onClose: () => void;
-  onSwitchToSignIn: () => void; 
-  onSignUp?: (email: string, password: string) => Promise<any>;
-  onGoogleLogin?: (idToken: string) => Promise<any>;
 }
 
 export const SignUp: React.FC<SignUpModalProps> = ({
   visible,
   onClose,
-  onSwitchToSignIn,
-  onSignUp,
-  onGoogleLogin,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -31,8 +24,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const fallbackRegister = useUserStore(s => s.register);
-  const fallbackGoogleLogin = useUserStore(s => s.loginWithGoogle);
-  const router = useRouter();
+  const setAuthMode = useUserStore(s => s.setAuthMode);
 
   // snackbar state
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -45,6 +37,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   };
 
   const handleSignUp = async () => {
+    // Client-side validation (snackbar for quick feedback)
     if (!email || !password || !confirmPassword) {
       showSnackbarMessage('Please fill in all fields');
       return;
@@ -55,25 +48,28 @@ export const SignUp: React.FC<SignUpModalProps> = ({
       return;
     }
     
-    const registerFn = onSignUp ?? fallbackRegister;
-    if (!registerFn) {
-      showSnackbarMessage('Registration function not yet loaded. Try again in a moment.');
-      return;
-    }
-    
     setLoading(true);
     
     try {
-      const result = await registerFn(email, password); 
-      console.log('SignUp result:', result);
+      const result = await fallbackRegister(email, password); 
       if (result?.success) { 
         onClose();
-        router.replace('/profile-completion');
+        // Routing handled by _layout.tsx based on auth state
       } else {
-        showSnackbarMessage(result?.error || result?.msg || 'Failed to create account');
+        // Critical auth error - use Alert
+        Alert.alert(
+          'Registration Failed',
+          result?.msg || 'We couldn\'t create your account. Please try again.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error) {
-      showSnackbarMessage((error as Error).message || 'Failed to create account');
+      // Unexpected error - use Alert
+      Alert.alert(
+        'Error',
+        (error as Error).message || 'Something went wrong. Please try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -172,7 +168,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Already have a account ? </Text>
-                <TouchableOpacity onPress={onSwitchToSignIn}>
+                    <TouchableOpacity onPress={() => setAuthMode('login')}>
                   <Text style={styles.linkText}>Login Now</Text>
                 </TouchableOpacity>
               </View>

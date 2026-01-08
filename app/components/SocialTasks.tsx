@@ -11,7 +11,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { useAuth } from '../../contexts/AuthContext';
 import { socialAPI } from '../../services/api';
 import { useUserStore } from '../../stores/userStore';
 import { FONTS } from '../../constants/fonts';
@@ -35,8 +34,9 @@ interface SocialTasksProps {
 }
 
 export const SocialTasks: React.FC<SocialTasksProps> = ({ onTaskComplete }) => {
-  const { authState } = useAuth();
-  const { fetchUserData } = useUserStore();
+  const authenticated = useUserStore(s => s.authenticated);
+  const hasInitialFetch = useUserStore(s => s.hasInitialFetch);
+  const fetchUserData = useUserStore(s => s.fetchUserData);
   const [socialOffers, setSocialOffers] = useState<SocialOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingSocialOffer, setCompletingSocialOffer] = useState<string | null>(null);
@@ -63,10 +63,11 @@ export const SocialTasks: React.FC<SocialTasksProps> = ({ onTaskComplete }) => {
   };
 
   useEffect(() => {
-    if (authState?.authenticated) {
+    // Wait for initial fetch to complete before fetching social offers
+    if (authenticated && hasInitialFetch) {
       fetchSocialOffers();
     }
-  }, [authState?.authenticated]);
+  }, [authenticated, hasInitialFetch]);
 
   // App State Listener for Social Tasks
   useEffect(() => {
