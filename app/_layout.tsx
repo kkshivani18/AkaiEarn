@@ -8,8 +8,9 @@ import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { FONT_ASSETS } from '../constants/fonts';
-import NotificationService from '../services/NotificationService';
 import "../globals";
+import NotificationService from '../services/NotificationService';
+import { setupBackgroundMessageHandler } from '../config/firebaseBackground';
 import { SplashScreen } from './SplashScreen';
 import { OnboardingSplash } from './SplashScreen2';
 
@@ -67,6 +68,8 @@ function RootLayoutNav() {
   useEffect(() => {
     const initNotifications = async () => {
       try {
+        setupBackgroundMessageHandler();
+        
         await NotificationService.requestUserPermission();
         await NotificationService.createChannels();
         NotificationService.initialize();
