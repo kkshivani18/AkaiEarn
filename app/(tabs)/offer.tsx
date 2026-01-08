@@ -1,18 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { ActivityIndicator, Alert, AppState, AppStateStatus, Dimensions, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { OfferSkeletonLoader } from '../../components/SkeletonLoader';
-import { useAuth } from '../../contexts/AuthContext';
-import { offersAPI, logsAPI } from '../../services/api';
-import { HeaderSection } from '../offerComponents/offerHeader';
-import { useUserStore } from '../../stores/userStore';
+import { router } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ErrorPopup } from '../../components/popups/ErrorPopup';
+import { OfferSkeletonLoader } from '../../components/SkeletonLoader';
 import { FONTS } from '../../constants/fonts';
+import { logsAPI, offersAPI } from '../../services/api';
+import { useUserStore } from '../../stores/userStore';
+import { HeaderSection } from '../offerComponents/offerHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ITEM_WIDTH = SCREEN_WIDTH * 0.87;
@@ -120,10 +118,13 @@ const TaskCard = ({ task, onPress, locked, scale, opacity }: { task: OfferTask, 
 };
 
 const OfferScreen: React.FC = () => {
-  const { authState } = useAuth();
+  const authenticated = useUserStore(s => s.authenticated);
+  const iq = useUserStore(s => s.iq);
+  const coins = useUserStore(s => s.coins);
+  const fetchUserData = useUserStore(s => s.fetchUserData);
+  const shouldRefetch = useUserStore(s => s.shouldRefetch);
   
   // for user data
-  const { name, email, iq, coins, fetchUserData, shouldRefetch } = useUserStore();
   
   const [allTasks, setAllTasks] = useState<OfferTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,18 +261,18 @@ const OfferScreen: React.FC = () => {
       }
     };
 
-    if (authState?.authenticated) {
+    if (authenticated) {
       fetchData();
       fetchUserData(); 
     }
-  }, [authState?.authenticated]);
+  }, [authenticated]);
 
   useFocusEffect(
     React.useCallback(() => {
-      if (authState?.authenticated && shouldRefetch()) {
+      if (authenticated && shouldRefetch()) {
         fetchUserData();
       }
-    }, [authState?.authenticated])
+    }, [authenticated, shouldRefetch, fetchUserData])
   );
 
   if (loading && allTasks.length === 0) {

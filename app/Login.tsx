@@ -1,25 +1,28 @@
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import Constants from "expo-constants";
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useState, useEffect } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme, ImageBackground } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
-import { authAPI } from '../services/api';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ImageBackground, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { FONTS } from "../constants/fonts";
+import { authAPI } from '../services/api';
+import { useUserStore } from '../stores/userStore';
 
 interface SignInModalProps {
   visible: boolean;
   onClose: () => void;
   onSwitchToSignUp?: () => void;
+  onLogin?: (email: string, password: string) => Promise<any>;
+  onGoogleLogin?: (idToken: string) => Promise<any>;
 }
 
 export const Login: React.FC<SignInModalProps> = ({
   visible,
   onClose,
   onSwitchToSignUp,
+  onLogin,
+  onGoogleLogin,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -36,7 +39,8 @@ export const Login: React.FC<SignInModalProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
-  const { onLogin, onGoogleLogin } = useAuth();
+  const fallbackLogin = useUserStore(s => s.login);
+  const fallbackGoogleLogin = useUserStore(s => s.loginWithGoogle);
   const params = useLocalSearchParams();
 
   useEffect(() => {
@@ -93,7 +97,7 @@ export const Login: React.FC<SignInModalProps> = ({
     console.log('Google Sign-In successful, authenticating with backend...');
 
     // Send to your backend
-    const authResult = await onGoogleLogin?.(idToken);
+    const authResult = await (onGoogleLogin ?? fallbackGoogleLogin)?.(idToken);
 
     if (authResult?.success) {
       console.log('Backend authentication successful');
@@ -137,7 +141,8 @@ export const Login: React.FC<SignInModalProps> = ({
       return;
     }
 
-    if (!onLogin) {
+    const loginFn = onLogin ?? fallbackLogin;
+    if (!loginFn) {
          showSnackbarMessage('Login function not yet loaded. Try again in a moment.');
          return;
     }
@@ -145,7 +150,7 @@ export const Login: React.FC<SignInModalProps> = ({
     setLoading(true);
     
     try {
-      const result = await onLogin(email, password); 
+      const result = await loginFn(email, password); 
       if (result?.success) {
         onClose();
         // check if profile is completed

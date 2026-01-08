@@ -62,6 +62,7 @@ ios/Pods/
 ios/**/*.xcworkspace/xcshareddata/
 
 # Android
+android/
 android/app/build/
 android/.gradle/
 android/captures/
@@ -72,6 +73,7 @@ android/local.properties
 !debug.keystore
 
 # Fastlane
+ios/
 ios/fastlane/report.xml
 ios/fastlane/Preview.html
 ios/fastlane/screenshots
@@ -96,3 +98,6 @@ android/fastlane/test_output
 app structure
 
 /app-example
+
+#plist-files
+GoogleService-Info.plist

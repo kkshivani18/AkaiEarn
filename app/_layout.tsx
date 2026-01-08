@@ -1,16 +1,17 @@
+import { AuthProvider } from "@/contexts/AuthContext";
+import { useUserStore } from "@/stores/userStore";
 import { CDPHooksProvider, Config } from "@coinbase/cdp-hooks";
-import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
-import { Provider as PaperProvider } from 'react-native-paper';
-import * as Linking from 'expo-linking';
-import * as SecureStore from 'expo-secure-store';
-import { SplashScreen } from './SplashScreen';
-import { OnboardingSplash } from './SplashScreen2';
 import { useFonts } from 'expo-font';
+import * as Linking from 'expo-linking';
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import React, { useEffect, useState } from 'react';
+import { Provider as PaperProvider } from 'react-native-paper';
 import { FONT_ASSETS } from '../constants/fonts';
 import NotificationService from '../services/NotificationService';
 import "../globals";
+import { SplashScreen } from './SplashScreen';
+import { OnboardingSplash } from './SplashScreen2';
 
 const cdpConfig: Config = {
   projectId: process.env.EXPO_PUBLIC_CDP_PROJECT_ID!,
@@ -31,13 +32,21 @@ const cdpConfig: Config = {
 };
 
 function RootLayoutNav() {
-  const { authState } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const pathname = usePathname();
+
+  const authenticated = useUserStore(s => s.authenticated);
+  const profileCompleted = useUserStore(s => s.profileCompleted);
+  const authLoading = useUserStore(s => s.authLoading);
+  const hydrateAuth = useUserStore(s => s.hydrateAuth);
   
   const [showFirstSplash, setShowFirstSplash] = useState(true);
   const [showSecondSplash, setShowSecondSplash] = useState(false);
+
+  useEffect(() => {
+    hydrateAuth();
+  }, [hydrateAuth]);
 
   // first splash screen timeout
   useEffect(() => {
@@ -73,10 +82,8 @@ function RootLayoutNav() {
 
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
-      if (event.url.startsWith('offerwall://')) {
-        if (authState?.authenticated) {
+      if (event.url.startsWith('offerwall://') && authenticated) {
           router.replace('/(tabs)/home');
-        }
       }
     };
 
@@ -91,23 +98,18 @@ function RootLayoutNav() {
     return () => {
       subscription.remove();
     };
-  }, [authState?.authenticated]);
+  }, [authenticated, router]);
 
   useEffect(() => {
     // no routing while showing splash screens
-    if (showFirstSplash || showSecondSplash) {
-      return;
-    }
-
-    // Auth state determined
-    if (authState?.authenticated === null) {
+    if (showFirstSplash || showSecondSplash || authLoading) {
       return;
     }
 
     const inAuthGroup = segments[0] === '(tabs)';
     const isOnIndex = !segments.length || pathname === '/' || pathname === '';
 
-    if (!authState?.authenticated) {
+    if (!authenticated) {
       // User is not authenticated
       if (inAuthGroup) {
         router.replace('/');
@@ -115,7 +117,7 @@ function RootLayoutNav() {
     } else {
       // User is authenticated
       if (isOnIndex) {
-        if (authState?.profileCompleted) {
+        if (profileCompleted) {
           router.replace('/(tabs)/home');
         } else {
           router.replace('/profile-completion');
@@ -123,8 +125,9 @@ function RootLayoutNav() {
       }
     }
   }, [
-    authState?.authenticated,
-    authState?.profileCompleted,
+    authenticated,
+    profileCompleted,
+    authLoading,
     segments,
     pathname,
     showFirstSplash,
@@ -139,6 +142,8 @@ function RootLayoutNav() {
   if (showSecondSplash) {
     return <OnboardingSplash onContinue={handleSecondSplashComplete} />;
   }
+
+  if (authLoading) return <SplashScreen />;
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }

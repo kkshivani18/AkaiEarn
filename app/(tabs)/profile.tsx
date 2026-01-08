@@ -1,22 +1,21 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ScrollView, Animated, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
+import { contractAddress, USDC_ADDRESS } from "@/constants/theme";
+import { useCreateEvmSmartAccount, useCurrentUser, useIsSignedIn, useSendUserOperation } from "@coinbase/cdp-hooks";
 import { Ionicons } from "@expo/vector-icons";
-import { useUserStore } from "../../stores/userStore";
-import { useAuth } from "../../contexts/AuthContext";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import IQMeter from "../../components/IQMeter";
-import { configAPI, contractAPI, logsAPI } from "../../services/api";
-import { useCurrentUser, useCreateEvmSmartAccount, useIsSignedIn, useSendUserOperation } from "@coinbase/cdp-hooks";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { createPublicClient, encodeFunctionData, formatUnits, http } from "viem";
 import { base } from "viem/chains";
-import { abi } from "../../config/abi";
-import { InfoPopup } from "../../components/popups/InfoPopup";
+import IQMeter from "../../components/IQMeter";
 import { ErrorPopup } from "../../components/popups/ErrorPopup";
+import { InfoPopup } from "../../components/popups/InfoPopup";
 import { SuccessPopup } from "../../components/popups/SuccessPopup";
-import { contractAddress, USDC_ADDRESS } from "@/constants/theme";
+import { abi } from "../../config/abi";
 import { FONTS } from "../../constants/fonts";
+import { configAPI, contractAPI, logsAPI } from "../../services/api";
+import { useUserStore } from "../../stores/userStore";
 
 const ERC20_ABI = [
   {
@@ -29,8 +28,15 @@ const ERC20_ABI = [
 ] as const;
 
 export default function ProfileScreen() {
-  const { name, iq, coins, balance, dollars, fetchUserData, setUser } = useUserStore();
-  const { onLogout } = useAuth();
+  const name = useUserStore(s => s.name);
+  const iq = useUserStore(s => s.iq);
+  const coins = useUserStore(s => s.coins);
+  const balance = useUserStore(s => s.balance);
+  const dollars = useUserStore(s => s.dollars);
+  const fetchUserData = useUserStore(s => s.fetchUserData);
+  const setUser = useUserStore(s => s.setUser);
+  const logout = useUserStore(s => s.logout);
+
   const { currentUser } = useCurrentUser();
   const { createEvmSmartAccount } = useCreateEvmSmartAccount();
   const { isSignedIn } = useIsSignedIn();
@@ -354,7 +360,7 @@ export default function ProfileScreen() {
   const performLogout = async () => {
     try {
       // clear auth tokens
-      await onLogout?.();
+      logout();
       console.log("✅ Logout completed, tokens cleared");
       router.replace("/");
     } catch (error) {

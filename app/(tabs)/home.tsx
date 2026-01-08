@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../contexts/AuthContext';
+import { FONTS } from '../../constants/fonts';
 import { useUserStore } from '../../stores/userStore';
 import { CarouselSection } from '../components/CarouselSection';
 import { DocsSection } from '../components/DocsSection';
@@ -10,35 +10,27 @@ import { HeaderSection } from '../components/HeaderSection';
 import { HomeSkeletonLoader } from '../components/HomeSkeletonLoader';
 import { SocialTasks } from '../components/SocialTasks';
 import { WelcomeSection } from '../components/WelcomeSection';
-import { FONTS } from '../../constants/fonts';
 
 export default function HomeScreen() {
-  const { authState } = useAuth();
-  const { fetchUserData, shouldRefetch } = useUserStore();
-  const [loading, setLoading] = useState(true);
+  const authenticated = useUserStore(s => s.authenticated);
+  const fetchUserData = useUserStore(s => s.fetchUserData);
+  const shouldRefetch = useUserStore(s => s.shouldRefetch);
+  const loading = useUserStore(s => s.loading);
+  const hasInitialFetch = useUserStore(s => s.hasInitialFetch);
 
   useEffect(() => {
     const loadData = async () => {
-      if (authState?.authenticated) {
-        if (shouldRefetch()) {
+      if (authenticated) {
+        if (!hasInitialFetch || shouldRefetch()) {
           await fetchUserData();
         } else {
           console.log('using cached data');
         }
-        
-        const timer = setTimeout(() => {
-          setLoading(false);
-        }, 1500);
-        
-        return () => clearTimeout(timer);
-      } else {
-        setLoading(false);
       }
     };
 
     loadData();
-  }, [authState?.authenticated]);
-
+  }, [authenticated, fetchUserData, shouldRefetch, hasInitialFetch]);
   const handleNotificationPress = () => {
     console.log('Notification pressed');
   };
