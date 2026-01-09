@@ -9,15 +9,7 @@ import { FONTS } from "../constants/fonts";
 import { authAPI } from '../services/api';
 import { useUserStore } from '../stores/userStore';
 
-interface SignInModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
-
-export const Login: React.FC<SignInModalProps> = ({
-  visible,
-  onClose,
-}) => {
+export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   
@@ -35,7 +27,6 @@ export const Login: React.FC<SignInModalProps> = ({
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const fallbackLogin = useUserStore(s => s.login);
   const fallbackGoogleLogin = useUserStore(s => s.loginWithGoogle);
-  const setAuthMode = useUserStore(s => s.setAuthMode);
   const params = useLocalSearchParams();
 
   useEffect(() => {
@@ -58,12 +49,12 @@ export const Login: React.FC<SignInModalProps> = ({
   // check for reset token on component mount
   useEffect(() => {
     const token = params.token as string;
-    if (token && visible) {
+    if (token) {
       setResetToken(token);
       setShowResetPassword(true);
       setShowForgotPassword(false);
     }
-  }, [params.token, visible]);
+  }, [params.token]);
   
   // auth session for web
   WebBrowser.maybeCompleteAuthSession();
@@ -89,7 +80,7 @@ export const Login: React.FC<SignInModalProps> = ({
 
       if (authResult?.success) {
         console.log('Backend authentication successful');
-        onClose();
+        // Routing handled by _layout.tsx based on auth state
       } else {
         // Critical auth error - use Alert
         Alert.alert(
@@ -147,7 +138,6 @@ export const Login: React.FC<SignInModalProps> = ({
     try {
       const result = await fallbackLogin(email, password); 
       if (result?.success) {
-        onClose();
         // Routing handled by _layout.tsx based on auth state
       } else {
         // Critical auth error - use Alert
@@ -245,7 +235,7 @@ export const Login: React.FC<SignInModalProps> = ({
           setNewPassword('');
           setConfirmPassword('');
           setResetToken('');
-          router.replace('/Login');
+          router.replace('/login' as any);
         }, 2000);
       } else {
         // API error - use Alert
@@ -272,8 +262,6 @@ export const Login: React.FC<SignInModalProps> = ({
   };
 
   const styles = createStyles(isDark);
-
-  if (!visible) return null;
 
   return (
     <>
@@ -367,7 +355,7 @@ export const Login: React.FC<SignInModalProps> = ({
 
                   <View style={styles.footer}>
                     <Text style={styles.footerText}>New To AkaiEarn ? </Text>
-                    <TouchableOpacity onPress={() => setAuthMode('signup')}>
+                    <TouchableOpacity onPress={() => router.replace('/signup' as any)}>
                       <Text style={styles.linkText}>Register Now</Text>
                     </TouchableOpacity>
                   </View>
@@ -443,7 +431,7 @@ export const Login: React.FC<SignInModalProps> = ({
                   setShowResetPassword(false);
                   setNewPassword('');
                   setConfirmPassword('');
-                  router.replace('/Login');
+                  router.replace('/login' as any);
                 }}
                 style={styles.modalCloseButton}
               >
@@ -495,7 +483,7 @@ export const Login: React.FC<SignInModalProps> = ({
       )}
     </>
   );
-};
+}
 
 const createStyles = (isDark: boolean) => StyleSheet.create({
   container: {
@@ -723,6 +711,3 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     fontFamily: FONTS.body.semiBold,
   },
 });
-
-
-

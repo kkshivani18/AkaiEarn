@@ -110,16 +110,17 @@ function RootLayoutNav() {
     }
 
     const inAuthGroup = segments[0] === '(tabs)';
+    const isAuthScreen = pathname === '/login' || pathname === '/signup';
     const isOnIndex = !segments.length || pathname === '/' || pathname === '';
 
     if (!authenticated) {
-      // User is not authenticated
-      if (inAuthGroup) {
-        router.replace('/');
+      // User is not authenticated - redirect to login if in protected area or on root
+      if (inAuthGroup || isOnIndex) {
+        router.replace('/login' as any);
       }
     } else {
-      // User is authenticated
-      if (isOnIndex) {
+      // User is authenticated - redirect away from auth screens or index
+      if (isAuthScreen || isOnIndex) {
         if (profileCompleted) {
           router.replace('/(tabs)/home');
         } else {
@@ -148,7 +149,7 @@ function RootLayoutNav() {
 
   if (authLoading) return <SplashScreen />;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false }} initialRouteName="login" />;
 }
 
 export default function RootLayout() {

@@ -4,8 +4,6 @@ export type ApiUser = {
   email?: string | null;
   firstName?: string;
   lastName?: string;
-  username?: string;
-  name?: string;
   profileCompleted?: boolean;
   walletAddress?: string | null;
   walletChainId?: string | null;

@@ -112,7 +112,7 @@ const CreativeTaskScreen: React.FC = () => {
       
       // User information (required)
       userId: userInfo._id || userInfo.id || 'anonymous',
-      userName: encodeURIComponent(userInfo.firstName || userInfo.username || userInfo.name || 'User'),
+      userName: encodeURIComponent(userInfo.firstName || 'User'),
       userIq: (userInfo.iq || 0).toString(),
       
       // Reward information (required)

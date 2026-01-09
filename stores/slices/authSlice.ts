@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { StateCreator } from 'zustand';
 import { authAPI } from '../../services/api';
-import { TOKEN_KEY, USER_KEY, USER_STATE_KEY } from '../storageKeys';
+import { TOKEN_KEY, USER_KEY } from '../storageKeys';
 import { mapUserFromApi } from '../user.mappers';
 import { ApiUser, AuthResult } from '../userTypes';
 
@@ -11,7 +11,6 @@ export type AuthSlice = {
   authLoading: boolean;
   authError: string | null;
   profileCompleted: boolean;
-  authMode: 'login' | 'signup';
 
   hydrateAuth: () => Promise<void>;
   login: (email: string, password: string) => Promise<AuthResult>;
@@ -19,7 +18,6 @@ export type AuthSlice = {
   loginWithGoogle: (idToken: string) => Promise<AuthResult>;
   onProfileCompleted: () => Promise<void>;
   logout: () => void;
-  setAuthMode: (mode: 'login' | 'signup') => void;
 };
 
 export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, _store) => ({
@@ -28,7 +26,6 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
   authLoading: false,
   authError: null,
   profileCompleted: false,
-  authMode: 'login',
 
   hydrateAuth: async () => {
     set({ authLoading: true, authError: null });
@@ -183,12 +180,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
       authLoading: false,
       authError: null,
     }));
-    SecureStore.deleteItemAsync(USER_STATE_KEY).catch(() => {});
     SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
     SecureStore.deleteItemAsync(USER_KEY).catch(() => {});
-  },
-
-  setAuthMode: (mode: 'login' | 'signup') => {
-    set({ authMode: mode });
   },
 });
