@@ -3,6 +3,7 @@ import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messag
 import { router } from 'expo-router'; 
 import { authAPI } from './api';
 import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
 interface NotificationPayload {
   type?: 'promotional' | 'referral' | 'update';
@@ -26,26 +27,30 @@ class NotificationService {
     console.log('Authorization status:', authStatus);
     
     if (enabled) {
-      // Get FCM token and send to backend
+      // get FCM token and send to backend
       await NotificationService.getFCMToken();
     }
     
     return enabled;
   }
 
-  // Get FCM token and send to backend
   static async getFCMToken() {
     try {
       const fcmToken = await messaging().getToken();
       if (fcmToken) {
         console.log('FCM Token:', fcmToken);
         
-        // Send token to backend
-        try {
-          await authAPI.updateFcmToken(fcmToken);
-          console.log('✅ FCM token sent to backend');
-        } catch (error) {
-          console.error('❌ Failed to send FCM token to backend:', error);
+        await SecureStore.setItemAsync('fcmToken', fcmToken);
+        
+        const authToken = await SecureStore.getItemAsync('authToken');
+        
+        if (authToken) {
+          try {
+            await authAPI.updateFcmToken(fcmToken);
+            console.log('✅ FCM token sent to backend');
+          } catch (error) {
+            console.error('❌ Failed to send FCM token to backend:', error);
+          }
         }
       }
     } catch (error) {
@@ -54,7 +59,7 @@ class NotificationService {
   }
 
   static async createChannels() {
-    //channel for admin promos
+    // admin promos
     await notifee.createChannel({
       id: 'promotions',
       name: 'Festival Offers',
@@ -62,7 +67,7 @@ class NotificationService {
       sound: 'default',
     });
 
-    // channel for referral rewards 
+    // referral rewards 
     await notifee.createChannel({
       id: 'referrals',
       name: 'Referral Rewards',
@@ -71,7 +76,6 @@ class NotificationService {
     });
   }
 
-  // Handle Foreground Notifications
   static async displayForegroundNotification(remoteMessage: FirebaseMessagingTypes.RemoteMessage) {
     const data = remoteMessage.data as NotificationPayload;
 
@@ -126,19 +130,16 @@ class NotificationService {
 
   // handle when user taps a notif
   static async handleNotificationPress() {
-    // App Closed -> Opened by notification
     const initialNotification = await notifee.getInitialNotification();
     if (initialNotification) {
       NotificationService.navigateBasedOnNotification(initialNotification.notification);
     }
 
-    // App Open/Background -> User taps notification
     notifee.onForegroundEvent(({ type, detail }) => {
       if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
         const { notification } = detail;
         if(notification) NotificationService.navigateBasedOnNotification(notification);
         
-        // specific button clicks
         if (detail.pressAction?.id === 'view_referral') {
              router.push('/rewardComponents/referralComponents/referralPage'); 
         }
@@ -155,23 +156,41 @@ class NotificationService {
       }
   }
 
+  static async sendStoredFCMToken() {
+    try {
+      const fcmToken = await SecureStore.getItemAsync('fcmToken');
+      const authToken = await SecureStore.getItemAsync('authToken');
+      
+      if (fcmToken && authToken) {
+        await authAPI.updateFcmToken(fcmToken);
+        console.log('✅ Stored FCM token sent to backend after login');
+      }
+    } catch (error) {
+      console.error('❌ Failed to send stored FCM token:', error);
+    }
+  }
+
   // listener
   static initialize() {
 
-    // foreground listener
     messaging().onMessage(NotificationService.displayForegroundNotification);
-    
-    // init notification tap handler
     NotificationService.handleNotificationPress();
-    
-    // init token refresh listener
+
     messaging().onTokenRefresh(async (newToken) => {
       console.log('FCM Token refreshed:', newToken);
-      try {
-        await authAPI.updateFcmToken(newToken);
-        console.log('✅ Refreshed FCM token sent to backend');
-      } catch (error) {
-        console.error('❌ Failed to send refreshed FCM token:', error);
+      
+      await SecureStore.setItemAsync('fcmToken', newToken);
+      
+      const authToken = await SecureStore.getItemAsync('authToken');
+      if (authToken) {
+        try {
+          await authAPI.updateFcmToken(newToken);
+          console.log('✅ Refreshed FCM token sent to backend');
+        } catch (error) {
+          console.error('❌ Failed to send refreshed FCM token:', error);
+        }
+      } else {
+        console.log('⏳ Refreshed FCM token stored. Will send after login.');
       }
     });
   }

@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { StateCreator } from 'zustand';
 import { authAPI } from '../../services/api';
+import NotificationService from '../../services/NotificationService';
 import { TOKEN_KEY, USER_KEY, USER_STATE_KEY } from '../storageKeys';
 import { mapUserFromApi } from '../user.mappers';
 import { ApiUser, AuthResult } from '../userTypes';
@@ -92,6 +93,10 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
         authError: null,
       });
 
+      NotificationService.sendStoredFCMToken().catch(err => {
+        console.error('Failed to send FCM token after login:', err);
+      });
+
       // Auto-fetch full user data after login
 
       return result as AuthResult;
@@ -121,6 +126,10 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
         authError: null,
       });
 
+      NotificationService.sendStoredFCMToken().catch(err => {
+        console.error('Failed to send FCM token after registration:', err);
+      });
+
 
       return result as AuthResult;
     } catch (e: any) {
@@ -148,6 +157,10 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get, 
         profileCompleted: result.profileCompleted ?? minimalUser.profileCompleted ?? false,
         authLoading: false,
         authError: null,
+      });
+
+      NotificationService.sendStoredFCMToken().catch(err => {
+        console.error('Failed to send FCM token after Google login:', err);
       });
 
 

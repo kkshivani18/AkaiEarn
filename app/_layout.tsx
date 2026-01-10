@@ -11,6 +11,7 @@ import { FONT_ASSETS } from '../constants/fonts';
 import "../globals";
 import NotificationService from '../services/NotificationService';
 import { setupBackgroundMessageHandler } from '../config/firebaseBackground';
+import { initializeFirebase } from '../config/firebase';
 import { SplashScreen } from './SplashScreen';
 import { OnboardingSplash } from './SplashScreen2';
 
@@ -64,17 +65,19 @@ function RootLayoutNav() {
     setShowSecondSplash(false);
   };
 
-  // Initialize push notifications
   useEffect(() => {
     const initNotifications = async () => {
       try {
+        await initializeFirebase();
+
         setupBackgroundMessageHandler();
         
         await NotificationService.requestUserPermission();
         await NotificationService.createChannels();
         NotificationService.initialize();
         NotificationService.handleNotificationPress();
-        console.log('✅ Push notifications initialized');
+        
+        console.log('✅ Push notifications initialized successfully');
       } catch (error) {
         console.error('❌ Failed to initialize notifications:', error);
       }
