@@ -2,9 +2,8 @@ import { ApiUser } from './userTypes';
 
 export const mapUserFromApi = (userData: ApiUser) => ({
   id: userData._id || userData.id || null,
-  name: userData.firstName || userData.username || userData.name || 'User',
+  name: userData.firstName || 'User',
   email: userData.email ?? null,
-  username: userData.username || userData.firstName || userData.name || null,
   iq: userData.iq ?? 0,
   coins: userData.coins ?? 0,
   inrBalance: userData.inrBalance ?? 0,

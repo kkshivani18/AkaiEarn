@@ -209,10 +209,12 @@ const ProfileCompletionScreen: React.FC = () => {
     setLoading(true);
     
     try {
-      const firstName = fullName.trim().split(/\s+/)[0];
+      const nameParts = fullName.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || undefined;
       const profileData = {
-        name: fullName.trim(), 
-        firstName: firstName, 
+        firstName,
+        lastName,
         occupation: occupation || '',
         dob: dobDate ? dobDate.toISOString().split('T')[0] : '',
         gender: gender.toLowerCase(),
@@ -264,10 +266,10 @@ const ProfileCompletionScreen: React.FC = () => {
 
   const handleBackNavigation = async () => {
     try {
-      router.replace('/Login');
+      router.replace('/login' as any);
     } catch (error) {
       console.error('Error during back navigation:', error);
-      router.replace('/Login');
+      router.replace('/login' as any);
     }
   };
 

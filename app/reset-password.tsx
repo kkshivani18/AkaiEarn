@@ -22,7 +22,7 @@ export default function ResetPasswordScreen() {
       Alert.alert(
         'Invalid Link',
         'This password reset link is invalid or expired.',
-        [{ text: 'OK', onPress: () => router.replace('/Login') }]
+        [{ text: 'OK', onPress: () => router.replace('/login' as any) }]
       );
     }
   }, [token]);
@@ -60,7 +60,7 @@ export default function ResetPasswordScreen() {
           [
             {
               text: 'Login Now',
-              onPress: () => router.replace('/Login')
+              onPress: () => router.replace('/login' as any)
             }
           ]
         );
@@ -86,7 +86,7 @@ export default function ResetPasswordScreen() {
   };
 
   const handleBackToLogin = () => {
-    router.replace('/Login');
+    router.replace('/login' as any);
   };
 
   if (!token) {

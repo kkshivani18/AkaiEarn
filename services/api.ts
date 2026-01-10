@@ -380,8 +380,8 @@ export const authAPI = {
   },
 
   updateProfile: async (profileData: {
-    name?: string;
     firstName?: string;
+    lastName?: string;
     occupation: string;
     dob: string | Date;
     gender?: string;
@@ -490,7 +490,8 @@ export const authAPI = {
 
   // Update basic profile info
   updateBasicProfile: async (profileData: {
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     email?: string;
     profilePicture?: string;
   }) => {

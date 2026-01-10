@@ -69,8 +69,6 @@ export const AuthProvider = ({children}: any) => {
             );
             
             const userData = await Promise.race([userDataPromise, timeoutPromise]);
-            // persist user data for quick access
-            try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
             setAuthState({
               token: token,
               authenticated: true,
@@ -83,9 +81,8 @@ export const AuthProvider = ({children}: any) => {
             const user = userData.user || userData;
             useUserStore.getState().setUser({
               id: user._id || user.id,
-              name: user.firstName || user.username || user.name,
+              name: user.firstName || 'User',
               email: user.email,
-              username: user.username || user.firstName || user.name,
               iq: user.iq || 0,
               coins: user.coins || 0,
               inrBalance: user.inrBalance || 0,
@@ -94,8 +91,6 @@ export const AuthProvider = ({children}: any) => {
               longestStreak: user.longestStreak || 0,
               lastStreakAt: user.lastStreakAt || null,
               profileCompleted: userData.profileCompleted ?? user.profileCompleted ?? false,
-              authenticated: true,
-              token: token,
             });
             
             try {
@@ -151,7 +146,6 @@ export const AuthProvider = ({children}: any) => {
         await SecureStore.setItemAsync(TOKEN_KEY, result.authToken);
         // refresh user from backend and update auth state
         const userData = await authAPI.getUser();
-        try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
         setAuthState({
           token: result.authToken,
           authenticated: true,
@@ -208,11 +202,10 @@ export const AuthProvider = ({children}: any) => {
         await SecureStore.setItemAsync(TOKEN_KEY, result.authToken);
         // fetch current user to get authoritative profileCompleted flag
         const userData = await authAPI.getUser();
-        try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
         setAuthState({
           token: result.authToken,
           authenticated: true,
-          user: userData.user || userData || result.user || { name: 'User', email },
+          user: userData.user || userData || result.user || { email },
           profileCompleted: userData.profileCompleted ?? userData.user?.profileCompleted ?? false,
           walletCreated: userData.walletAddress === null ? false : true
         });
@@ -262,8 +255,7 @@ export const AuthProvider = ({children}: any) => {
     try {
       // Delete token from storage
       await SecureStore.deleteItemAsync(TOKEN_KEY);
-      await SecureStore.deleteItemAsync('userData');
-      console.log('✅ AuthContext: Tokens cleared from storage');
+      console.log('AuthContext: Token cleared from storage');
 
       // Reset auth state
       setAuthState({
@@ -293,7 +285,6 @@ export const AuthProvider = ({children}: any) => {
   const onProfileCompleted = async () => {
     try {
       const userData = await authAPI.getUser();
-      try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){console.warn('Could not persist userData', e)}
       
       const user = userData.user || userData;
       
@@ -305,9 +296,8 @@ export const AuthProvider = ({children}: any) => {
       
       useUserStore.getState().setUser({
         id: user._id || user.id,
-        name: user.firstName || user.username || user.name || 'User',
+        name: user.firstName || 'User',
         email: user.email,
-        username: user.username || user.firstName || user.name,
         iq: user.iq || 0,
         coins: user.coins || 0,
         inrBalance: user.inrBalance || 0,
@@ -322,7 +312,7 @@ export const AuthProvider = ({children}: any) => {
       });
       
       console.log('✅ Profile completed - User data refreshed:', {
-        name: user.firstName || user.username || user.name,
+        name: user.firstName || 'User',
         profileCompleted: true
       });
     } catch (e) {
@@ -348,11 +338,6 @@ export const AuthProvider = ({children}: any) => {
   const refreshUserData = async () => {
     try {
       const userData = await authAPI.getUser();
-      try { 
-        await SecureStore.setItemAsync('userData', JSON.stringify(userData)); 
-      } catch(e) {
-        console.warn('Could not persist userData', e);
-      }
       
       setAuthState(prev => ({
         ...prev!,
@@ -370,7 +355,6 @@ export const AuthProvider = ({children}: any) => {
       if (result?.success && result?.authToken) {
         await SecureStore.setItemAsync(TOKEN_KEY, result.authToken);
         const userData = await authAPI.getUser();
-        try { await SecureStore.setItemAsync('userData', JSON.stringify(userData)); } catch(e){/* ignore */ }
         setAuthState({
           token: result.authToken,
           authenticated: true,

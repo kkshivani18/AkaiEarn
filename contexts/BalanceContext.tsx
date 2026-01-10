@@ -45,9 +45,9 @@ export const BalanceProvider = ({ children }: { children: React.ReactNode }) => 
       const response = await authAPI.getUser();
       const userData = response.user || response.data || response;
       
-      if (userData && (userData.username || userData.name || userData.email)) {
+      if (userData && (userData.firstName || userData.email)) {
         const mappedUserData = {
-          name: userData.username || userData.name,
+          name: userData.firstName || 'User',
           email: userData.email,
           iq: userData.iq,
           coins: userData.coins || 0

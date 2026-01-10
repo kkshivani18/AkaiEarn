@@ -1,19 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { FONTS } from "../constants/fonts";
 import { useUserStore } from '../stores/userStore';
 
-interface SignUpModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
-
-export const SignUp: React.FC<SignUpModalProps> = ({
-  visible,
-  onClose,
-}) => {
+export default function SignUpScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   
@@ -24,7 +17,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const fallbackRegister = useUserStore(s => s.register);
-  const setAuthMode = useUserStore(s => s.setAuthMode);
 
   // snackbar state
   const [showSnackbar, setShowSnackbar] = useState(false);
@@ -53,7 +45,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
     try {
       const result = await fallbackRegister(email, password); 
       if (result?.success) { 
-        onClose();
         // Routing handled by _layout.tsx based on auth state
       } else {
         // Critical auth error - use Alert
@@ -76,8 +67,6 @@ export const SignUp: React.FC<SignUpModalProps> = ({
   };
 
   const styles = createStyles(isDark);
-
-  if (!visible) return null;
 
   return (
     <LinearGradient
@@ -168,7 +157,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Already have a account ? </Text>
-                    <TouchableOpacity onPress={() => setAuthMode('login')}>
+                <TouchableOpacity onPress={() => router.replace('/login' as any)}>
                   <Text style={styles.linkText}>Login Now</Text>
                 </TouchableOpacity>
               </View>
@@ -183,7 +172,7 @@ export const SignUp: React.FC<SignUpModalProps> = ({
       )}
     </LinearGradient>
   );
-};
+}
 
 const createStyles = (isDark: boolean) => StyleSheet.create({
   container: {

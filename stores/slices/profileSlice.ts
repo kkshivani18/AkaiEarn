@@ -9,7 +9,6 @@ export type ProfileSlice = {
   id: string | null;
   name: string | null;
   email: string | null;
-  username: string | null;
   iq: number;
   coins: number;
   inrBalance: number;
@@ -40,7 +39,6 @@ export const createProfileSlice: StateCreator<any, [], [], ProfileSlice> = (set,
   id: null,
   name: null,
   email: null,
-  username: null,
   iq: 0,
   coins: 0,
   inrBalance: 0,
@@ -73,7 +71,7 @@ export const createProfileSlice: StateCreator<any, [], [], ProfileSlice> = (set,
       const response = await authAPI.getUser();
       const userData = response.user || response.data || response;
 
-      if (userData && (userData.firstName || userData.username || userData.name || userData.email)) {
+      if (userData && (userData.firstName || userData.email)) {
         const mappedUserData = mapUserFromApi(userData as ApiUser);
         
         // Ensure loading is explicitly set to false and not overridden
