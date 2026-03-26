@@ -22,17 +22,20 @@ A React Native mobile application that allows users to earn tokens by completing
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/Offer-Wall-Frontend.git
    cd Offer-Wall-Frontend-upd
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Configure environment**
+
    ```bash
    # Copy environment template
    cp .env.example .env
@@ -41,11 +44,13 @@ A React Native mobile application that allows users to earn tokens by completing
    ```
 
 4. **Start the app**
+
    ```bash
    npx expo start
    ```
 
 5. **Run on device/simulator**
+
    ```bash
    # iOS
    npm run ios
@@ -87,10 +92,10 @@ Update `config/environment.ts` with your backend URL:
 ```typescript
 const environments = {
   development: {
-    API_BASE_URL: 'https://your-backend-url.com/api',
+    API_BASE_URL: "https://your-backend-url.com/api",
     // ...other config
-  }
-}
+  },
+};
 ```
 
 ### Backend Integration
@@ -98,6 +103,7 @@ const environments = {
 This frontend connects to the Offer-Wall Backend. Ensure the backend is running and accessible.
 
 **Required Backend Endpoints:**
+
 - `POST /auth/login` - User authentication
 - `POST /auth/register` - User registration
 - `GET /auth/user` - Get user profile
@@ -108,17 +114,20 @@ This frontend connects to the Offer-Wall Backend. Ensure the backend is running 
 ## 📱 App Features
 
 ### Authentication Flow
+
 1. **Splash Screen** → Check authentication status
 2. **Login/Signup** → User authentication
 3. **Profile Completion** → Collect user information
 4. **Main App** → Access to all features
 
 ### Main Screens
+
 - **Offers** - Browse and complete available tasks
-- **Profile** - User information and statistics  
+- **Profile** - User information and statistics
 - **Rewards** - Spin wheel, coupons, and referrals
 
 ### Key Components
+
 - **SpinWheel** - Interactive spinning wheel with rewards
 - **CouponModal** - Display and copy coupon codes
 - **IQMeter** - Visual IQ level indicator
@@ -126,17 +135,20 @@ This frontend connects to the Offer-Wall Backend. Ensure the backend is running 
 ## 🛠️ Development
 
 ### Code Style
+
 - TypeScript for type safety
 - Functional components with hooks
 - Consistent naming conventions
 - Component-based architecture
 
 ### State Management
+
 - React Context for global state
 - Local state for component-specific data
 - Secure storage for sensitive data
 
 ### API Integration
+
 - Axios for HTTP requests
 - Interceptors for token management
 - Error handling and retry logic
@@ -144,12 +156,14 @@ This frontend connects to the Offer-Wall Backend. Ensure the backend is running 
 ## 🎨 UI/UX
 
 ### Design System
+
 - **Colors**: Dark theme with blue accents
 - **Typography**: System fonts with weight hierarchy
 - **Components**: Blur effects, gradients, and shadows
 - **Icons**: Ionicons for consistent iconography
 
 ### Responsive Design
+
 - Supports various screen sizes
 - Optimized for mobile devices
 - Cross-platform compatibility
@@ -159,6 +173,7 @@ This frontend connects to the Offer-Wall Backend. Ensure the backend is running 
 ### Building for Production
 
 1. **Configure environment for production**
+
 ```typescript
 // config/environment.ts
 production: {
@@ -169,6 +184,7 @@ production: {
 ```
 
 2. **Build the app**
+
    ```bash
    # Build for production
    expo build:android
@@ -184,22 +200,8 @@ production: {
    eas submit --platform all
    ```
 
-## 🤝 Contributing
+## Figma Link for UI of the app
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Related Repositories
-
-- [Offer-Wall-Backend](https://github.com/yourusername/Offer-Wall-Backend) - Backend API
+- [UI of AkaiEarn](https://www.figma.com/design/LMyeoDCZwwhI3J4NJLxxiM/AkaiEarn?node-id=0-1&p=f&t=kQYGNWRWEkdq5AOq-0)
 
 ---
-
-Made with ❤️ by the AkaiSpace Team
