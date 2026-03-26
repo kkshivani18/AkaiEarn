@@ -100,4 +100,5 @@ app structure
 /app-example
 
 #plist-files
+google-services.json
 GoogleService-Info.plist
