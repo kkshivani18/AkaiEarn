@@ -11,6 +11,10 @@ A React Native mobile application that allows users to earn tokens by completing
 - **Real-time Balance** - Token and INR balance tracking
 - **Dark Theme** - Beautiful dark UI with blur effects
 
+## Figma Link for UI of the app
+
+- [UI of AkaiEarn](https://www.figma.com/design/LMyeoDCZwwhI3J4NJLxxiM/AkaiEarn?node-id=0-1&p=f&t=kQYGNWRWEkdq5AOq-0)
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -199,9 +203,5 @@ production: {
    # Submit to stores
    eas submit --platform all
    ```
-
-## Figma Link for UI of the app
-
-- [UI of AkaiEarn](https://www.figma.com/design/LMyeoDCZwwhI3J4NJLxxiM/AkaiEarn?node-id=0-1&p=f&t=kQYGNWRWEkdq5AOq-0)
 
 ---
